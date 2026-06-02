@@ -125,6 +125,7 @@ const MOCK = {
   sqlsTotales:   28,
   sqlsPaidMedia: 18,
   sqlsOrganicos: 6,
+  sqlsOutbound:  4,
   convPorMes: {
     labels: MONTHS_ES,
     data:   [12, 18, 24, 31, 28, 35, 42, 38, 29, 33, 41, 36],
@@ -519,6 +520,7 @@ async function processPipedrive(deals, period, origenMap, stageMap = {}) {
   };
   const isSQLPaid = d => isSQL(d) && /paid/i.test(getLabel(d));
   const isSQLOrg  = d => isSQL(d) && /org/i.test(getLabel(d));
+  const isSQLOut  = d => isSQL(d) && /outbound/i.test(getLabel(d));
 
   const startStr = localDateStr(start);
   const endStr   = localDateStr(end);
@@ -563,6 +565,7 @@ async function processPipedrive(deals, period, origenMap, stageMap = {}) {
 
   const sqlsPaidDeals = updatedInPeriod.filter(isSQLPaid);
   const sqlsOrgDeals  = updatedInPeriod.filter(isSQLOrg);
+  const sqlsOutDeals  = updatedInPeriod.filter(isSQLOut);
 
   // Origen: solo SQLs calificados (calificación SQL llena), agrupados por origen
   // El total coincide con el número de SQLs del resumen ejecutivo
@@ -596,6 +599,7 @@ async function processPipedrive(deals, period, origenMap, stageMap = {}) {
       clientesGanados:  wonDeals.length,
       sqlsPaidMedia:    sqlsPaidDeals.length,
       sqlsOrganicos:    sqlsOrgDeals.length,
+      sqlsOutbound:     sqlsOutDeals.length,
     },
     dealLists: {
       leads:    buildDealSummaries(leadDeals,    fieldOrigen, origenMap, stageMap),
@@ -974,6 +978,7 @@ async function fetchAllData(period) {
   // Métricas de SQL por origen
   const sqlsPaidMedia = pipeData?.totals.sqlsPaidMedia  ?? mk.sqlsPaidMedia;
   const sqlsOrganicos = pipeData?.totals.sqlsOrganicos  ?? mk.sqlsOrganicos;
+  const sqlsOutbound  = pipeData?.totals.sqlsOutbound   ?? mk.sqlsOutbound;
   const sqlsTotales   = pipeData?.totals.sqls           ?? mk.sqlsTotales;
 
   // Costo por SQL = gasto del periodo / (SQLs paid + orgánicos)
@@ -1003,6 +1008,7 @@ async function fetchAllData(period) {
     sqlsTotales,
     sqlsPaidMedia,
     sqlsOrganicos,
+    sqlsOutbound,
     convPorMes:      adsData?.convPorMes      ?? mk.convPorMes,
     gastoPorMes:     { labels: MONTHS_ES, data: gastoPorMesData },
     costoPorSQLMes,

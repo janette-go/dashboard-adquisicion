@@ -388,7 +388,7 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
       <div class="card" style="height:100%">
         <div class="card-hdr">
           <span class="card-title">
-            SQLs por mes
+            SQLs por mes vs Costo/SQL
             <span class="tip" style="margin-left:4px">
               <span class="tip-icon">ⓘ</span>
               <span class="tip-box">Las <b>barras</b> muestran todos los SQLs calificados del periodo.<br>La <b>línea de Costo por SQL</b> se calcula únicamente con SQLs de <b>Paid media + Orgánico</b>: Gasto Ads ÷ (SQLs Paid + SQLs Orgánicos) por mes.</span>
@@ -410,8 +410,8 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
             <p class="sm-lbl"><span class="tip">Orgánicos<span class="tip-icon">ⓘ</span><span class="tip-box">SQLs creados en el periodo con <b>Calificación SQL</b> llena y <b>Origen de SQL = Orgánico</b>.</span></span></p>
           </div>
           <div style="padding:.45rem .6rem;border-right:1px solid var(--border);overflow:visible">
-            <p class="sm-val" id="best-sql-month" style="font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">–</p>
-            <p class="sm-lbl"><span class="tip">Mejor mes<span class="tip-icon">ⓘ</span><span class="tip-box">Mes del año en curso con el mayor número de SQLs generados.</span></span></p>
+            <p class="sm-val" id="sql-outbound" style="font-size:15px">–</p>
+            <p class="sm-lbl"><span class="tip">Outbound<span class="tip-icon">ⓘ</span><span class="tip-box">SQLs creados en el periodo con <b>Calificación SQL</b> llena y <b>Origen de SQL = Outbound</b>.</span></span></p>
           </div>
           <div style="padding:.45rem .6rem;border-right:1px solid var(--border);overflow:visible">
             <p class="sm-val" id="avg-sql-month" style="font-size:15px">–</p>
@@ -422,6 +422,8 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
             <p class="sm-lbl"><span class="tip">Total año<span class="tip-icon">ⓘ</span><span class="tip-box">Suma de todos los SQLs generados en el año en curso (enero al mes actual).</span></span></p>
           </div>
         </div>
+        <!-- best-sql-month oculto para compatibilidad JS -->
+        <span id="best-sql-month" style="display:none"></span>
         <!-- sql-totales oculto para compatibilidad JS -->
         <span id="sql-totales" style="display:none"></span>
       </div>
@@ -691,9 +693,10 @@ function renderSummary(d) {
   const s2w = pl.sqls > 0 ? ((pl.ganados / pl.sqls) * 100).toFixed(1) + '%' : '–';
   setText('m-s2w', s2w);
   // Métricas de SQL en sección de gráfico
-  setText('sql-totales', fmt(d.sqlsTotales));
-  setText('sql-paid',    fmt(d.sqlsPaidMedia));
-  setText('sql-org',     fmt(d.sqlsOrganicos));
+  setText('sql-totales',  fmt(d.sqlsTotales));
+  setText('sql-paid',     fmt(d.sqlsPaidMedia));
+  setText('sql-org',      fmt(d.sqlsOrganicos));
+  setText('sql-outbound', fmt(d.sqlsOutbound));
 }
 
 // ── CHARTS ────────────────────────────────────────────────────────────────────
@@ -733,31 +736,30 @@ function renderCharts(d) {
   setText('best-sql-month', smx > 0 ? sm.labels[sbi] + ' · ' + smx + ' SQLs' : '–');
   setText('avg-sql-month',  Math.round(sm.data.reduce((a,b) => a+b, 0) / (sm.data.length||1)) + ' SQLs/mes');
   setText('total-sql-year', sm.data.reduce((a,b) => a+b, 0) + ' SQLs');
-  // Barras apiladas: Paid+Org (azul abajo) + Otros canales (rojo arriba) = total
+  // Barras superpuestas: Total SQLs (fondo rojo, ancha) + Paid+Org (frente azul, estrecha)
   const spo_raw = d.sqlsPaidOrgPorMes || { labels:[], data:[] };
   const spoData = spo_raw.data?.slice(0, curM+1) || [];
-  const otrosData = sm.data.map((v, i) => Math.max(0, v - (spoData[i] || 0)));
 
   charts['sql'] = new Chart(document.getElementById('sqlChart'), {
     type: 'bar',
     data: { labels: sm.labels, datasets: [
+      { label:'Total SQLs', data: sm.data, yAxisID:'y',
+        backgroundColor: C.red+'66', borderRadius:3, borderSkipped:false,
+        barPercentage:1.0, categoryPercentage:0.75, order:2 },
       { label:'Paid+Orgánico', data: spoData, yAxisID:'y',
-        backgroundColor: C.blue+'AA', borderRadius:0, borderSkipped:false,
-        stack:'sqls', order:2 },
-      { label:'Otros canales', data: otrosData, yAxisID:'y',
-        backgroundColor: C.red+'77', borderRadius:3, borderSkipped:false,
-        stack:'sqls', order:2 },
+        backgroundColor: C.blue+'CC', borderRadius:3, borderSkipped:false,
+        barPercentage:0.6, categoryPercentage:0.75, order:1 },
       { label:'Costo/SQL', data: cpsm.data, yAxisID:'y2', type:'line',
         borderColor: C.blue, backgroundColor: C.blue+'22',
         borderWidth:2, pointRadius:3, pointBackgroundColor:C.blue,
-        tension:0.35, spanGaps:true, order:1 },
+        tension:0.35, spanGaps:true, order:0 },
     ]},
     options: { responsive:true, maintainAspectRatio:false,
       plugins:{ legend:{ position:'top', labels:{ boxWidth:8, font:{size:9} } } },
       scales:{
-        y:  { beginAtZero:true, stacked:true, grid:{color:C.border}, ticks:{font:{size:9}}, position:'left' },
+        y:  { beginAtZero:true, grid:{color:C.border}, ticks:{font:{size:9}}, position:'left' },
         y2: { beginAtZero:true, grid:{display:false}, ticks:{font:{size:9}, callback:v=>'$'+v.toLocaleString()}, position:'right' },
-        x:  { grid:{display:false}, stacked:true },
+        x:  { grid:{display:false} },
       },
     },
   });
