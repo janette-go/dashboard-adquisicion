@@ -387,7 +387,13 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
     <section id="sqls-mes">
       <div class="card" style="height:100%">
         <div class="card-hdr">
-          <span class="card-title">SQLs por mes</span>
+          <span class="card-title">
+            SQLs por mes
+            <span class="tip" style="margin-left:4px">
+              <span class="tip-icon">ⓘ</span>
+              <span class="tip-box">Las <b>barras</b> muestran todos los SQLs calificados del periodo.<br>La <b>línea de Costo por SQL</b> se calcula únicamente con SQLs de <b>Paid media + Orgánico</b>: Gasto Ads ÷ (SQLs Paid + SQLs Orgánicos) por mes.</span>
+            </span>
+          </span>
           <span class="card-src"><span class="src-dot pipe live"></span>Pipedrive</span>
         </div>
         <div style="padding:.75rem .85rem .5rem">
@@ -424,7 +430,13 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
     <section id="gasto-sqls">
       <div class="card" style="height:100%">
         <div class="card-hdr">
-          <span class="card-title">Inversión Ads vs SQLs por mes</span>
+          <span class="card-title">
+            Inversión Ads vs SQLs por mes
+            <span class="tip" style="margin-left:4px">
+              <span class="tip-icon">ⓘ</span>
+              <span class="tip-box">La línea de <b>SQLs</b> en esta gráfica incluye únicamente los SQLs cuyo <b>Origen de SQL = Paid media u Orgánico</b>.<br>Se excluyen Outbound, Referidos y otros canales para correlacionar solo la inversión en Ads con los SQLs que genera.</span>
+            </span>
+          </span>
           <span class="card-src"><span class="src-dot gads live"></span>Google Ads&nbsp;&nbsp;<span class="src-dot pipe live"></span>Pipedrive</span>
         </div>
         <div style="padding:.75rem .85rem;height:calc(100% - 38px);box-sizing:border-box">
@@ -727,7 +739,7 @@ function renderCharts(d) {
       { label:'SQLs', data: sm.data, yAxisID:'y',
         backgroundColor: sm.data.map((_,i) => i===sbi ? C.yellow+'EE' : C.yellow+'88'),
         borderRadius:3, borderSkipped:false, order:2 },
-      { label:'Costo por SQL ($)', data: cpsm.data, yAxisID:'y2', type:'line',
+      { label:'Costo/SQL Paid+Org ($)', data: cpsm.data, yAxisID:'y2', type:'line',
         borderColor: C.blue, backgroundColor: C.blue+'22',
         borderWidth:2, pointRadius:3, pointBackgroundColor:C.blue,
         tension:0.35, spanGaps:true, order:1 },
@@ -801,7 +813,7 @@ function renderCharts(d) {
     data: { labels: gm.labels, datasets: [
       { label:'Gasto Ads (MXN)', data: gm.data, yAxisID:'y',
         backgroundColor: C.blue+'99', borderRadius:3, borderSkipped:false, order:2 },
-      { label:'SQLs', data: sm2.data, yAxisID:'y2', type:'line',
+      { label:'SQLs Paid+Orgánico', data: sm2.data, yAxisID:'y2', type:'line',
         borderColor: C.green, backgroundColor: C.green+'22',
         borderWidth:2, pointRadius:3, pointBackgroundColor:C.green,
         tension:0.35, spanGaps:false, order:1 },
