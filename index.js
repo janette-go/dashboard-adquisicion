@@ -288,6 +288,33 @@ function groupByMonth(deals, year) {
   return { labels: MONTHS_ES, data: byMonth };
 }
 
+// Cache de etapas del pipeline de Pipedrive
+let _stageCache = null;
+async function fetchPipelineStages() {
+  if (_stageCache) return _stageCache;
+  const token = process.env.PIPEDRIVE_API_TOKEN;
+  const pid   = process.env.PIPEDRIVE_PIPELINE_ID || '';
+  const resp  = await fetch(`https://api.pipedrive.com/v1/stages?pipeline_id=${pid}&api_token=${token}`);
+  if (!resp.ok) return (_stageCache = {});
+  const json  = await resp.json();
+  _stageCache = Object.fromEntries((json.data || []).map(s => [s.id, s.name]));
+  return _stageCache;
+}
+
+// Construye un resumen de deals para mostrar en el popup del dashboard
+function buildDealSummaries(deals, fieldOrigen, origenMap, stageMap) {
+  return deals.slice(0, 100).map(d => ({
+    id:        d.id,
+    title:     d.title || '(sin título)',
+    value:     d.value != null ? `$${Number(d.value).toLocaleString('es-MX')} ${d.currency || ''}`.trim() : '–',
+    status:    d.status === 'won' ? 'Ganado' : d.status === 'lost' ? 'Perdido' : 'Abierto',
+    owner:     d.owner_name || d.user_id?.name || '–',
+    stage:     stageMap[d.stage_id] || `Etapa ${d.stage_id || '–'}`,
+    origenSQL: (() => { const r = fieldOrigen ? d[fieldOrigen] : null; return r ? (origenMap[String(r)] || String(r)) : '–'; })(),
+    add_time:  (d.add_time || '').slice(0, 10),
+  }));
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // CREDENCIALES Y HELPERS DE GOOGLE ADS REST
 // ─────────────────────────────────────────────────────────────────────────────
@@ -472,7 +499,7 @@ function updateQualState(deals, fieldCalLead, fieldCalSQL) {
   return state;
 }
 
-async function processPipedrive(deals, period, origenMap) {
+async function processPipedrive(deals, period, origenMap, stageMap = {}) {
   const { start, end, year } = parsePeriod(period);
   const fieldCalLead = process.env.PIPEDRIVE_FIELD_CALIFICACION_LEAD || '';
   const fieldCalSQL  = process.env.PIPEDRIVE_FIELD_CALIFICACION_SQL  || '';
@@ -536,6 +563,9 @@ async function processPipedrive(deals, period, origenMap) {
     return raw != null && raw !== '';
   });
 
+  const sqlsPaidDeals = updatedInPeriod.filter(isSQLPaid);
+  const sqlsOrgDeals  = updatedInPeriod.filter(isSQLOrg);
+
   return {
     pipeline:      { leads: leadDeals.length, sqls: sqlDeals.length, ganados: wonDeals.length },
     origenSqls:    groupByOrigenSQL(conOrigenFilled, fieldOrigen, origenMap),
@@ -546,8 +576,15 @@ async function processPipedrive(deals, period, origenMap) {
       leadsCalificados: leadDeals.length,
       sqls:             sqlDeals.length,
       clientesGanados:  wonDeals.length,
-      sqlsPaidMedia:    updatedInPeriod.filter(isSQLPaid).length,
-      sqlsOrganicos:    updatedInPeriod.filter(isSQLOrg).length,
+      sqlsPaidMedia:    sqlsPaidDeals.length,
+      sqlsOrganicos:    sqlsOrgDeals.length,
+    },
+    dealLists: {
+      leads:    buildDealSummaries(leadDeals,    fieldOrigen, origenMap, stageMap),
+      sqls:     buildDealSummaries(sqlDeals,     fieldOrigen, origenMap, stageMap),
+      ganados:  buildDealSummaries(wonDeals,     fieldOrigen, origenMap, stageMap),
+      sqlsPaid: buildDealSummaries(sqlsPaidDeals,fieldOrigen, origenMap, stageMap),
+      sqlsOrg:  buildDealSummaries(sqlsOrgDeals, fieldOrigen, origenMap, stageMap),
     },
     _debug: {
       totalFetched:    deals.length,
@@ -897,8 +934,8 @@ async function fetchAllData(period) {
                 console.error('[Google Ads raw]', JSON.stringify(e, Object.getOwnPropertyNames(e), 2));
               }),
 
-    pipeOk && Promise.all([fetchPipedriveDeals(), getPipedriveOrigenMap()])
-               .then(async ([deals, origenMap]) => { pipeData = await processPipedrive(deals, period, origenMap); }) // async por compatibilidad futura
+    pipeOk && Promise.all([fetchPipedriveDeals(), getPipedriveOrigenMap(), fetchPipelineStages()])
+               .then(async ([deals, origenMap, stageMap]) => { pipeData = await processPipedrive(deals, period, origenMap, stageMap); })
                .catch(e => { pipeError = e.message; console.error('[Pipedrive]', e.message); }),
   ].filter(Boolean));
 
@@ -957,6 +994,7 @@ async function fetchAllData(period) {
     changes:         (adsData?.changes?.length ? adsData.changes : null) ?? mk.changes,
     campaigns:       adsData?.campaigns    ?? mk.campaigns,
     auctionData:     (adsData?.auctionData?.length ? adsData.auctionData : null) ?? mk.auctionData,
+    dealLists:       pipeData?.dealLists ?? { leads:[], sqls:[], ganados:[], sqlsPaid:[], sqlsOrg:[] },
     periodLabel:     parsePeriod(period).periodLabel,
     ...(adsError   ? { _adsError:   adsError          } : {}),
     ...(pipeError  ? { _pipeError:  pipeError         } : {}),

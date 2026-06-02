@@ -371,9 +371,9 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
         <div class="exec-row">
           <div class="exec-row-label">Pipedrive</div>
           <div class="exec-cells">
-            <div class="exec-cell"><p class="ec-val" id="m-ql"       >–</p><p class="ec-lbl"><span class="tip">Leads calificados<span class="tip-icon">ⓘ</span><span class="tip-box">Deals creados en el periodo con el campo <b>"Calificación del Lead"</b> lleno en Pipedrive.</span></span></p></div>
-            <div class="exec-cell"><p class="ec-val" id="m-sql"      >–</p><p class="ec-lbl"><span class="tip">SQLs<span class="tip-icon">ⓘ</span><span class="tip-box">Deals creados en el periodo con el campo <b>"Calificación SQL"</b> lleno en Pipedrive. Indica que el lead fue calificado como Sales Qualified Lead.</span></span></p></div>
-            <div class="exec-cell"><p class="ec-val" id="m-won"      >–</p><p class="ec-lbl"><span class="tip">Clientes ganados<span class="tip-icon">ⓘ</span><span class="tip-box">Deals marcados como <b>Ganados</b> en Pipedrive dentro del periodo. Filtrado por la fecha exacta de cierre (won_time).</span></span></p></div>
+            <div class="exec-cell"><p class="ec-val deal-num" id="m-ql" data-list="leads" data-label="Leads calificados" style="cursor:pointer">–</p><p class="ec-lbl"><span class="tip">Leads calificados<span class="tip-icon">ⓘ</span><span class="tip-box">Deals creados en el periodo con el campo <b>"Calificación del Lead"</b> lleno en Pipedrive.</span></span></p></div>
+            <div class="exec-cell"><p class="ec-val deal-num" id="m-sql" data-list="sqls" data-label="SQLs" style="cursor:pointer">–</p><p class="ec-lbl"><span class="tip">SQLs<span class="tip-icon">ⓘ</span><span class="tip-box">Deals creados en el periodo con el campo <b>"Calificación SQL"</b> lleno en Pipedrive. Indica que el lead fue calificado como Sales Qualified Lead.</span></span></p></div>
+            <div class="exec-cell"><p class="ec-val deal-num" id="m-won" data-list="ganados" data-label="Clientes ganados" style="cursor:pointer">–</p><p class="ec-lbl"><span class="tip">Clientes ganados<span class="tip-icon">ⓘ</span><span class="tip-box">Deals marcados como <b>Ganados</b> en Pipedrive dentro del periodo. Filtrado por la fecha exacta de cierre (won_time).</span></span></p></div>
             <div class="exec-cell"><p class="ec-val" id="m-costo-sql">–</p><p class="ec-lbl"><span class="tip">Costo por SQL<span class="tip-icon">ⓘ</span><span class="tip-box"><b>Cálculo:</b> Gasto Ads ÷ (SQLs Paid Media + SQLs Orgánicos).<br>Solo considera canales pagados y orgánicos para atribuir el costo correctamente.</span></span></p></div>
             <div class="exec-cell"><p class="ec-val" id="m-s2w"      >–</p><p class="ec-lbl"><span class="tip">SQL → Cliente<span class="tip-icon">ⓘ</span><span class="tip-box"><b>Cálculo:</b> (Clientes ganados ÷ SQLs totales) × 100.<br>Tasa de cierre del pipeline de ventas.</span></span></p></div>
           </div>
@@ -396,11 +396,11 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
         <!-- Stats en fila debajo del gráfico -->
         <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:0;border-top:1px solid var(--border)">
           <div style="padding:.45rem .6rem;border-right:1px solid var(--border);overflow:visible">
-            <p class="sm-val" id="sql-paid" style="font-size:15px">–</p>
+            <p class="sm-val deal-num" id="sql-paid" data-list="sqlsPaid" data-label="SQLs Paid Media" style="font-size:15px;cursor:pointer">–</p>
             <p class="sm-lbl"><span class="tip">Paid Media<span class="tip-icon">ⓘ</span><span class="tip-box">SQLs creados en el periodo con <b>Calificación SQL</b> llena y <b>Origen de SQL = Paid media</b>.</span></span></p>
           </div>
           <div style="padding:.45rem .6rem;border-right:1px solid var(--border);overflow:visible">
-            <p class="sm-val" id="sql-org" style="font-size:15px">–</p>
+            <p class="sm-val deal-num" id="sql-org" data-list="sqlsOrg" data-label="SQLs Orgánicos" style="font-size:15px;cursor:pointer">–</p>
             <p class="sm-lbl"><span class="tip">Orgánicos<span class="tip-icon">ⓘ</span><span class="tip-box">SQLs creados en el periodo con <b>Calificación SQL</b> llena y <b>Origen de SQL = Orgánico</b>.</span></span></p>
           </div>
           <div style="padding:.45rem .6rem;border-right:1px solid var(--border);overflow:visible">
@@ -444,15 +444,26 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
         </div>
         <div class="chart-row">
           <div class="chart-cell" style="flex:1.4">
-            <div class="cc-title"><span id="origen-total" style="font-weight:400;color:var(--muted)"></span></div>
+            <div class="cc-title">
+              <span class="tip">Deals con Origen de SQL lleno
+                <span class="tip-icon">ⓘ</span>
+                <span class="tip-box">Muestra todos los deals del periodo que tienen el campo <b>"Origen de SQL"</b> lleno en Pipedrive, agrupados por canal.<br>No requiere que tenga Calificación SQL.</span>
+              </span>
+              <span id="origen-total" style="font-weight:400;color:var(--muted);margin-left:4px"></span>
+            </div>
             <div class="chart-h-sm"><canvas id="originSqlChart"></canvas></div>
             <div id="origen-sql-legend" style="display:flex;flex-direction:column;gap:3px;margin-top:6px"></div>
           </div>
           <div class="chart-cell">
-            <div class="cc-title">Deals ganados</div>
+            <div class="cc-title">
+              <span class="tip">Deals ganados
+                <span class="tip-icon">ⓘ</span>
+                <span class="tip-box">Deals cerrados como <b>Ganados</b> en Pipedrive durante el periodo seleccionado. Filtrado por la fecha exacta de cierre (<b>won_time</b>), no por creación.</span>
+              </span>
+            </div>
             <div style="display:flex;flex-direction:column;gap:8px;padding-top:.25rem">
-              <div class="stat-mini" style="text-align:center">
-                <p class="sm-val" id="won-total" style="color:var(--green);font-size:32px">–</p>
+              <div class="stat-mini" style="text-align:center;overflow:visible">
+                <p class="sm-val deal-num" id="won-total" data-list="ganados" style="color:var(--green);font-size:32px;cursor:pointer">–</p>
                 <p class="sm-lbl">Total ganados</p>
               </div>
               <div id="won-breakdown" style="display:flex;flex-direction:column;gap:5px"></div>
@@ -536,6 +547,43 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
   </section>
 
 </div><!-- /main -->
+
+<!-- ── DEAL POPUP (hover sobre número) ─────────────────────────── -->
+<div id="deal-popup" style="display:none;position:fixed;z-index:8500;width:340px;background:var(--surface);border:1px solid var(--border);border-radius:8px;box-shadow:0 6px 24px rgba(0,0,0,.15);overflow:hidden">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:.45rem .75rem;background:var(--gray-lt);border-bottom:1px solid var(--border)">
+    <span id="dp-label" style="font-size:11px;font-weight:700;color:var(--text)"></span>
+    <span id="dp-count" style="font-size:10px;color:var(--muted)"></span>
+  </div>
+  <div id="dp-rows" style="max-height:240px;overflow-y:auto"></div>
+  <div id="dp-more" style="display:none;padding:.4rem .75rem;border-top:1px solid var(--border);text-align:center">
+    <button id="dp-more-btn" onclick="openDealModal()" style="font-size:10px;font-weight:600;color:var(--blue);background:none;border:none;cursor:pointer;font-family:inherit">Ver todos →</button>
+  </div>
+</div>
+
+<!-- ── DEAL MODAL (clic cuando hay muchos deals) ─────────────────── -->
+<div id="deal-modal" onclick="if(event.target===this)closeDealModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9000;overflow:auto;padding:2rem 1rem">
+  <div style="background:var(--surface);border-radius:10px;max-width:800px;margin:0 auto;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.25)">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:.65rem 1rem;border-bottom:1px solid var(--border);background:var(--gray-lt)">
+      <span id="dm-label" style="font-size:13px;font-weight:700"></span>
+      <button onclick="closeDealModal()" style="background:none;border:none;font-size:16px;cursor:pointer;color:var(--muted);line-height:1">✕</button>
+    </div>
+    <div style="overflow-x:auto">
+      <table id="dm-table" style="width:100%;border-collapse:collapse;font-size:11px">
+        <thead style="position:sticky;top:0;background:var(--gray-lt)">
+          <tr>
+            <th style="padding:.4rem .75rem;text-align:left;font-size:9px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap">Deal</th>
+            <th style="padding:.4rem .75rem;text-align:left;font-size:9px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border)">Etapa</th>
+            <th style="padding:.4rem .75rem;text-align:left;font-size:9px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border)">Propietario</th>
+            <th style="padding:.4rem .75rem;text-align:right;font-size:9px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border)">Valor</th>
+            <th style="padding:.4rem .75rem;text-align:left;font-size:9px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border)">Estado</th>
+            <th style="padding:.4rem .75rem;text-align:left;font-size:9px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border)">Origen SQL</th>
+          </tr>
+        </thead>
+        <tbody id="dm-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
 
 <script>
 // ── PERIOD ────────────────────────────────────────────────────────────────────
@@ -622,6 +670,7 @@ async function loadData() {
     setText('acc-id',   data.account.id   || '720-603-7956');
   }
 
+  _dealLists = data.dealLists || {};
   renderSummary(data);
   renderCharts(data);
   renderTree(data);
@@ -969,6 +1018,118 @@ function renderAuction(d) {
       scales:{ x:{ grid:{display:false} }, y:{ beginAtZero:true, max:100, grid:{color:C.border}, ticks:{callback:v=>v+'%'} } } },
   });
 }
+
+// ── DEAL POPUP & MODAL ────────────────────────────────────────────────────────
+let _dealLists   = {};    // se actualiza en cada loadData()
+let _activeList  = [];    // deals del popup actual
+let _activeLabel = '';
+
+const POPUP_PREVIEW = 5;  // deals visibles en el popup antes de "ver todos"
+
+const STATUS_COLOR = { 'Ganado':'var(--green)', 'Perdido':'var(--red)', 'Abierto':'var(--blue)' };
+
+function dealRow(d, border = true) {
+  const sc = STATUS_COLOR[d.status] || 'var(--muted)';
+  return `<div style="display:grid;grid-template-columns:1fr auto;gap:4px 8px;padding:.45rem .75rem;${border?'border-bottom:1px solid var(--gray-lt)':''}">
+    <div style="min-width:0">
+      <div style="font-size:11px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${d.title}</div>
+      <div style="font-size:9px;color:var(--muted);margin-top:2px">${d.stage} · ${d.owner}</div>
+    </div>
+    <div style="text-align:right;flex-shrink:0">
+      <div style="font-size:11px;font-weight:500;font-family:'Roboto Mono',monospace;color:var(--text)">${d.value}</div>
+      <div style="font-size:9px;font-weight:600;color:${sc}">${d.status}</div>
+    </div>
+    ${d.origenSQL !== '–' ? `<div style="grid-column:1/-1;font-size:9px;color:var(--muted)">Origen SQL: <b style="color:var(--text)">${d.origenSQL}</b></div>` : ''}
+  </div>`;
+}
+
+function showDealPopup(el) {
+  const listKey = el.dataset.list;
+  const label   = el.dataset.label || listKey;
+  const deals   = _dealLists[listKey] || [];
+  if (!deals.length) return;
+
+  _activeList  = deals;
+  _activeLabel = label;
+
+  const popup  = document.getElementById('deal-popup');
+  const rows   = document.getElementById('dp-rows');
+  const more   = document.getElementById('dp-more');
+  const btn    = document.getElementById('dp-more-btn');
+
+  document.getElementById('dp-label').textContent = label;
+  document.getElementById('dp-count').textContent  = deals.length + ' deals';
+
+  const preview = deals.slice(0, POPUP_PREVIEW);
+  rows.innerHTML = preview.map((d, i) => dealRow(d, i < preview.length - 1)).join('');
+
+  const hasMore = deals.length > POPUP_PREVIEW;
+  more.style.display = hasMore ? 'block' : 'none';
+  if (hasMore) btn.textContent = `Ver todos (${deals.length}) →`;
+
+  // Posicionar
+  popup.style.display = 'block';
+  const r = el.getBoundingClientRect();
+  const pw = 340, ph = popup.offsetHeight;
+  const W  = window.innerWidth, H = window.innerHeight;
+  let top  = r.bottom + 8;
+  if (top + ph > H - 20) top = r.top - ph - 8;
+  let left = r.left + r.width / 2 - pw / 2;
+  left = Math.max(10, Math.min(left, W - pw - 10));
+  popup.style.top  = top  + 'px';
+  popup.style.left = left + 'px';
+}
+
+function hideDealPopup() {
+  document.getElementById('deal-popup').style.display = 'none';
+}
+
+function openDealModal() {
+  hideDealPopup();
+  document.getElementById('dm-label').textContent = _activeLabel + ' — ' + _activeList.length + ' deals';
+  const tbody = document.getElementById('dm-tbody');
+  tbody.innerHTML = _activeList.map(d => {
+    const sc = STATUS_COLOR[d.status] || 'var(--muted)';
+    return `<tr style="border-bottom:1px solid var(--gray-lt)">
+      <td style="padding:.4rem .75rem;font-weight:600;color:var(--text)">${d.title}</td>
+      <td style="padding:.4rem .75rem;color:var(--muted)">${d.stage}</td>
+      <td style="padding:.4rem .75rem;color:var(--muted)">${d.owner}</td>
+      <td style="padding:.4rem .75rem;text-align:right;font-family:'Roboto Mono',monospace">${d.value}</td>
+      <td style="padding:.4rem .75rem;font-weight:600;color:${sc}">${d.status}</td>
+      <td style="padding:.4rem .75rem;color:var(--muted)">${d.origenSQL}</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('deal-modal').style.display = 'block';
+}
+
+function closeDealModal() {
+  document.getElementById('deal-modal').style.display = 'none';
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDealModal(); });
+
+// Delegación: hover sobre .deal-num
+document.addEventListener('mouseover', e => {
+  const el = e.target.closest('.deal-num');
+  if (el) showDealPopup(el);
+});
+document.addEventListener('mouseout', e => {
+  const el = e.target.closest('.deal-num');
+  if (!el) return;
+  const popup = document.getElementById('deal-popup');
+  if (!popup.contains(e.relatedTarget)) hideDealPopup();
+});
+document.getElementById('deal-popup').addEventListener('mouseleave', hideDealPopup);
+
+// Clic sobre .deal-num con muchos deals abre el modal directamente
+document.addEventListener('click', e => {
+  const el = e.target.closest('.deal-num');
+  if (!el) return;
+  const listKey = el.dataset.list;
+  const deals   = _dealLists[listKey] || [];
+  _activeList   = deals;
+  _activeLabel  = el.dataset.label || listKey;
+  if (deals.length) openDealModal();
+});
 
 // ── TOOLTIPS (position:fixed para saltar overflow:hidden de cards) ────────────
 document.addEventListener('mouseover', e => {
