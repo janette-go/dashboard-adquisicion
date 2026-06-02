@@ -557,18 +557,32 @@ async function processPipedrive(deals, period, origenMap, stageMap = {}) {
     if (isSQLPaid(deal) || isSQLOrg(deal)) sqlsPaidOrganicoPorMes[t.getMonth()]++;
   }
 
-  // Deals con el campo "Origen de SQL" relleno (para el donut de origen)
-  const conOrigenFilled = updatedInPeriod.filter(d => {
-    const raw = fieldOrigen ? d[fieldOrigen] : null;
-    return raw != null && raw !== '';
-  });
-
   const sqlsPaidDeals = updatedInPeriod.filter(isSQLPaid);
   const sqlsOrgDeals  = updatedInPeriod.filter(isSQLOrg);
 
+  // Origen: solo SQLs calificados (calificación SQL llena), agrupados por origen
+  // El total coincide con el número de SQLs del resumen ejecutivo
+  const dealsByOrigin = {};
+  for (const deal of sqlDeals) {
+    const label = getLabel(deal) || 'Sin fuente';
+    if (!dealsByOrigin[label]) dealsByOrigin[label] = [];
+    if (dealsByOrigin[label].length < 100) {
+      dealsByOrigin[label].push({
+        id:        deal.id,
+        title:     deal.title || '(sin título)',
+        value:     deal.value != null ? `$${Number(deal.value).toLocaleString('es-MX')} ${deal.currency||''}`.trim() : '–',
+        status:    deal.status === 'won' ? 'Ganado' : deal.status === 'lost' ? 'Perdido' : 'Abierto',
+        owner:     deal.owner_name || deal.user_id?.name || '–',
+        stage:     (stageMap||{})[deal.stage_id] || `Etapa ${deal.stage_id||'–'}`,
+        origenSQL: label,
+        add_time:  (deal.add_time||'').slice(0,10),
+      });
+    }
+  }
+
   return {
     pipeline:      { leads: leadDeals.length, sqls: sqlDeals.length, ganados: wonDeals.length },
-    origenSqls:    groupByOrigenSQL(conOrigenFilled, fieldOrigen, origenMap),
+    origenSqls:    groupByOrigenSQL(sqlDeals, fieldOrigen, origenMap),
     origenGanados: groupByOrigenSQL(wonDeals, fieldOrigen, origenMap),
     sqlsPorMes:    groupByMonth(sqlsYear, year),
     sqlsPaidOrganicoPorMes,
@@ -586,13 +600,14 @@ async function processPipedrive(deals, period, origenMap, stageMap = {}) {
       sqlsPaid: buildDealSummaries(sqlsPaidDeals,fieldOrigen, origenMap, stageMap),
       sqlsOrg:  buildDealSummaries(sqlsOrgDeals, fieldOrigen, origenMap, stageMap),
     },
+    dealsByOrigin,
     _debug: {
       totalFetched:    deals.length,
       updatedInPeriod_update: updatedInPeriod.length,  // filtrado por update_time
       conLeadField:    leadDeals.length,
       conSQLField:     sqlDeals.length,
       wonDeals:        wonDeals.length,
-      conOrigenFilled: conOrigenFilled.length,
+      conOrigenFilled: sqlDeals.length,
       fieldCalLead,
       fieldCalSQL,
       sampleDeal: updatedInPeriod[0] ? {
@@ -994,7 +1009,8 @@ async function fetchAllData(period) {
     changes:         (adsData?.changes?.length ? adsData.changes : null) ?? mk.changes,
     campaigns:       adsData?.campaigns    ?? mk.campaigns,
     auctionData:     (adsData?.auctionData?.length ? adsData.auctionData : null) ?? mk.auctionData,
-    dealLists:       pipeData?.dealLists ?? { leads:[], sqls:[], ganados:[], sqlsPaid:[], sqlsOrg:[] },
+    dealLists:       pipeData?.dealLists    ?? { leads:[], sqls:[], ganados:[], sqlsPaid:[], sqlsOrg:[] },
+    dealsByOrigin:   pipeData?.dealsByOrigin ?? {},
     periodLabel:     parsePeriod(period).periodLabel,
     ...(adsError   ? { _adsError:   adsError          } : {}),
     ...(pipeError  ? { _pipeError:  pipeError         } : {}),

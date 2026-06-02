@@ -382,8 +382,8 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
     </div>
   </section>
 
-  <!-- ROW 1: SQLs por mes | Inversión Ads vs SQLs -->
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+  <!-- ROW 1: SQLs por mes | Inversión Ads vs SQLs | Origen de SQLs -->
+  <div style="display:grid;grid-template-columns:1fr 1fr 0.7fr;gap:1rem">
     <section id="sqls-mes">
       <div class="card" style="height:100%">
         <div class="card-hdr">
@@ -432,47 +432,25 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
         </div>
       </div>
     </section>
-  </div>
 
-  <!-- ROW 2: Origen de SQLs (izq) | Estadísticas de subasta (der) -->
-  <div style="display:grid;grid-template-columns:1fr 1.6fr;gap:1rem">
+    <!-- Origen de SQLs — tercer gráfico del Row 1 -->
     <section id="origen">
       <div class="card" style="height:100%">
         <div class="card-hdr">
           <span class="card-title">Origen de SQLs</span>
           <span class="card-src"><span class="src-dot pipe live"></span>Pipedrive</span>
         </div>
-        <div class="chart-row">
-          <div class="chart-cell" style="flex:1.4">
-            <div class="cc-title">
-              <span class="tip">Deals con Origen de SQL lleno
-                <span class="tip-icon">ⓘ</span>
-                <span class="tip-box">Muestra todos los deals del periodo que tienen el campo <b>"Origen de SQL"</b> lleno en Pipedrive, agrupados por canal.<br>No requiere que tenga Calificación SQL.</span>
-              </span>
-              <span id="origen-total" style="font-weight:400;color:var(--muted);margin-left:4px"></span>
-            </div>
-            <div class="chart-h-sm"><canvas id="originSqlChart"></canvas></div>
-            <div id="origen-sql-legend" style="display:flex;flex-direction:column;gap:3px;margin-top:6px"></div>
-          </div>
-          <div class="chart-cell">
-            <div class="cc-title">
-              <span class="tip">Deals ganados
-                <span class="tip-icon">ⓘ</span>
-                <span class="tip-box">Deals cerrados como <b>Ganados</b> en Pipedrive durante el periodo seleccionado. Filtrado por la fecha exacta de cierre (<b>won_time</b>), no por creación.</span>
-              </span>
-            </div>
-            <div style="display:flex;flex-direction:column;gap:8px;padding-top:.25rem">
-              <div class="stat-mini" style="text-align:center;overflow:visible">
-                <p class="sm-val deal-num" id="won-total" data-list="ganados" style="color:var(--green);font-size:32px;cursor:pointer">–</p>
-                <p class="sm-lbl">Total ganados</p>
-              </div>
-              <div id="won-breakdown" style="display:flex;flex-direction:column;gap:5px"></div>
-            </div>
-          </div>
+        <div style="padding:.6rem .85rem .5rem">
+          <div class="chart-h-sm" style="height:160px"><canvas id="originSqlChart"></canvas></div>
+          <div id="origen-total" style="font-size:10px;color:var(--muted);text-align:center;margin-top:4px"></div>
+          <div id="origen-sql-legend" style="display:flex;flex-direction:column;gap:3px;margin-top:6px"></div>
         </div>
       </div>
     </section>
+  </div>
 
+  <!-- ROW 2: Estadísticas de subasta (ancho completo) -->
+  <div>
     <section id="subasta">
       <div class="card" style="height:100%">
         <div class="card-hdr">
@@ -503,7 +481,7 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
         </div>
       </div>
     </section>
-  </div>
+  </div><!-- /Row 2 -->
 
   <!-- canvas oculto para compatibilidad de leads por mes (no se muestra) -->
   <canvas id="convChart" style="display:none"></canvas>
@@ -611,6 +589,7 @@ function sbClick(el) {
 }
 window.addEventListener('scroll', () => {
   const ids = ['resumen','sqls-mes','gasto-sqls','origen','subasta','campanas'];
+  // Row 2 ahora solo tiene subasta
   let current = 'resumen';
   ids.forEach(id => {
     const el = document.getElementById(id);
@@ -670,7 +649,8 @@ async function loadData() {
     setText('acc-id',   data.account.id   || '720-603-7956');
   }
 
-  _dealLists = data.dealLists || {};
+  _dealLists    = data.dealLists    || {};
+  _dealsByOrigin = data.dealsByOrigin || {};
   renderSummary(data);
   renderCharts(data);
   renderTree(data);
@@ -766,11 +746,26 @@ function renderCharts(d) {
   const os = d.origenSqls || { labels:[], data:[] };
   const osTotal = os.data.reduce((a,b) => a+b, 0);
   const origenEl = document.getElementById('origen-total');
-  if (origenEl) origenEl.textContent = osTotal > 0 ? `· ${osTotal} total` : '';
+  if (origenEl) origenEl.textContent = osTotal > 0 ? `${osTotal} SQLs · clic en segmento para ver deals` : '';
   dc('origs'); charts['origs'] = new Chart(document.getElementById('originSqlChart'), {
     type: 'doughnut',
     data: { labels: os.labels, datasets:[{ data:os.data, backgroundColor:C.pal, borderWidth:0 }] },
-    options: { responsive:true, maintainAspectRatio:false, cutout:'65%', plugins:{ legend:{display:false} } },
+    options: {
+      responsive:true, maintainAspectRatio:false, cutout:'65%',
+      plugins:{
+        legend:{display:false},
+        tooltip:{ callbacks:{ label: ctx => ` ${ctx.label}: ${ctx.parsed} SQLs — clic para ver deals` } }
+      },
+      onClick: (_, elements) => {
+        if (!elements.length) return;
+        const label = os.labels[elements[0].index];
+        const deals = _dealsByOrigin[label] || [];
+        if (!deals.length) return;
+        _activeList  = deals;
+        _activeLabel = 'Origen: ' + label;
+        openDealModal();
+      },
+    },
   });
   // Leyenda con números
   const legendEl = document.getElementById('origen-sql-legend');
@@ -1020,7 +1015,8 @@ function renderAuction(d) {
 }
 
 // ── DEAL POPUP & MODAL ────────────────────────────────────────────────────────
-let _dealLists   = {};    // se actualiza en cada loadData()
+let _dealLists    = {};   // se actualiza en cada loadData()
+let _dealsByOrigin = {};  // deals agrupados por origen SQL
 let _activeList  = [];    // deals del popup actual
 let _activeLabel = '';
 
