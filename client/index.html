@@ -333,14 +333,14 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
 <!-- SIDEBAR -->
 <div class="sidebar">
   <div class="sb-desc">
-    Monitoreo en tiempo real del funnel SEM: inversión, leads, pipeline y performance de campañas Google Ads conectado con Pipedrive.
+    Visualiza en un solo lugar la inversión en Google Ads, calidad de keywords, SQLs por canal de origen, pipeline de Pipedrive y competidores en subasta — todo actualizado en tiempo real.
   </div>
   <nav class="sb-nav">
     <a class="sb-item active" href="#resumen"  onclick="sbClick(this)"><span class="sb-icon">📊</span>Resumen ejecutivo</a>
     <a class="sb-item"        href="#sqls-mes" onclick="sbClick(this)"><span class="sb-icon">🎯</span>SQLs por mes</a>
     <a class="sb-item"        href="#origen"   onclick="sbClick(this)"><span class="sb-icon">🧭</span>Origen de SQLs</a>
-    <a class="sb-item"        href="#subasta"      onclick="sbClick(this)"><span class="sb-icon">⚖️</span>Subasta · Competidores</a>
     <a class="sb-item"        href="#campanas"     onclick="sbClick(this)"><span class="sb-icon">🗺️</span>Mapa de campañas</a>
+    <a class="sb-item"        href="#subasta"      onclick="sbClick(this)"><span class="sb-icon">⚖️</span>Subasta · Competidores</a>
   </nav>
   <div class="sb-footer">
     <div class="sb-footer-inner">
@@ -464,40 +464,6 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
     </section>
   </div>
 
-  <!-- ROW 2: Estadísticas de subasta (ancho completo) -->
-  <div>
-    <section id="subasta">
-      <div class="card" style="height:100%">
-        <div class="card-hdr">
-          <span class="card-title">Estadísticas de subasta · Competidores</span>
-          <span class="card-src"><span class="src-dot gads live"></span>Google Ads</span>
-        </div>
-        <div class="auction-wrap">
-          <div class="auction-tbl-wrap">
-            <table>
-              <thead><tr>
-                <th>Competidor</th>
-                <th>% Parte sup.</th>
-                <th>% Abs. top</th>
-                <th style="background:var(--blue-lt);color:var(--blue)">% Impr. ★</th>
-                <th>% Superpos.</th>
-                <th>% Pos. sup.</th>
-                <th>% Ranking sup.</th>
-              </tr></thead>
-              <tbody id="auction-tbody">
-                <tr><td colspan="7" style="text-align:center;color:var(--muted);padding:1rem">Cargando…</td></tr>
-              </tbody>
-            </table>
-          </div>
-          <div class="auction-chart-wrap">
-            <div class="cc-title">Comparativa de visibilidad SEM</div>
-            <div class="chart-h-lg"><canvas id="auctionChart"></canvas></div>
-          </div>
-        </div>
-      </div>
-    </section>
-  </div><!-- /Row 2 -->
-
   <!-- canvas oculto para compatibilidad de leads por mes (no se muestra) -->
   <canvas id="convChart" style="display:none"></canvas>
 
@@ -534,6 +500,38 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
               <p class="ci-desc">Conectando con Google Ads API</p>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ESTADÍSTICAS DE SUBASTA -->
+  <section id="subasta">
+    <div class="card">
+      <div class="card-hdr">
+        <span class="card-title">Estadísticas de subasta · Competidores</span>
+        <span class="card-src"><span class="src-dot gads live"></span>Google Ads</span>
+      </div>
+      <div class="auction-wrap">
+        <div class="auction-tbl-wrap">
+          <table>
+            <thead><tr>
+              <th>Competidor</th>
+              <th>% Parte sup.</th>
+              <th>% Abs. top</th>
+              <th style="background:var(--blue-lt);color:var(--blue)">% Impr. ★</th>
+              <th>% Superpos.</th>
+              <th>% Pos. sup.</th>
+              <th>% Ranking sup.</th>
+            </tr></thead>
+            <tbody id="auction-tbody">
+              <tr><td colspan="7" style="text-align:center;color:var(--muted);padding:1rem">Cargando…</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="auction-chart-wrap">
+          <div class="cc-title">Comparativa de visibilidad SEM</div>
+          <div class="chart-h-lg"><canvas id="auctionChart"></canvas></div>
         </div>
       </div>
     </div>
@@ -603,8 +601,7 @@ function sbClick(el) {
   el.classList.add('active');
 }
 window.addEventListener('scroll', () => {
-  const ids = ['resumen','sqls-mes','gasto-sqls','origen','subasta','campanas'];
-  // Row 2 ahora solo tiene subasta
+  const ids = ['resumen','sqls-mes','gasto-sqls','origen','campanas','subasta'];
   let current = 'resumen';
   ids.forEach(id => {
     const el = document.getElementById(id);
