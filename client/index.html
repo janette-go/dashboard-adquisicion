@@ -698,7 +698,7 @@ async function loadData() {
   _dealLists    = data.dealLists    || {};
   _dealsByOrigin = data.dealsByOrigin || {};
   renderSummary(data);
-  renderInsights(data);
+  if (typeof renderInsights === 'function') renderInsights(data);
   renderCharts(data);
   renderTree(data);
   renderChanges(data);
