@@ -141,6 +141,10 @@ const MOCK = {
     labels: MONTHS_ES,
     data:   [4250, 3200, 2800, 3600, 3900, null, null, null, null, null, null, null],
   },
+  sqlsPaidOrgPorMes: {
+    labels: MONTHS_ES,
+    data:   [3, 5, 7, 9, 7, 0, 0, 0, 0, 0, 0, 0],
+  },
   pipeline:      { leads: 62, sqls: 28, ganados: 9 },
   origenSqls:    { labels: ['Paid media','Orgánico','Referido','Directo'], data: [18, 6, 3, 1] },
   origenGanados: { labels: ['Paid media','Orgánico','Referido','Directo'], data: [5, 2, 1, 1] },
@@ -1002,6 +1006,7 @@ async function fetchAllData(period) {
     convPorMes:      adsData?.convPorMes      ?? mk.convPorMes,
     gastoPorMes:     { labels: MONTHS_ES, data: gastoPorMesData },
     costoPorSQLMes,
+    sqlsPaidOrgPorMes: { labels: MONTHS_ES, data: sqlsPaidOrgMes },
     sqlsPorMes:      pipeData?.sqlsPorMes     ?? mk.sqlsPorMes,
     pipeline:        pipeData?.pipeline       ?? mk.pipeline,
     origenSqls:      pipeData?.origenSqls     ?? mk.origenSqls,

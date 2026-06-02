@@ -733,13 +733,21 @@ function renderCharts(d) {
   setText('best-sql-month', smx > 0 ? sm.labels[sbi] + ' · ' + smx + ' SQLs' : '–');
   setText('avg-sql-month',  Math.round(sm.data.reduce((a,b) => a+b, 0) / (sm.data.length||1)) + ' SQLs/mes');
   setText('total-sql-year', sm.data.reduce((a,b) => a+b, 0) + ' SQLs');
+  // Barras apiladas: Paid+Org (azul abajo) + Otros canales (rojo arriba) = total
+  const spo_raw = d.sqlsPaidOrgPorMes || { labels:[], data:[] };
+  const spoData = spo_raw.data?.slice(0, curM+1) || [];
+  const otrosData = sm.data.map((v, i) => Math.max(0, v - (spoData[i] || 0)));
+
   charts['sql'] = new Chart(document.getElementById('sqlChart'), {
     type: 'bar',
     data: { labels: sm.labels, datasets: [
-      { label:'SQLs', data: sm.data, yAxisID:'y',
-        backgroundColor: sm.data.map((_,i) => i===sbi ? C.yellow+'EE' : C.yellow+'88'),
-        borderRadius:3, borderSkipped:false, order:2 },
-      { label:'Costo/SQL Paid+Org ($)', data: cpsm.data, yAxisID:'y2', type:'line',
+      { label:'Paid+Orgánico', data: spoData, yAxisID:'y',
+        backgroundColor: C.blue+'AA', borderRadius:0, borderSkipped:false,
+        stack:'sqls', order:2 },
+      { label:'Otros canales', data: otrosData, yAxisID:'y',
+        backgroundColor: C.red+'77', borderRadius:3, borderSkipped:false,
+        stack:'sqls', order:2 },
+      { label:'Costo/SQL', data: cpsm.data, yAxisID:'y2', type:'line',
         borderColor: C.blue, backgroundColor: C.blue+'22',
         borderWidth:2, pointRadius:3, pointBackgroundColor:C.blue,
         tension:0.35, spanGaps:true, order:1 },
@@ -747,9 +755,9 @@ function renderCharts(d) {
     options: { responsive:true, maintainAspectRatio:false,
       plugins:{ legend:{ position:'top', labels:{ boxWidth:8, font:{size:9} } } },
       scales:{
-        y:  { beginAtZero:true, grid:{color:C.border}, ticks:{font:{size:9}}, position:'left' },
-        y2: { beginAtZero:true, grid:{display:false},  ticks:{font:{size:9}, callback:v=>'$'+v.toLocaleString()}, position:'right' },
-        x:  { grid:{display:false} },
+        y:  { beginAtZero:true, stacked:true, grid:{color:C.border}, ticks:{font:{size:9}}, position:'left' },
+        y2: { beginAtZero:true, grid:{display:false}, ticks:{font:{size:9}, callback:v=>'$'+v.toLocaleString()}, position:'right' },
+        x:  { grid:{display:false}, stacked:true },
       },
     },
   });
