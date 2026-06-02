@@ -263,29 +263,31 @@ tr.detecta td:first-child{color:var(--blue)}
 section{scroll-margin-top:calc(var(--header) + 8px)}
 
 /* ── TOOLTIPS ── */
-.tip{position:relative;display:inline-flex;align-items:center;gap:3px;cursor:help}
+.tip{display:inline-flex;align-items:center;gap:3px;cursor:help}
 .tip-icon{font-size:9px;color:var(--muted);opacity:.55;line-height:1;flex-shrink:0;transition:opacity .15s}
 .tip:hover .tip-icon{opacity:1}
+/* tip-box usa position:fixed via JS para saltar cualquier overflow:hidden */
 .tip-box{
-  display:none;position:absolute;bottom:calc(100% + 7px);left:50%;
-  transform:translateX(-50%);
+  display:none;position:fixed;
   background:#202124;color:#fff;
   font-size:10px;line-height:1.5;font-weight:400;
   font-family:'Google Sans',sans-serif;
   padding:7px 10px;border-radius:6px;
   width:210px;text-align:left;
   z-index:9999;pointer-events:none;white-space:normal;
-  box-shadow:0 4px 12px rgba(0,0,0,.3);
+  box-shadow:0 4px 14px rgba(0,0,0,.35);
 }
 .tip-box b{color:#aecbfa;font-weight:600}
-.tip-box::after{
-  content:'';position:absolute;top:100%;left:50%;
+.tip-box.tip-above::after{
+  content:'';position:absolute;top:100%;left:var(--arrow-left,50%);
   transform:translateX(-50%);
   border:5px solid transparent;border-top-color:#202124;
 }
-.tip:hover .tip-box{display:block}
-/* evitar que los exec-cell corten el tooltip */
-.exec-cell{overflow:visible}
+.tip-box.tip-below::after{
+  content:'';position:absolute;bottom:100%;left:var(--arrow-left,50%);
+  transform:translateX(-50%);
+  border:5px solid transparent;border-bottom-color:#202124;
+}
 </style>
 </head>
 <body>
@@ -967,6 +969,46 @@ function renderAuction(d) {
       scales:{ x:{ grid:{display:false} }, y:{ beginAtZero:true, max:100, grid:{color:C.border}, ticks:{callback:v=>v+'%'} } } },
   });
 }
+
+// ── TOOLTIPS (position:fixed para saltar overflow:hidden de cards) ────────────
+document.addEventListener('mouseover', e => {
+  const tip = e.target.closest('.tip');
+  if (!tip) return;
+  const box = tip.querySelector('.tip-box');
+  if (!box) return;
+
+  const r   = tip.getBoundingClientRect();
+  const W   = window.innerWidth;
+  const BOX = 210; // ancho del tooltip
+  const GAP = 8;
+
+  box.style.display = 'block';
+  const boxH = box.offsetHeight;
+
+  // Intentar arriba primero; si no cabe, abajo
+  const topAbove = r.top - boxH - GAP;
+  const showAbove = topAbove > 10;
+  box.classList.toggle('tip-above', showAbove);
+  box.classList.toggle('tip-below', !showAbove);
+  box.style.top = showAbove ? topAbove + 'px' : (r.bottom + GAP) + 'px';
+
+  // Centrar horizontalmente, ajustar para no salirse del viewport
+  let left = r.left + r.width / 2 - BOX / 2;
+  left = Math.max(10, Math.min(left, W - BOX - 10));
+  box.style.left = left + 'px';
+
+  // Posición de la flecha relativa al box
+  const arrowLeft = (r.left + r.width / 2) - left;
+  box.style.setProperty('--arrow-left', Math.max(14, Math.min(arrowLeft, BOX - 14)) + 'px');
+});
+
+document.addEventListener('mouseout', e => {
+  const tip = e.target.closest('.tip');
+  if (!tip) return;
+  if (tip.contains(e.relatedTarget)) return;
+  const box = tip.querySelector('.tip-box');
+  if (box) box.style.display = 'none';
+});
 
 loadData();
 </script>
