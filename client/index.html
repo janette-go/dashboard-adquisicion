@@ -261,6 +261,31 @@ tr.detecta td:first-child{color:var(--blue)}
 
 /* scrollspy */
 section{scroll-margin-top:calc(var(--header) + 8px)}
+
+/* ── TOOLTIPS ── */
+.tip{position:relative;display:inline-flex;align-items:center;gap:3px;cursor:help}
+.tip-icon{font-size:9px;color:var(--muted);opacity:.55;line-height:1;flex-shrink:0;transition:opacity .15s}
+.tip:hover .tip-icon{opacity:1}
+.tip-box{
+  display:none;position:absolute;bottom:calc(100% + 7px);left:50%;
+  transform:translateX(-50%);
+  background:#202124;color:#fff;
+  font-size:10px;line-height:1.5;font-weight:400;
+  font-family:'Google Sans',sans-serif;
+  padding:7px 10px;border-radius:6px;
+  width:210px;text-align:left;
+  z-index:9999;pointer-events:none;white-space:normal;
+  box-shadow:0 4px 12px rgba(0,0,0,.3);
+}
+.tip-box b{color:#aecbfa;font-weight:600}
+.tip-box::after{
+  content:'';position:absolute;top:100%;left:50%;
+  transform:translateX(-50%);
+  border:5px solid transparent;border-top-color:#202124;
+}
+.tip:hover .tip-box{display:block}
+/* evitar que los exec-cell corten el tooltip */
+.exec-cell{overflow:visible}
 </style>
 </head>
 <body>
@@ -334,21 +359,21 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
         <div class="exec-row">
           <div class="exec-row-label">Google Ads</div>
           <div class="exec-cells">
-            <div class="exec-cell"><p class="ec-val" id="m-gasto">$0</p><p class="ec-lbl">Gasto Ads Total</p></div>
-            <div class="exec-cell"><p class="ec-val" id="m-conv" >0</p><p class="ec-lbl">Conversiones (leads)</p></div>
-            <div class="exec-cell"><p class="ec-val" id="m-cpl"  >$0</p><p class="ec-lbl">Costo por Lead (CPL)</p></div>
-            <div class="exec-cell"><p class="ec-val" id="m-ctr"  >0%</p><p class="ec-lbl">CTR de la cuenta</p></div>
-            <div class="exec-cell"><p class="ec-val" id="m-impr" >0</p><p class="ec-lbl">Impresiones de la cuenta</p></div>
+            <div class="exec-cell"><p class="ec-val" id="m-gasto">$0</p><p class="ec-lbl"><span class="tip">Gasto Ads Total<span class="tip-icon">ⓘ</span><span class="tip-box">Suma del costo de todas las campañas en el periodo.<br><b>Fuente:</b> Google Ads · metrics.cost_micros</span></span></p></div>
+            <div class="exec-cell"><p class="ec-val" id="m-conv" >0</p><p class="ec-lbl"><span class="tip">Conversiones (leads)<span class="tip-icon">ⓘ</span><span class="tip-box">Total de conversiones registradas en Google Ads. Generalmente equivale a formularios completados desde los anuncios.<br><b>Fuente:</b> Google Ads · metrics.conversions</span></span></p></div>
+            <div class="exec-cell"><p class="ec-val" id="m-cpl"  >$0</p><p class="ec-lbl"><span class="tip">Costo por Lead (CPL)<span class="tip-icon">ⓘ</span><span class="tip-box"><b>Cálculo:</b> Gasto Ads ÷ Conversiones.<br>Cuánto cuesta en promedio cada lead generado por publicidad.</span></span></p></div>
+            <div class="exec-cell"><p class="ec-val" id="m-ctr"  >0%</p><p class="ec-lbl"><span class="tip">CTR de la cuenta<span class="tip-icon">ⓘ</span><span class="tip-box"><b>Cálculo:</b> (Clics ÷ Impresiones) × 100.<br>Porcentaje de veces que el anuncio fue visto y recibió un clic.<br><b>Fuente:</b> Google Ads</span></span></p></div>
+            <div class="exec-cell"><p class="ec-val" id="m-impr" >0</p><p class="ec-lbl"><span class="tip">Impresiones de la cuenta<span class="tip-icon">ⓘ</span><span class="tip-box">Número de veces que los anuncios aparecieron en resultados de búsqueda en el periodo.<br><b>Fuente:</b> Google Ads</span></span></p></div>
           </div>
         </div>
         <div class="exec-row">
           <div class="exec-row-label">Pipedrive</div>
           <div class="exec-cells">
-            <div class="exec-cell"><p class="ec-val" id="m-ql"       >–</p><p class="ec-lbl">Leads calificados</p></div>
-            <div class="exec-cell"><p class="ec-val" id="m-sql"      >–</p><p class="ec-lbl">SQLs</p></div>
-            <div class="exec-cell"><p class="ec-val" id="m-won"      >–</p><p class="ec-lbl">Clientes ganados</p></div>
-            <div class="exec-cell"><p class="ec-val" id="m-costo-sql">–</p><p class="ec-lbl">Costo por SQL</p></div>
-            <div class="exec-cell"><p class="ec-val" id="m-s2w"      >–</p><p class="ec-lbl">SQL → Cliente</p></div>
+            <div class="exec-cell"><p class="ec-val" id="m-ql"       >–</p><p class="ec-lbl"><span class="tip">Leads calificados<span class="tip-icon">ⓘ</span><span class="tip-box">Deals creados en el periodo con el campo <b>"Calificación del Lead"</b> lleno en Pipedrive.</span></span></p></div>
+            <div class="exec-cell"><p class="ec-val" id="m-sql"      >–</p><p class="ec-lbl"><span class="tip">SQLs<span class="tip-icon">ⓘ</span><span class="tip-box">Deals creados en el periodo con el campo <b>"Calificación SQL"</b> lleno en Pipedrive. Indica que el lead fue calificado como Sales Qualified Lead.</span></span></p></div>
+            <div class="exec-cell"><p class="ec-val" id="m-won"      >–</p><p class="ec-lbl"><span class="tip">Clientes ganados<span class="tip-icon">ⓘ</span><span class="tip-box">Deals marcados como <b>Ganados</b> en Pipedrive dentro del periodo. Filtrado por la fecha exacta de cierre (won_time).</span></span></p></div>
+            <div class="exec-cell"><p class="ec-val" id="m-costo-sql">–</p><p class="ec-lbl"><span class="tip">Costo por SQL<span class="tip-icon">ⓘ</span><span class="tip-box"><b>Cálculo:</b> Gasto Ads ÷ (SQLs Paid Media + SQLs Orgánicos).<br>Solo considera canales pagados y orgánicos para atribuir el costo correctamente.</span></span></p></div>
+            <div class="exec-cell"><p class="ec-val" id="m-s2w"      >–</p><p class="ec-lbl"><span class="tip">SQL → Cliente<span class="tip-icon">ⓘ</span><span class="tip-box"><b>Cálculo:</b> (Clientes ganados ÷ SQLs totales) × 100.<br>Tasa de cierre del pipeline de ventas.</span></span></p></div>
           </div>
         </div>
       </div>
@@ -366,22 +391,27 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
         <div style="padding:.75rem .85rem .5rem">
           <div class="chart-h-lg"><canvas id="sqlChart"></canvas></div>
         </div>
-        <!-- Stats en fila debajo del gráfico (sin SQLs totales — ya está en resumen) -->
+        <!-- Stats en fila debajo del gráfico -->
         <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:0;border-top:1px solid var(--border)">
-          <div style="padding:.45rem .6rem;border-right:1px solid var(--border)">
-            <p class="sm-val" id="sql-paid" style="font-size:15px">–</p><p class="sm-lbl">Paid Media</p>
+          <div style="padding:.45rem .6rem;border-right:1px solid var(--border);overflow:visible">
+            <p class="sm-val" id="sql-paid" style="font-size:15px">–</p>
+            <p class="sm-lbl"><span class="tip">Paid Media<span class="tip-icon">ⓘ</span><span class="tip-box">SQLs creados en el periodo con <b>Calificación SQL</b> llena y <b>Origen de SQL = Paid media</b>.</span></span></p>
           </div>
-          <div style="padding:.45rem .6rem;border-right:1px solid var(--border)">
-            <p class="sm-val" id="sql-org" style="font-size:15px">–</p><p class="sm-lbl">Orgánicos</p>
+          <div style="padding:.45rem .6rem;border-right:1px solid var(--border);overflow:visible">
+            <p class="sm-val" id="sql-org" style="font-size:15px">–</p>
+            <p class="sm-lbl"><span class="tip">Orgánicos<span class="tip-icon">ⓘ</span><span class="tip-box">SQLs creados en el periodo con <b>Calificación SQL</b> llena y <b>Origen de SQL = Orgánico</b>.</span></span></p>
           </div>
-          <div style="padding:.45rem .6rem;border-right:1px solid var(--border)">
-            <p class="sm-val" id="best-sql-month" style="font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">–</p><p class="sm-lbl">Mejor mes</p>
+          <div style="padding:.45rem .6rem;border-right:1px solid var(--border);overflow:visible">
+            <p class="sm-val" id="best-sql-month" style="font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">–</p>
+            <p class="sm-lbl"><span class="tip">Mejor mes<span class="tip-icon">ⓘ</span><span class="tip-box">Mes del año en curso con el mayor número de SQLs generados.</span></span></p>
           </div>
-          <div style="padding:.45rem .6rem;border-right:1px solid var(--border)">
-            <p class="sm-val" id="avg-sql-month" style="font-size:15px">–</p><p class="sm-lbl">Prom./mes</p>
+          <div style="padding:.45rem .6rem;border-right:1px solid var(--border);overflow:visible">
+            <p class="sm-val" id="avg-sql-month" style="font-size:15px">–</p>
+            <p class="sm-lbl"><span class="tip">Prom./mes<span class="tip-icon">ⓘ</span><span class="tip-box"><b>Cálculo:</b> Total SQLs del año ÷ meses transcurridos.<br>Promedio mensual de SQLs en el año en curso.</span></span></p>
           </div>
-          <div style="padding:.45rem .6rem">
-            <p class="sm-val" id="total-sql-year" style="font-size:15px">–</p><p class="sm-lbl">Total año</p>
+          <div style="padding:.45rem .6rem;overflow:visible">
+            <p class="sm-val" id="total-sql-year" style="font-size:15px">–</p>
+            <p class="sm-lbl"><span class="tip">Total año<span class="tip-icon">ⓘ</span><span class="tip-box">Suma de todos los SQLs generados en el año en curso (enero al mes actual).</span></span></p>
           </div>
         </div>
         <!-- sql-totales oculto para compatibilidad JS -->
