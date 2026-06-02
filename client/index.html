@@ -262,6 +262,12 @@ tr.detecta td:first-child{color:var(--blue)}
 /* scrollspy */
 section{scroll-margin-top:calc(var(--header) + 8px)}
 
+/* insights panel */
+.insight-bullet{display:flex;gap:7px;align-items:flex-start;padding:.35rem 0;border-bottom:1px solid var(--border);font-size:11px;line-height:1.45}
+.insight-bullet:last-child{border-bottom:none}
+.insight-ico{font-size:13px;flex-shrink:0;margin-top:1px}
+.insight-bullet strong{color:var(--text)}
+
 /* ── TOOLTIPS ── */
 .tip{display:inline-flex;align-items:center;gap:3px;cursor:help}
 .tip-icon{font-size:9px;color:var(--muted);opacity:.55;line-height:1;flex-shrink:0;transition:opacity .15s}
@@ -353,8 +359,9 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
 <!-- MAIN -->
 <div class="main">
 
-  <!-- RESUMEN EJECUTIVO -->
+  <!-- RESUMEN EJECUTIVO + INSIGHTS -->
   <section id="resumen">
+  <div style="display:grid;grid-template-columns:1fr 260px;gap:1rem;align-items:start">
     <div class="card">
       <div class="card-hdr"><span class="card-title">Resumen Ejecutivo</span></div>
       <div class="exec-rows">
@@ -380,6 +387,13 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
         </div>
       </div>
     </div>
+
+    <!-- Panel de insights -->
+    <div class="card" style="height:100%">
+      <div class="card-hdr"><span class="card-title">Resumen del periodo</span></div>
+      <div id="insights-panel" style="padding:.5rem .85rem"></div>
+    </div>
+  </div>
   </section>
 
   <!-- ROW 1: SQLs por mes | Inversión Ads vs SQLs -->
@@ -391,7 +405,7 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
           <span class="card-src"><span class="src-dot pipe live"></span>Pipedrive</span>
         </div>
         <div style="padding:.75rem .85rem .5rem">
-          <div class="chart-h-lg"><canvas id="sqlChart"></canvas></div>
+          <div style="position:relative;height:155px"><canvas id="sqlChart"></canvas></div>
         </div>
         <!-- Stats en fila debajo del gráfico -->
         <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:0;border-top:1px solid var(--border)">
@@ -444,13 +458,7 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
         </div>
         <div class="chart-row">
           <div class="chart-cell" style="flex:1.4">
-            <div class="cc-title">
-              <span class="tip">Deals con Origen de SQL lleno
-                <span class="tip-icon">ⓘ</span>
-                <span class="tip-box">Muestra todos los deals del periodo que tienen el campo <b>"Origen de SQL"</b> lleno en Pipedrive, agrupados por canal.<br>No requiere que tenga Calificación SQL.</span>
-              </span>
-              <span id="origen-total" style="font-weight:400;color:var(--muted);margin-left:4px"></span>
-            </div>
+            <div class="cc-title"><span id="origen-total" style="font-weight:400;color:var(--muted)"></span></div>
             <div class="chart-h-sm"><canvas id="originSqlChart"></canvas></div>
             <div id="origen-sql-legend" style="display:flex;flex-direction:column;gap:3px;margin-top:6px"></div>
           </div>
@@ -672,6 +680,7 @@ async function loadData() {
 
   _dealLists = data.dealLists || {};
   renderSummary(data);
+  renderInsights(data);
   renderCharts(data);
   renderTree(data);
   renderChanges(data);
@@ -745,7 +754,7 @@ function renderCharts(d) {
     type: 'bar',
     data: { labels: sm.labels, datasets: [
       { label:'SQLs', data: sm.data, yAxisID:'y',
-        backgroundColor: sm.data.map((_,i) => i===sbi ? C.yellow+'EE' : C.yellow+'88'),
+        backgroundColor: sm.data.map((_,i) => i===sbi ? C.red+'EE' : C.red+'88'),
         borderRadius:3, borderSkipped:false, order:2 },
       { label:'Costo por SQL ($)', data: cpsm.data, yAxisID:'y2', type:'line',
         borderColor: C.blue, backgroundColor: C.blue+'22',
@@ -1017,6 +1026,62 @@ function renderAuction(d) {
       plugins:{ legend:{ position:'bottom', labels:{ boxWidth:8, font:{size:9} } } },
       scales:{ x:{ grid:{display:false} }, y:{ beginAtZero:true, max:100, grid:{color:C.border}, ticks:{callback:v=>v+'%'} } } },
   });
+}
+
+// ── INSIGHTS ─────────────────────────────────────────────────────────────────
+function renderInsights(d) {
+  const panel = document.getElementById('insights-panel');
+  if (!panel) return;
+  const s   = d.summary  || {};
+  const pl  = d.pipeline || {};
+  const ins = [];
+
+  const add = (ico, html) => ins.push(`<div class="insight-bullet"><span class="insight-ico">${ico}</span><span style="color:var(--muted)">${html}</span></div>`);
+
+  // Google Ads
+  if (s.gasto > 0) {
+    add('💰', `Gasto Ads: <strong>${fmtM(s.gasto)}</strong> · CPL <strong>${fmtM(s.cpl)}</strong>`);
+  } else {
+    add('⚠️', 'Sin gasto en Google Ads en este periodo');
+  }
+  if (s.conversiones > 0) {
+    add('📥', `<strong>${s.conversiones}</strong> conversiones con CTR de <strong>${fmtP(s.ctr)}</strong>`);
+  }
+  if (s.impr > 0 && s.ctr > 0) {
+    const label = s.ctr > 15 ? '✅' : s.ctr > 8 ? 'ℹ️' : '⚠️';
+    add(label, `CTR <strong>${fmtP(s.ctr)}</strong> sobre <strong>${fmt(s.impr)}</strong> impresiones`);
+  }
+
+  // SQLs
+  if (pl.sqls > 0) {
+    const cSQL = d.costoSQL;
+    add('🎯', `<strong>${pl.sqls}</strong> SQL${pl.sqls !== 1 ? 's' : ''} calificado${pl.sqls !== 1 ? 's' : ''} en el periodo${cSQL ? ` · Costo/SQL <strong>${fmtM(cSQL)}</strong>` : ''}`);
+    if (d.sqlsPaidMedia > 0 || d.sqlsOrganicos > 0) {
+      add('📊', `<strong>${d.sqlsPaidMedia || 0}</strong> Paid Media · <strong>${d.sqlsOrganicos || 0}</strong> Orgánicos`);
+    }
+  } else {
+    add('⚠️', 'Sin SQLs calificados en este periodo');
+  }
+
+  // Ganados
+  if (pl.ganados > 0) {
+    const rate = pl.sqls > 0 ? ((pl.ganados / pl.sqls) * 100).toFixed(1) : null;
+    add('🏆', `<strong>${pl.ganados}</strong> cliente${pl.ganados !== 1 ? 's' : ''} ganado${pl.ganados !== 1 ? 's' : ''}${rate ? ` · tasa cierre <strong>${rate}%</strong>` : ''}`);
+  }
+
+  // Mejor mes del año
+  const sm = d.sqlsPorMes;
+  if (sm?.data?.length) {
+    const maxSQL = Math.max(...sm.data.filter(v => v > 0));
+    if (maxSQL > 0) {
+      const idx = sm.data.indexOf(maxSQL);
+      add('📈', `Mejor mes: <strong>${sm.labels[idx]}</strong> con <strong>${maxSQL} SQLs</strong>`);
+    }
+  }
+
+  panel.innerHTML = ins.length
+    ? ins.join('')
+    : '<p style="font-size:11px;color:var(--muted)">Sin datos suficientes para este periodo.</p>';
 }
 
 // ── DEAL POPUP & MODAL ────────────────────────────────────────────────────────

@@ -557,18 +557,14 @@ async function processPipedrive(deals, period, origenMap, stageMap = {}) {
     if (isSQLPaid(deal) || isSQLOrg(deal)) sqlsPaidOrganicoPorMes[t.getMonth()]++;
   }
 
-  // Deals con el campo "Origen de SQL" relleno (para el donut de origen)
-  const conOrigenFilled = updatedInPeriod.filter(d => {
-    const raw = fieldOrigen ? d[fieldOrigen] : null;
-    return raw != null && raw !== '';
-  });
-
   const sqlsPaidDeals = updatedInPeriod.filter(isSQLPaid);
   const sqlsOrgDeals  = updatedInPeriod.filter(isSQLOrg);
 
+  // Origen: todos los SQLs del periodo (calificación SQL llena) → el total
+  // coincide con el número de SQLs del resumen ejecutivo
   return {
     pipeline:      { leads: leadDeals.length, sqls: sqlDeals.length, ganados: wonDeals.length },
-    origenSqls:    groupByOrigenSQL(conOrigenFilled, fieldOrigen, origenMap),
+    origenSqls:    groupByOrigenSQL(sqlDeals, fieldOrigen, origenMap),
     origenGanados: groupByOrigenSQL(wonDeals, fieldOrigen, origenMap),
     sqlsPorMes:    groupByMonth(sqlsYear, year),
     sqlsPaidOrganicoPorMes,
