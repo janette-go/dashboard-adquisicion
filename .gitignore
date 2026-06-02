@@ -1,0 +1,5 @@
+node_modules/
+.env
+deals_state.json
+*.log
+.claude/

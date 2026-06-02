@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Adquisición · Detecta</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Roboto+Mono:wght@400;500&display=swap');
+:root{
+  --bg:#F8F9FA;--surface:#FFF;--border:#DADCE0;
+  --text:#202124;--muted:#5F6368;--gray-lt:#F1F3F4;
+  --blue:#1A73E8;--blue-lt:#E8F0FE;
+  --green:#1E8E3E;--green-lt:#E6F4EA;
+  --yellow:#F9AB00;--yellow-lt:#FEF7E0;
+  --red:#D93025;--red-lt:#FCE8E6;
+  --sidebar:220px;--header:48px;--period:36px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Google Sans','Segoe UI',sans-serif;background:var(--bg);color:var(--text);font-size:13px;overflow-x:hidden}
+
+/* ── HEADER ── */
+.hdr{
+  position:fixed;top:0;left:0;right:0;height:var(--header);
+  background:var(--surface);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 1rem;gap:10px;z-index:200;
+}
+.hdr-title{font-size:14px;font-weight:700;white-space:nowrap}
+.hdr-chip{font-size:10px;font-weight:500;background:var(--blue-lt);color:var(--blue);padding:2px 8px;border-radius:4px;white-space:nowrap}
+.hdr-sep{width:1px;height:20px;background:var(--border);margin:0 4px;flex-shrink:0}
+.source-badge{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600;flex-shrink:0}
+.source-real{background:var(--green-lt);color:var(--green)}
+.source-mock{background:var(--yellow-lt);color:var(--yellow)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.pulse{animation:pulse 1.8s ease-in-out infinite}
+
+/* PERIOD in header */
+.period-wrap{display:flex;align-items:center;gap:4px;flex:1;flex-wrap:nowrap;overflow-x:auto}
+.period-btn{
+  font-size:11px;font-weight:500;padding:3px 10px;border-radius:20px;
+  border:1px solid var(--border);background:transparent;color:var(--muted);
+  cursor:pointer;white-space:nowrap;font-family:'Google Sans',sans-serif;flex-shrink:0;
+  transition:all .15s;
+}
+.period-btn:hover{border-color:var(--blue);color:var(--blue)}
+.period-btn.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+.psep{width:1px;height:14px;background:var(--border);flex-shrink:0}
+
+/* ── SIDEBAR ── */
+.sidebar{
+  position:fixed;top:var(--header);left:0;bottom:0;
+  width:var(--sidebar);background:var(--surface);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  z-index:150;overflow-y:auto;
+}
+.sb-desc{
+  padding:.75rem .9rem;border-bottom:1px solid var(--border);
+  font-size:11px;color:var(--muted);line-height:1.55;
+}
+.sb-desc strong{color:var(--text);display:block;margin-bottom:4px;font-size:12px}
+.sb-nav{padding:.5rem 0;flex:1}
+.sb-item{
+  display:flex;align-items:center;gap:8px;
+  padding:.45rem .9rem;cursor:pointer;
+  font-size:12px;color:var(--muted);
+  border-left:3px solid transparent;
+  transition:all .12s;text-decoration:none;
+}
+.sb-item:hover{background:var(--gray-lt);color:var(--text)}
+.sb-item.active{color:var(--blue);border-left-color:var(--blue);background:var(--blue-lt);font-weight:500}
+.sb-icon{font-size:13px;width:18px;text-align:center;flex-shrink:0}
+.sb-footer{padding:.75rem .9rem;border-top:1px solid var(--border);font-size:10px;color:var(--muted)}
+
+/* ── MAIN ── */
+.main{
+  margin-top:var(--header);
+  margin-left:var(--sidebar);
+  padding:1rem;
+  display:flex;flex-direction:column;gap:1rem;
+}
+
+/* ── CARD ── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.card-hdr{
+  padding:.5rem .85rem;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.card-title{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.card-src{font-size:10px;color:var(--muted);display:flex;align-items:center;gap:4px}
+.src-dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:3px}
+.src-dot.gads{background:var(--blue)}
+.src-dot.pipe{background:var(--green)}
+.src-dot.live{animation:pulse 1.8s ease-in-out infinite}
+.sb-footer-inner{display:flex;flex-direction:column;gap:4px}
+.sb-src-row{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--muted)}
+.sb-updated{font-size:9px;color:var(--muted);margin-top:4px;padding-top:4px;border-top:1px solid var(--border)}
+
+/* ── EXEC SUMMARY ── */
+.exec-rows{display:flex;flex-direction:column}
+.exec-row{display:flex;border-bottom:1px solid var(--border)}
+.exec-row:last-child{border-bottom:none}
+.exec-row-label{
+  width:100px;flex-shrink:0;padding:.5rem .75rem;
+  font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--muted);background:var(--gray-lt);
+  display:flex;align-items:center;border-right:1px solid var(--border);
+}
+.exec-cells{display:flex;flex:1}
+.exec-cell{flex:1;padding:.6rem .85rem;border-right:1px solid var(--border)}
+.exec-cell:last-child{border-right:none}
+.ec-val{font-family:'Roboto Mono',monospace;font-size:20px;font-weight:500;line-height:1;margin-bottom:3px;color:var(--text)}
+.ec-lbl{font-size:10px;color:var(--muted)}
+
+/* ── 2-COL CHART ROW ── */
+.chart-row{display:flex;gap:0}
+.chart-cell{flex:1;padding:.75rem .85rem;border-right:1px solid var(--border);min-width:0}
+.chart-cell:last-child{border-right:none}
+.cc-title{font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.04em;text-transform:uppercase;margin-bottom:.6rem}
+.chart-h{position:relative;height:170px}
+.chart-h-sm{position:relative;height:140px}
+.chart-h-lg{position:relative;height:200px}
+
+/* stat mini */
+.stat-mini{background:var(--gray-lt);border-radius:6px;padding:.45rem .7rem;border:1px solid var(--border);margin-bottom:6px}
+.stat-mini:last-child{margin-bottom:0}
+.sm-val{font-family:'Roboto Mono',monospace;font-size:17px;font-weight:500;line-height:1}
+.sm-lbl{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-top:2px}
+
+/* funnel */
+.funnel-steps{display:flex;align-items:center;gap:5px;margin-bottom:.6rem}
+.funnel-step{flex:1;background:var(--gray-lt);border-radius:6px;padding:.4rem .6rem;text-align:center;border:1px solid var(--border)}
+.fs-val{font-family:'Roboto Mono',monospace;font-size:15px;font-weight:600;line-height:1}
+.fs-lbl{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-top:2px}
+.funnel-arr{color:var(--muted);font-size:12px;flex-shrink:0}
+.funnel-rate{text-align:center;margin-bottom:.6rem}
+.fr-val{font-family:'Roboto Mono',monospace;font-size:26px;font-weight:500}
+.fr-lbl{font-size:10px;color:var(--muted)}
+
+/* auction */
+.auction-wrap{display:flex;gap:0}
+.auction-tbl-wrap{flex:1.3;overflow-x:auto;border-right:1px solid var(--border)}
+.auction-chart-wrap{flex:1;padding:.75rem .85rem}
+table{width:100%;border-collapse:collapse;font-size:11px}
+th{padding:.4rem .65rem;text-align:left;font-size:9px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);background:var(--gray-lt);white-space:nowrap}
+td{padding:.45rem .65rem;border-bottom:1px solid var(--gray-lt);color:var(--text)}
+tr:last-child td{border-bottom:none}
+tr.detecta td{background:var(--blue-lt);font-weight:600}
+tr.detecta td:first-child{color:var(--blue)}
+
+/* ── CAMPAIGN TREE ── */
+.tree-outer{display:flex;gap:0;min-width:0}
+.tree-left{flex:1;min-width:0;overflow-x:auto;padding:.85rem 1rem;border-right:1px solid var(--border)}
+.tree-right{width:280px;flex-shrink:0;display:flex;flex-direction:column}
+
+/* changes log */
+.changes-hdr{padding:.5rem .85rem;border-bottom:1px solid var(--border);font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.changes-list{padding:.5rem .85rem;display:flex;flex-direction:column;gap:.5rem;overflow-y:auto;max-height:420px}
+.change-item{padding:.5rem .65rem;background:var(--gray-lt);border-radius:6px;border:1px solid var(--border);border-left:3px solid var(--blue)}
+.ci-date{font-size:9px;color:var(--muted);font-family:'Roboto Mono',monospace;margin-bottom:2px}
+.ci-type{font-size:9px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;margin-bottom:2px}
+.ci-desc{font-size:11px;color:var(--text);line-height:1.4}
+
+/* account + campaign nodes */
+.account-row{display:flex;align-items:center;gap:0;margin-bottom:20px}
+.account-node{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:.4rem .75rem;flex-shrink:0}
+.acc-label{font-size:9px;color:var(--muted)}
+.acc-name{font-size:12px;font-weight:700}
+.acc-id{font-size:9px;color:var(--muted);font-family:'Roboto Mono',monospace}
+.h-line{height:1px;background:var(--border);flex:1}
+.campaigns-col{display:flex;flex-direction:column;gap:24px}
+.campaign-row{display:flex;align-items:flex-start;position:relative}
+.campaign-row::before{content:'';position:absolute;left:125px;top:16px;bottom:16px;width:1px;background:var(--border)}
+.campaign-node{width:126px;flex-shrink:0;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:.45rem .7rem;display:flex;flex-direction:column;gap:2px;position:relative;z-index:2}
+.camp-type{font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--blue)}
+.camp-name{font-size:11px;font-weight:700;line-height:1.3}
+.camp-sub{font-size:9px;color:var(--muted)}
+.groups-col{display:flex;flex-direction:column;gap:4px;flex:1}
+.group-row{display:flex;align-items:flex-start}
+.group-connector{width:20px;flex-shrink:0;display:flex;align-items:center;height:38px}
+.group-connector::after{content:'';display:block;width:100%;height:1px;background:var(--border)}
+
+/* GROUP */
+.group-node{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;transition:border-color .15s}
+.group-node:hover{border-color:#AECBFA}
+.group-node.expanded{border-color:var(--blue)}
+.group-header{display:grid;grid-template-columns:36px 1fr auto;gap:8px;align-items:center;padding:.45rem .75rem .45rem .5rem;cursor:pointer;user-select:none;min-height:38px}
+.group-header:hover{background:var(--gray-lt)}
+.gh-qs{width:34px;height:34px;border-radius:50%;border:2px solid;display:flex;align-items:center;justify-content:center;font-family:'Roboto Mono',monospace;font-size:12px;font-weight:700;flex-shrink:0}
+.gh-body{min-width:0}
+.gh-tag{font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:1px}
+.gh-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gh-lp{font-size:10px;font-family:'Roboto Mono',monospace;color:var(--blue);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gh-metrics{display:flex;gap:12px;align-items:center}
+.ghm{text-align:right}
+.ghm-val{font-family:'Roboto Mono',monospace;font-size:12px;font-weight:500;line-height:1}
+.ghm-lbl{font-size:8px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-top:1px}
+.gh-chev{font-size:9px;color:var(--muted);transition:transform .2s;margin-left:6px;flex-shrink:0}
+.group-node.expanded .gh-chev{transform:rotate(180deg)}
+.qs-green{color:var(--green);border-color:var(--green);background:var(--green-lt)}
+.qs-yellow{color:var(--yellow);border-color:var(--yellow);background:var(--yellow-lt)}
+.qs-red{color:var(--red);border-color:var(--red);background:var(--red-lt)}
+
+/* EXPAND PANEL — 2 cols */
+.expand-panel{display:none;border-top:1px solid var(--border)}
+.expand-panel.open{display:block}
+.ep-cols{display:flex;gap:0}
+.ep-left{flex:1;min-width:0;border-right:1px solid var(--border)}
+.ep-right{width:320px;flex-shrink:0}
+
+.sec-lbl{padding:.4rem .85rem .25rem;font-size:9px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);background:var(--gray-lt)}
+.perf-grid{display:grid;grid-template-columns:1fr 1fr;gap:0;border-bottom:1px solid var(--border)}
+.perf-cell{padding:.6rem .85rem;border-right:1px solid var(--border);border-bottom:1px solid var(--border)}
+.perf-cell:nth-child(2n){border-right:none}
+.pc-lbl{font-size:9px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.pc-val{font-family:'Roboto Mono',monospace;font-size:20px;font-weight:500;line-height:1;margin-bottom:3px}
+.pc-hist{font-size:10px;color:var(--muted);font-family:'Roboto Mono',monospace}
+.pc-desc{font-size:10px;color:var(--muted);line-height:1.45;border-top:1px solid var(--border);padding-top:4px;margin-top:3px}
+.pc-desc strong{color:var(--text)}
+
+.rating-pill{display:inline-flex;align-items:center;gap:2px;font-size:9px;font-weight:700;padding:2px 6px;border-radius:8px;white-space:nowrap}
+
+.insight-box{padding:.5rem .85rem;font-size:11px;line-height:1.5;color:var(--muted);display:flex;align-items:flex-start;gap:6px;border-bottom:1px solid var(--border)}
+.insight-box strong{color:var(--text)}
+.insight-box.warn{background:var(--red-lt)}
+.insight-box.info{background:var(--blue-lt)}
+.insight-box.ok{background:var(--green-lt)}
+
+/* QS + keywords panel (right) */
+.qs-panel{display:flex;flex-direction:column}
+.qs-overview{display:flex;align-items:center;gap:10px;padding:.6rem .85rem;border-bottom:1px solid var(--border);background:var(--gray-lt)}
+.qs-big{width:44px;height:44px;border-radius:50%;border:2px solid;display:flex;align-items:center;justify-content:center;font-family:'Roboto Mono',monospace;font-size:16px;font-weight:700;flex-shrink:0}
+.qs-details{flex:1;min-width:0}
+.qs-detail-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:3px}
+.qs-dr-lbl{font-size:9px;color:var(--muted)}
+.qs-dr-val{font-size:9px;font-weight:700}
+
+.kw-wrap{padding:.5rem .85rem .75rem;overflow-y:auto}
+.kw-title{font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:5px;display:flex;align-items:center;justify-content:space-between}
+.kw-hint{font-size:9px;font-weight:400;letter-spacing:0;text-transform:none}
+.kw-hdr{display:flex;align-items:center;gap:6px;padding:0 0 3px;font-size:8px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border);margin-bottom:2px}
+.kw-row{display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid var(--gray-lt);font-size:11px}
+.kw-row:last-child{border-bottom:none}
+.kw-match{width:18px;height:18px;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0}
+.kw-name{flex:1;font-family:'Roboto Mono',monospace;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kw-bar{width:36px;height:3px;background:var(--gray-lt);border-radius:2px;overflow:hidden;flex-shrink:0}
+.kw-bar-f{height:100%;border-radius:2px}
+.kw-qs{font-family:'Roboto Mono',monospace;font-size:12px;font-weight:700;width:18px;text-align:right;flex-shrink:0}
+.kw-impr{font-size:10px;color:var(--muted);width:38px;text-align:right;flex-shrink:0;font-family:'Roboto Mono',monospace}
+.kw-conv{font-size:11px;font-weight:700;width:24px;text-align:right;flex-shrink:0;font-family:'Roboto Mono',monospace}
+
+.lp-row{padding:.4rem .85rem;border-top:1px solid var(--border);display:flex;align-items:center;gap:6px;background:var(--gray-lt)}
+.lp-lbl{font-size:9px;font-weight:700;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.lp-pill{font-size:10px;font-family:'Roboto Mono',monospace;padding:2px 8px;border-radius:4px;background:var(--blue-lt);color:var(--blue)}
+.lp-pill.miss{background:var(--red-lt);color:var(--red)}
+
+/* ── QS LEGEND in map section ── */
+.qs-legend-row{display:flex;gap:12px;align-items:center;font-size:10px;color:var(--muted);padding:.4rem .85rem;border-bottom:1px solid var(--border);background:var(--gray-lt)}
+.leg{display:flex;align-items:center;gap:4px}
+.leg-dot{width:7px;height:7px;border-radius:50%}
+
+/* scrollspy */
+section{scroll-margin-top:calc(var(--header) + 8px)}
+</style>
+</head>
+<body>
+
+<!-- HEADER FIJO -->
+<div class="hdr">
+  <span class="hdr-title">Dashboard Adquisición</span>
+  <span class="source-badge source-mock" id="source-badge"><span class="pulse">●</span> Mock</span>
+  <span id="period-label" style="font-size:10px;color:var(--muted);white-space:nowrap"></span>
+  <div class="hdr-sep"></div>
+  <div class="period-wrap">
+    <select id="month-select" class="period-btn" style="cursor:pointer;padding:3px 6px"
+            onchange="setMonthPeriod(this)">
+      <option value="">Mes…</option>
+      <option value="month-1">Enero</option>
+      <option value="month-2">Febrero</option>
+      <option value="month-3">Marzo</option>
+      <option value="month-4">Abril</option>
+      <option value="month-5">Mayo</option>
+      <option value="month-6">Junio</option>
+      <option value="month-7">Julio</option>
+      <option value="month-8">Agosto</option>
+      <option value="month-9">Septiembre</option>
+      <option value="month-10">Octubre</option>
+      <option value="month-11">Noviembre</option>
+      <option value="month-12">Diciembre</option>
+    </select>
+    <div class="psep"></div>
+    <button class="period-btn active" onclick="setPeriod(this,'this_month')">Este mes</button>
+    <button class="period-btn" onclick="setPeriod(this,'last_month')">Mes pasado</button>
+    <button class="period-btn" onclick="setPeriod(this,'7d')">Esta semana (L-V)</button>
+    <button class="period-btn" onclick="setPeriod(this,'today')">Hoy</button>
+    <button class="period-btn" onclick="setPeriod(this,'yesterday')">Ayer</button>
+    <div class="psep"></div>
+    <button class="period-btn" onclick="setPeriod(this,'q1')">Q1</button>
+    <button class="period-btn" onclick="setPeriod(this,'q2')">Q2</button>
+    <button class="period-btn" onclick="setPeriod(this,'q3')">Q3</button>
+    <button class="period-btn" onclick="setPeriod(this,'q4')">Q4</button>
+  </div>
+</div>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="sb-desc">
+    Monitoreo en tiempo real del funnel SEM: inversión, leads, pipeline y performance de campañas Google Ads conectado con Pipedrive.
+  </div>
+  <nav class="sb-nav">
+    <a class="sb-item active" href="#resumen"  onclick="sbClick(this)"><span class="sb-icon">📊</span>Resumen ejecutivo</a>
+    <a class="sb-item"        href="#sqls-mes" onclick="sbClick(this)"><span class="sb-icon">🎯</span>SQLs por mes</a>
+    <a class="sb-item"        href="#origen"   onclick="sbClick(this)"><span class="sb-icon">🧭</span>Origen de SQLs</a>
+    <a class="sb-item"        href="#subasta"      onclick="sbClick(this)"><span class="sb-icon">⚖️</span>Subasta · Competidores</a>
+    <a class="sb-item"        href="#campanas"     onclick="sbClick(this)"><span class="sb-icon">🗺️</span>Mapa de campañas</a>
+  </nav>
+  <div class="sb-footer">
+    <div class="sb-footer-inner">
+      <div class="sb-src-row"><span class="src-dot gads live" id="dot-gads"></span> Google Ads <span id="status-gads" style="margin-left:auto">–</span></div>
+      <div class="sb-src-row"><span class="src-dot pipe live" id="dot-pipe"></span> Pipedrive   <span id="status-pipe" style="margin-left:auto">–</span></div>
+      <div class="sb-updated" id="last-updated">Última actualización: –</div>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- RESUMEN EJECUTIVO -->
+  <section id="resumen">
+    <div class="card">
+      <div class="card-hdr"><span class="card-title">Resumen Ejecutivo</span></div>
+      <div class="exec-rows">
+        <div class="exec-row">
+          <div class="exec-row-label">Google Ads</div>
+          <div class="exec-cells">
+            <div class="exec-cell"><p class="ec-val" id="m-gasto">$0</p><p class="ec-lbl">Gasto Ads Total</p></div>
+            <div class="exec-cell"><p class="ec-val" id="m-conv" >0</p><p class="ec-lbl">Conversiones (leads)</p></div>
+            <div class="exec-cell"><p class="ec-val" id="m-cpl"  >$0</p><p class="ec-lbl">Costo por Lead (CPL)</p></div>
+            <div class="exec-cell"><p class="ec-val" id="m-ctr"  >0%</p><p class="ec-lbl">CTR de la cuenta</p></div>
+            <div class="exec-cell"><p class="ec-val" id="m-impr" >0</p><p class="ec-lbl">Impresiones de la cuenta</p></div>
+          </div>
+        </div>
+        <div class="exec-row">
+          <div class="exec-row-label">Pipedrive</div>
+          <div class="exec-cells">
+            <div class="exec-cell"><p class="ec-val" id="m-ql"       >–</p><p class="ec-lbl">Leads calificados</p></div>
+            <div class="exec-cell"><p class="ec-val" id="m-sql"      >–</p><p class="ec-lbl">SQLs</p></div>
+            <div class="exec-cell"><p class="ec-val" id="m-won"      >–</p><p class="ec-lbl">Clientes ganados</p></div>
+            <div class="exec-cell"><p class="ec-val" id="m-costo-sql">–</p><p class="ec-lbl">Costo por SQL</p></div>
+            <div class="exec-cell"><p class="ec-val" id="m-s2w"      >–</p><p class="ec-lbl">SQL → Cliente</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ROW 1: SQLs por mes | Inversión Ads vs SQLs -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+    <section id="sqls-mes">
+      <div class="card" style="height:100%">
+        <div class="card-hdr">
+          <span class="card-title">SQLs por mes</span>
+          <span class="card-src"><span class="src-dot pipe live"></span>Pipedrive</span>
+        </div>
+        <div style="padding:.75rem .85rem .5rem">
+          <div class="chart-h-lg"><canvas id="sqlChart"></canvas></div>
+        </div>
+        <!-- Stats en fila debajo del gráfico (sin SQLs totales — ya está en resumen) -->
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:0;border-top:1px solid var(--border)">
+          <div style="padding:.45rem .6rem;border-right:1px solid var(--border)">
+            <p class="sm-val" id="sql-paid" style="font-size:15px">–</p><p class="sm-lbl">Paid Media</p>
+          </div>
+          <div style="padding:.45rem .6rem;border-right:1px solid var(--border)">
+            <p class="sm-val" id="sql-org" style="font-size:15px">–</p><p class="sm-lbl">Orgánicos</p>
+          </div>
+          <div style="padding:.45rem .6rem;border-right:1px solid var(--border)">
+            <p class="sm-val" id="best-sql-month" style="font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">–</p><p class="sm-lbl">Mejor mes</p>
+          </div>
+          <div style="padding:.45rem .6rem;border-right:1px solid var(--border)">
+            <p class="sm-val" id="avg-sql-month" style="font-size:15px">–</p><p class="sm-lbl">Prom./mes</p>
+          </div>
+          <div style="padding:.45rem .6rem">
+            <p class="sm-val" id="total-sql-year" style="font-size:15px">–</p><p class="sm-lbl">Total año</p>
+          </div>
+        </div>
+        <!-- sql-totales oculto para compatibilidad JS -->
+        <span id="sql-totales" style="display:none"></span>
+      </div>
+    </section>
+
+    <section id="gasto-sqls">
+      <div class="card" style="height:100%">
+        <div class="card-hdr">
+          <span class="card-title">Inversión Ads vs SQLs por mes</span>
+          <span class="card-src"><span class="src-dot gads live"></span>Google Ads&nbsp;&nbsp;<span class="src-dot pipe live"></span>Pipedrive</span>
+        </div>
+        <div style="padding:.75rem .85rem;height:calc(100% - 38px);box-sizing:border-box">
+          <div style="height:100%;min-height:200px"><canvas id="gastoSqlsChart"></canvas></div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ROW 2: Origen de SQLs (izq) | Estadísticas de subasta (der) -->
+  <div style="display:grid;grid-template-columns:1fr 1.6fr;gap:1rem">
+    <section id="origen">
+      <div class="card" style="height:100%">
+        <div class="card-hdr">
+          <span class="card-title">Origen de SQLs</span>
+          <span class="card-src"><span class="src-dot pipe live"></span>Pipedrive</span>
+        </div>
+        <div class="chart-row">
+          <div class="chart-cell" style="flex:1.4">
+            <div class="cc-title"><span id="origen-total" style="font-weight:400;color:var(--muted)"></span></div>
+            <div class="chart-h-sm"><canvas id="originSqlChart"></canvas></div>
+            <div id="origen-sql-legend" style="display:flex;flex-direction:column;gap:3px;margin-top:6px"></div>
+          </div>
+          <div class="chart-cell">
+            <div class="cc-title">Deals ganados</div>
+            <div style="display:flex;flex-direction:column;gap:8px;padding-top:.25rem">
+              <div class="stat-mini" style="text-align:center">
+                <p class="sm-val" id="won-total" style="color:var(--green);font-size:32px">–</p>
+                <p class="sm-lbl">Total ganados</p>
+              </div>
+              <div id="won-breakdown" style="display:flex;flex-direction:column;gap:5px"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="subasta">
+      <div class="card" style="height:100%">
+        <div class="card-hdr">
+          <span class="card-title">Estadísticas de subasta · Competidores</span>
+          <span class="card-src"><span class="src-dot gads live"></span>Google Ads</span>
+        </div>
+        <div class="auction-wrap">
+          <div class="auction-tbl-wrap">
+            <table>
+              <thead><tr>
+                <th>Competidor</th>
+                <th>% Parte sup.</th>
+                <th>% Abs. top</th>
+                <th style="background:var(--blue-lt);color:var(--blue)">% Impr. ★</th>
+                <th>% Superpos.</th>
+                <th>% Pos. sup.</th>
+                <th>% Ranking sup.</th>
+              </tr></thead>
+              <tbody id="auction-tbody">
+                <tr><td colspan="7" style="text-align:center;color:var(--muted);padding:1rem">Cargando…</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="auction-chart-wrap">
+            <div class="cc-title">Comparativa de visibilidad SEM</div>
+            <div class="chart-h-lg"><canvas id="auctionChart"></canvas></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- canvas oculto para compatibilidad de leads por mes (no se muestra) -->
+  <canvas id="convChart" style="display:none"></canvas>
+
+  <!-- MAPA DE CAMPAÑAS -->
+  <section id="campanas">
+    <div class="card">
+      <div class="card-hdr">
+        <span class="card-title">Mapa de campañas</span>
+        <span class="card-src"><span class="src-dot gads live"></span>Google Ads</span>
+      </div>
+      <div class="qs-legend-row">
+        <div class="leg"><div class="leg-dot" style="background:var(--green)"></div> QS 8–10 Excelente</div>
+        <div class="leg"><div class="leg-dot" style="background:var(--yellow)"></div> QS 6–7 Mejorable</div>
+        <div class="leg"><div class="leg-dot" style="background:var(--red)"></div> QS 1–5 Crítico</div>
+        <span style="margin-left:auto;font-size:10px;color:var(--muted)">Haz clic en un grupo para ver detalle · Rendimiento izq · QS + Keywords der</span>
+      </div>
+      <div class="tree-outer">
+        <div class="tree-left">
+          <div class="account-row">
+            <div class="account-node">
+              <p class="acc-label">Cuenta Google Ads</p>
+              <p class="acc-name" id="acc-name">DETECTA-CUSTODIAS</p>
+              <p class="acc-id"   id="acc-id">720-603-7956</p>
+            </div>
+            <div class="h-line"></div>
+          </div>
+          <div class="campaigns-col" id="campaigns-tree"></div>
+        </div>
+        <div class="tree-right">
+          <div class="changes-hdr">🕐 Últimas modificaciones</div>
+          <div class="changes-list" id="changes-list">
+            <div class="change-item" style="border-left-color:var(--yellow)">
+              <p class="ci-date">Cargando...</p>
+              <p class="ci-desc">Conectando con Google Ads API</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div><!-- /main -->
+
+<script>
+// ── PERIOD ────────────────────────────────────────────────────────────────────
+let currentPeriod = 'this_month';
+function setPeriod(btn, period) {
+  document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('month-select').value = '';
+  btn.classList.add('active');
+  currentPeriod = period;
+  loadData();
+}
+
+function setMonthPeriod(sel) {
+  if (!sel.value) return;
+  document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+  sel.classList.add('active');
+  currentPeriod = sel.value;
+  loadData();
+}
+
+// ── SIDEBAR ───────────────────────────────────────────────────────────────────
+function sbClick(el) {
+  document.querySelectorAll('.sb-item').forEach(i => i.classList.remove('active'));
+  el.classList.add('active');
+}
+window.addEventListener('scroll', () => {
+  const ids = ['resumen','sqls-mes','gasto-sqls','origen','subasta','campanas'];
+  let current = 'resumen';
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (el && el.getBoundingClientRect().top <= 80) current = id;
+  });
+  document.querySelectorAll('.sb-item').forEach(i =>
+    i.classList.toggle('active', i.getAttribute('href') === '#' + current));
+}, { passive: true });
+
+// ── LOAD DATA ─────────────────────────────────────────────────────────────────
+async function loadData() {
+  let data;
+  try {
+    const res = await fetch(`/api/campaigns?period=${currentPeriod}`, { cache: 'no-store' });
+    data = res.ok ? await res.json() : null;
+  } catch(e) { data = null; }
+
+  if (!data) return;
+
+  // Badge de fuente
+  const badge  = document.getElementById('source-badge');
+  const dotG   = document.getElementById('dot-gads');
+  const dotP   = document.getElementById('dot-pipe');
+  const now    = new Date();
+  const ts     = now.toLocaleDateString('es-MX', { day:'2-digit', month:'short', year:'numeric' })
+               + ' ' + now.toLocaleTimeString('es-MX', { hour:'2-digit', minute:'2-digit' });
+
+  if (data.source === 'google-ads-api') {
+    badge.innerHTML   = '<span class="pulse">●</span> En vivo';
+    badge.className   = 'source-badge source-real';
+    dotG.style.background = 'var(--green)';
+    dotP.style.background = 'var(--green)';
+    setText('status-gads', 'Conectado');
+    setText('status-pipe', 'Conectado');
+  } else if (data.source === 'pipedrive-only') {
+    badge.innerHTML   = '<span class="pulse">●</span> Pipedrive';
+    badge.className   = 'source-badge source-mock';
+    dotG.style.background = 'var(--red)';
+    dotP.style.background = 'var(--green)';
+    setText('status-gads', 'Error');
+    setText('status-pipe', 'Conectado');
+    if (data._adsError) console.warn('[Google Ads error]', data._adsError);
+  } else {
+    badge.innerHTML   = '<span class="pulse">●</span> Mock';
+    badge.className   = 'source-badge source-mock';
+    dotG.style.background = 'var(--yellow)';
+    dotP.style.background = 'var(--yellow)';
+    setText('status-gads', 'Demo');
+    setText('status-pipe', 'Demo');
+  }
+  setText('last-updated', 'Actualizado: ' + ts);
+  setText('period-label', data.periodLabel ? data.periodLabel : '');
+
+  // Account info
+  if (data.account) {
+    setText('acc-name', data.account.name || 'DETECTA-CUSTODIAS');
+    setText('acc-id',   data.account.id   || '720-603-7956');
+  }
+
+  renderSummary(data);
+  renderCharts(data);
+  renderTree(data);
+  renderChanges(data);
+}
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+function setText(id, v) { const e = document.getElementById(id); if (e) e.textContent = v; }
+const fmt  = n  => n != null ? n.toLocaleString('es-MX') : '–';
+const fmtP = n  => n != null ? n.toFixed(1) + '%' : '–';
+const fmtM = n  => n != null ? '$' + n.toLocaleString('es-MX') : '–';
+
+// ── SUMMARY ───────────────────────────────────────────────────────────────────
+function renderSummary(d) {
+  const s  = d.summary  || {};
+  const pl = d.pipeline || {};
+  setText('m-gasto',    fmtM(s.gasto));
+  setText('m-conv',     fmt(s.conversiones));
+  setText('m-cpl',      fmtM(s.cpl));
+  setText('m-ctr',      fmtP(s.ctr));
+  setText('m-impr',     fmt(s.impr));
+  setText('m-ql',       fmt(s.leadsCalificados));
+  setText('m-sql',      fmt(s.sqls));
+  setText('m-won',      fmt(s.clientesGanados));
+  setText('m-costo-sql',d.costoSQL != null ? fmtM(d.costoSQL) : '–');
+  const s2w = pl.sqls > 0 ? ((pl.ganados / pl.sqls) * 100).toFixed(1) + '%' : '–';
+  setText('m-s2w', s2w);
+  // Métricas de SQL en sección de gráfico
+  setText('sql-totales', fmt(d.sqlsTotales));
+  setText('sql-paid',    fmt(d.sqlsPaidMedia));
+  setText('sql-org',     fmt(d.sqlsOrganicos));
+}
+
+// ── CHARTS ────────────────────────────────────────────────────────────────────
+const charts = {};
+function dc(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
+const C = {
+  blue:'#1A73E8', green:'#1E8E3E', yellow:'#F9AB00', red:'#D93025', muted:'#5F6368', border:'#DADCE0',
+  pal: ['#1A73E8','#1E8E3E','#F9AB00','#D93025','#5F6368','#4285F4','#34A853'],
+};
+
+function renderCharts(d) {
+  // Leads por mes
+  dc('conv');
+  const cm = d.convPorMes || { labels: [], data: [] };
+  const mx = Math.max(...cm.data), bi = cm.data.indexOf(mx);
+  setText('best-month',  cm.labels[bi] + ' · ' + mx + ' leads');
+  setText('avg-month',   Math.round(cm.data.reduce((a,b) => a+b, 0) / (cm.data.length||1)) + ' leads/mes');
+  setText('total-year',  cm.data.reduce((a,b) => a+b, 0) + ' leads');
+  charts['conv'] = new Chart(document.getElementById('convChart'), {
+    type: 'bar',
+    data: { labels: cm.labels, datasets: [{ label:'Leads', data: cm.data,
+      backgroundColor: cm.data.map((_,i) => i===bi ? C.green+'CC' : C.blue+'99'),
+      borderRadius: 3, borderSkipped: false }] },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
+      scales:{ y:{beginAtZero:true,grid:{color:C.border}}, x:{grid:{display:false}} } },
+  });
+
+  // SQLs por mes — recortado al mes actual para evitar hueco en meses futuros
+  dc('sql');
+  const sm_raw   = d.sqlsPorMes      || { labels: [], data: [] };
+  const cpsm_raw = d.costoPorSQLMes  || { labels: [], data: [] };
+  const curM     = new Date().getMonth(); // 0-indexed
+  const sm   = { labels: sm_raw.labels.slice(0, curM + 1),   data: sm_raw.data.slice(0, curM + 1) };
+  const cpsm = { labels: cpsm_raw.labels.slice(0, curM + 1), data: cpsm_raw.data.slice(0, curM + 1) };
+  const smx  = Math.max(...sm.data.filter(v => v > 0), 0);
+  const sbi  = sm.data.indexOf(smx);
+  setText('best-sql-month', smx > 0 ? sm.labels[sbi] + ' · ' + smx + ' SQLs' : '–');
+  setText('avg-sql-month',  Math.round(sm.data.reduce((a,b) => a+b, 0) / (sm.data.length||1)) + ' SQLs/mes');
+  setText('total-sql-year', sm.data.reduce((a,b) => a+b, 0) + ' SQLs');
+  charts['sql'] = new Chart(document.getElementById('sqlChart'), {
+    type: 'bar',
+    data: { labels: sm.labels, datasets: [
+      { label:'SQLs', data: sm.data, yAxisID:'y',
+        backgroundColor: sm.data.map((_,i) => i===sbi ? C.yellow+'EE' : C.yellow+'88'),
+        borderRadius:3, borderSkipped:false, order:2 },
+      { label:'Costo por SQL ($)', data: cpsm.data, yAxisID:'y2', type:'line',
+        borderColor: C.blue, backgroundColor: C.blue+'22',
+        borderWidth:2, pointRadius:3, pointBackgroundColor:C.blue,
+        tension:0.35, spanGaps:true, order:1 },
+    ]},
+    options: { responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ position:'top', labels:{ boxWidth:8, font:{size:9} } } },
+      scales:{
+        y:  { beginAtZero:true, grid:{color:C.border}, ticks:{font:{size:9}}, position:'left' },
+        y2: { beginAtZero:true, grid:{display:false},  ticks:{font:{size:9}, callback:v=>'$'+v.toLocaleString()}, position:'right' },
+        x:  { grid:{display:false} },
+      },
+    },
+  });
+
+  // Origen SQLs — donut con leyenda numérica
+  const os = d.origenSqls || { labels:[], data:[] };
+  const osTotal = os.data.reduce((a,b) => a+b, 0);
+  const origenEl = document.getElementById('origen-total');
+  if (origenEl) origenEl.textContent = osTotal > 0 ? `· ${osTotal} total` : '';
+  dc('origs'); charts['origs'] = new Chart(document.getElementById('originSqlChart'), {
+    type: 'doughnut',
+    data: { labels: os.labels, datasets:[{ data:os.data, backgroundColor:C.pal, borderWidth:0 }] },
+    options: { responsive:true, maintainAspectRatio:false, cutout:'65%', plugins:{ legend:{display:false} } },
+  });
+  // Leyenda con números
+  const legendEl = document.getElementById('origen-sql-legend');
+  if (legendEl) legendEl.innerHTML = os.labels.map((lbl,i) => `
+    <div style="display:flex;align-items:center;justify-content:space-between;font-size:10px">
+      <div style="display:flex;align-items:center;gap:5px">
+        <div style="width:8px;height:8px;border-radius:50%;background:${C.pal[i]};flex-shrink:0"></div>
+        <span style="color:var(--muted)">${lbl}</span>
+      </div>
+      <span style="font-family:'Roboto Mono',monospace;font-weight:600;color:var(--text)">${os.data[i]}</span>
+    </div>`).join('');
+
+  // Won breakdown
+  const og = d.origenGanados || { labels:[], data:[] };
+  setText('won-total', og.data.reduce((a,b) => a+b, 0));
+  const wb = document.getElementById('won-breakdown');
+  if (wb) wb.innerHTML = og.labels.map((lbl,i) => `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 8px;background:var(--gray-lt);border-radius:6px;border:1px solid var(--border)">
+      <div style="display:flex;align-items:center;gap:6px">
+        <div style="width:8px;height:8px;border-radius:50%;background:${C.pal[i]};flex-shrink:0"></div>
+        <span style="font-size:11px;color:var(--muted)">${lbl}</span>
+      </div>
+      <span style="font-family:'Roboto Mono',monospace;font-size:13px;font-weight:600;color:var(--text)">${og.data[i]}</span>
+    </div>`).join('');
+
+  // Gasto en Ads vs SQLs — también recortado al mes actual
+  dc('gastoSqls');
+  const gm_raw = d.gastoPorMes || { labels:[], data:[] };
+  const gm  = { labels: gm_raw.labels.slice(0, curM + 1), data: gm_raw.data.slice(0, curM + 1) };
+  const sm2 = { labels: sm_raw.labels.slice(0, curM + 1), data: sm_raw.data.slice(0, curM + 1) };
+  charts['gastoSqls'] = new Chart(document.getElementById('gastoSqlsChart'), {
+    type: 'bar',
+    data: { labels: gm.labels, datasets: [
+      { label:'Gasto Ads (MXN)', data: gm.data, yAxisID:'y',
+        backgroundColor: C.blue+'99', borderRadius:3, borderSkipped:false, order:2 },
+      { label:'SQLs', data: sm2.data, yAxisID:'y2', type:'line',
+        borderColor: C.green, backgroundColor: C.green+'22',
+        borderWidth:2, pointRadius:3, pointBackgroundColor:C.green,
+        tension:0.35, spanGaps:false, order:1 },
+    ]},
+    options: { responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ position:'top', labels:{ boxWidth:10, font:{size:10} } } },
+      scales:{
+        y:  { beginAtZero:true, grid:{color:C.border}, ticks:{ font:{size:9}, callback:v=>'$'+v.toLocaleString('es-MX') }, position:'left' },
+        y2: { beginAtZero:true, grid:{display:false},  ticks:{ font:{size:9} }, position:'right', title:{ display:true, text:'SQLs', font:{size:9} } },
+        x:  { grid:{display:false} },
+      },
+    },
+  });
+
+  renderAuction(d);
+}
+
+// ── TREE ──────────────────────────────────────────────────────────────────────
+function renderTree(d) {
+  const container = document.getElementById('campaigns-tree');
+  container.innerHTML = '';
+  (d.campaigns || []).forEach(camp => {
+    const div      = document.createElement('div');
+    div.className  = 'campaign-row';
+    const ns = camp.type === 'Brand' ? 'border-color:var(--green)' : '';
+    const ts = camp.type === 'Brand' ? 'color:var(--green)' : '';
+    div.innerHTML = `
+      <div class="campaign-node" style="${ns}">
+        <p class="camp-type" style="${ts}">${camp.type}</p>
+        <p class="camp-name">${camp.name}</p>
+        <p class="camp-sub">${camp.groupCount} grupos · ${camp.keywordCount} kws</p>
+      </div>
+      <div class="groups-col" id="gcol-${camp.id}"></div>`;
+    container.appendChild(div);
+    const gcol = div.querySelector(`#gcol-${camp.id}`);
+    (camp.groups || []).forEach(g => {
+      const qsCls = g.qsStatus === 'green' ? 'qs-green' : g.qsStatus === 'red' ? 'qs-red' : 'qs-yellow';
+      const lp    = g.landingPage || '';
+      const lpMiss = g.landingPageMissing;
+      const lpStyle = lpMiss ? 'style="color:var(--red)"' : g.id === 'gbrand' ? 'style="color:var(--green)"' : '';
+      const tagStyle = g.id === 'gbrand' ? 'style="color:var(--green)"' : lpMiss ? 'style="color:var(--red)"' : '';
+      const im  = g.metrics || {};
+      const row = document.createElement('div');
+      row.className = 'group-row';
+      row.innerHTML = `
+        <div class="group-connector"></div>
+        <div class="group-node" id="gn-${g.id}">
+          <div class="group-header" onclick="toggleGroup('${g.id}')">
+            <div class="gh-qs ${qsCls}">${g.qs ?? '–'}</div>
+            <div class="gh-body">
+              <p class="gh-tag" ${tagStyle}>${g.tag || ''}</p>
+              <p class="gh-name">${g.name}</p>
+              <p class="gh-lp" ${lpStyle}>${lp}</p>
+            </div>
+            <div class="gh-metrics">
+              <div class="ghm"><p class="ghm-val">${(im.impressions||0).toLocaleString('es-MX')}</p><p class="ghm-lbl">Impr.</p></div>
+              <div class="ghm"><p class="ghm-val" style="color:${(im.conversions||0)>0?'var(--green)':'var(--muted)'}">${im.conversions??0}</p><p class="ghm-lbl">Conv.</p></div>
+              <div class="ghm"><p class="ghm-val">${im.ctr??0}%</p><p class="ghm-lbl">CTR</p></div>
+              <span class="gh-chev">▼</span>
+            </div>
+          </div>
+          <div class="expand-panel" id="ep-${g.id}">
+            <div class="ep-cols">
+              <div class="ep-left">${renderPerf(g)}</div>
+              <div class="ep-right">${renderQS(g)}</div>
+            </div>
+            <div class="lp-row">
+              <span class="lp-lbl">LP</span>
+              <span class="lp-pill ${lpMiss?'miss':''}">${lpMiss?lp:'detectasecurity.io'+lp}</span>
+            </div>
+          </div>
+        </div>`;
+      gcol.appendChild(row);
+    });
+  });
+}
+
+function renderPerf(g) {
+  const m   = g.metrics || {};
+  const qc  = g.qsStatus==='green'?'var(--green)':g.qsStatus==='red'?'var(--red)':'var(--yellow)';
+  const lostPct = m.lostImprRanking ?? 0;
+  return `
+    <div class="sec-lbl">📊 Rendimiento</div>
+    <div class="perf-grid">
+      <div class="perf-cell"><p class="pc-lbl">Impresiones</p><p class="pc-val">${(m.impressions||0).toLocaleString('es-MX')}</p><p class="pc-desc">Veces elegible para mostrarse.</p></div>
+      <div class="perf-cell"><p class="pc-lbl">Conversiones</p><p class="pc-val" style="color:${(m.conversions||0)>0?'var(--green)':'var(--red)'}">${m.conversions??0}</p><p class="pc-desc">Formularios completados del grupo.</p></div>
+      <div class="perf-cell"><p class="pc-lbl">CTR</p><p class="pc-val" style="color:var(--blue)">${m.ctr??0}%</p><p class="pc-hist">Histórico: ${g.historicalCtr!=null?(g.historicalCtr*100).toFixed(1)+'%':'–'}</p><p class="pc-desc">% de impr. que resultaron en clic.</p></div>
+      <div class="perf-cell"><p class="pc-lbl">Impr. perdidas</p><p class="pc-val" style="color:${lostPct>40?'var(--red)':lostPct>20?'var(--yellow)':'var(--green)'}">${lostPct}%</p><p class="pc-desc">% búsquedas sin exposición por ranking bajo.</p></div>
+      <div class="perf-cell"><p class="pc-lbl">Nivel de calidad</p><p class="pc-val" style="color:${qc}">${g.qs??'–'}</p><p class="pc-hist">Histórico: ${g.historicalQs??'–'}</p><p class="pc-desc">Google 1–10. Bajo 7 = pagas más.</p></div>
+      <div class="perf-cell"><p class="pc-lbl">Exp. LP histórica</p><p class="pc-val" style="font-size:13px">${ratingLabel(g.historicalLpExperience)}</p><p class="pc-desc">Experiencia en página de destino histórica.</p></div>
+    </div>`;
+}
+
+function ratingLabel(r) {
+  if (!r) return '–';
+  if (r.includes('ABOVE') || r.includes('above')) return '↑ Superior';
+  if (r.includes('BELOW') || r.includes('below')) return '↓ Inferior';
+  return '= Promedio';
+}
+function rC(r){ return r&&(r.includes('ABOVE')||r.includes('above'))?'var(--green)':r&&(r.includes('BELOW')||r.includes('below'))?'var(--red)':'var(--yellow)'; }
+function rB(r){ return r&&(r.includes('ABOVE')||r.includes('above'))?'var(--green-lt)':r&&(r.includes('BELOW')||r.includes('below'))?'var(--red-lt)':'var(--yellow-lt)'; }
+function rI(r){ return r&&(r.includes('ABOVE')||r.includes('above'))?'↑':r&&(r.includes('BELOW')||r.includes('below'))?'↓':'='; }
+
+function renderQS(g) {
+  const qc  = g.qsStatus==='green'?'var(--green)':g.qsStatus==='red'?'var(--red)':'var(--yellow)';
+  const qCls= g.qsStatus==='green'?'qs-green':g.qsStatus==='red'?'qs-red':'qs-yellow';
+  const kws = g.keywords || [];
+  const maxImpr = Math.max(1, ...kws.map(k => k.impressions || 0));
+  return `
+    <div class="qs-panel">
+      <div class="qs-overview">
+        <div class="qs-big ${qCls}">${g.qs??'–'}</div>
+        <div class="qs-details">
+          <div class="qs-detail-row">
+            <span class="qs-dr-lbl">Relevancia anuncio</span>
+            <span class="rating-pill" style="background:${rB(g.adRelevance)};color:${rC(g.adRelevance)}">${rI(g.adRelevance)} ${ratingLabel(g.adRelevance)}</span>
+          </div>
+          <div class="qs-detail-row" style="margin-top:3px">
+            <span class="qs-dr-lbl">Exp. página destino</span>
+            <span class="rating-pill" style="background:${rB(g.lpExperience)};color:${rC(g.lpExperience)}">${rI(g.lpExperience)} ${ratingLabel(g.lpExperience)}</span>
+          </div>
+          <div class="qs-detail-row" style="margin-top:3px">
+            <span class="qs-dr-lbl">QS histórico</span>
+            <span class="qs-dr-val" style="color:${qc}">${g.historicalQs??'–'}</span>
+          </div>
+        </div>
+      </div>
+      <div class="kw-wrap">
+        <div class="kw-title">Keywords <span class="kw-hint">[·]=Exacta "·"=Frase</span></div>
+        <div class="kw-hdr"><div style="width:18px"></div><div style="flex:1">Keyword</div><div style="width:36px">Rel.</div><div style="width:18px;text-align:right">QS</div><div style="width:38px;text-align:right">Impr.</div><div style="width:24px;text-align:right">Conv.</div></div>
+        ${kws.map(kw => {
+          const qs  = kw.qs ?? 0;
+          const mc  = qs >= 8 ? 'green' : qs >= 6 ? 'yellow' : 'red';
+          const bg  = mc==='green'?'var(--green-lt)':mc==='red'?'var(--red-lt)':'var(--yellow-lt)';
+          const tc  = mc==='green'?'var(--green)':mc==='red'?'var(--red)':'var(--yellow)';
+          const sym = kw.match?.includes('exact') ? '[]' : kw.match?.includes('phrase') ? '""' : '~';
+          const barW = Math.round((kw.impressions||0) / maxImpr * 100);
+          return `<div class="kw-row">
+            <div class="kw-match" style="background:${bg};color:${tc};font-size:8px">${sym}</div>
+            <span class="kw-name">${kw.text||''}</span>
+            <div class="kw-bar"><div class="kw-bar-f" style="width:${barW}%;background:${tc}"></div></div>
+            <span class="kw-qs" style="color:${tc}">${qs||'–'}</span>
+            <span class="kw-impr">${(kw.impressions||0).toLocaleString('es-MX')}</span>
+            <span class="kw-conv" style="color:${(kw.conversions||0)>0?'var(--green)':'var(--muted)'}">${kw.conversions??0}</span>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+}
+
+function toggleGroup(id) {
+  const node  = document.getElementById('gn-' + id);
+  const panel = document.getElementById('ep-' + id);
+  if (!node || !panel) return;
+  const open = panel.classList.contains('open');
+  panel.classList.toggle('open',   !open);
+  node.classList.toggle('expanded', !open);
+}
+
+// ── CHANGES ───────────────────────────────────────────────────────────────────
+function renderChanges(d) {
+  const list    = document.getElementById('changes-list');
+  const changes = d.changes || [];
+  if (!changes.length) { list.innerHTML = '<div class="change-item"><p class="ci-desc" style="color:var(--muted)">Sin cambios recientes.</p></div>'; return; }
+  const typeColors = {
+    'Anuncio':'#1A73E8','Puja':'#F9AB00','Keyword':'#D93025',
+    'Presupuesto':'#1E8E3E','Campaña':'#5F6368','Grupo':'#4285F4',
+    'LP':'#5F6368','Segmentación':'#9C27B0',
+  };
+  list.innerHTML = changes.map(c => `
+    <div class="change-item" style="border-left-color:${typeColors[c.type]||'#1A73E8'}">
+      <p class="ci-date">${c.date} · ${c.campaign}</p>
+      <p class="ci-type" style="color:${typeColors[c.type]||'#1A73E8'}">${c.type}</p>
+      <p class="ci-desc">${c.desc}</p>
+    </div>`).join('');
+}
+
+// ── SUBASTA ───────────────────────────────────────────────────────────────────
+function renderAuction(d) {
+  const rows  = d.auctionData || [];
+  const tbody = document.getElementById('auction-tbody');
+  const fv    = v => v != null ? v.toFixed(1) + '%' : '–';
+  const isOwn = r => /detecta|tú/i.test(r.domain);
+
+  if (tbody) tbody.innerHTML = rows.map(r => `
+    <tr class="${isOwn(r) ? 'detecta' : ''}">
+      <td>${r.domain}</td>
+      <td>${fv(r.topImpr)}</td>
+      <td>${fv(r.absTopImpr)}</td>
+      <td style="background:var(--blue-lt);font-weight:600">${fv(r.imprShare)}</td>
+      <td>${fv(r.overlap)}</td>
+      <td>${fv(r.outranking)}</td>
+      <td>${fv(r.posAbove)}</td>
+    </tr>`).join('')
+    || '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:.75rem">Sin datos de subasta para este periodo</td></tr>';
+
+  dc('auction');
+  if (!rows.length) return;
+  charts['auction'] = new Chart(document.getElementById('auctionChart'), {
+    type: 'bar',
+    data: { labels: rows.map(r => r.domain.split('.')[0]),
+      datasets: [
+        { label:'% Parte sup.', data: rows.map(r => r.topImpr    ?? 0), backgroundColor: C.blue+'BB',   borderRadius:3, borderSkipped:false },
+        { label:'% Abs. top',   data: rows.map(r => r.absTopImpr ?? 0), backgroundColor: C.green+'BB',  borderRadius:3, borderSkipped:false },
+        { label:'% Impr. ★',   data: rows.map(r => r.imprShare  ?? 0), backgroundColor: C.yellow+'DD', borderRadius:3, borderSkipped:false },
+      ]},
+    options: { responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ position:'bottom', labels:{ boxWidth:8, font:{size:9} } } },
+      scales:{ x:{ grid:{display:false} }, y:{ beginAtZero:true, max:100, grid:{color:C.border}, ticks:{callback:v=>v+'%'} } } },
+  });
+}
+
+loadData();
+</script>
+</body>
+</html>
