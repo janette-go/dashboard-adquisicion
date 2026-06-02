@@ -968,20 +968,6 @@ async function fetchAllData(period) {
 // ENDPOINT
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Endpoint temporal de diagnóstico — muestra si las credenciales llegan correctamente
-app.get('/api/debug-creds', (req, res) => {
-  const peek = (v, n = 6) => v ? `${v.slice(0, n)}...${v.slice(-4)} (len:${v.length})` : 'MISSING';
-  res.json({
-    hasAdsCreds:    hasAdsCreds(),
-    hasPipedrive:   hasPipedriveCreds(),
-    DEVELOPER_TOKEN:  peek(process.env.GOOGLE_ADS_DEVELOPER_TOKEN),
-    CLIENT_ID:        peek(process.env.GOOGLE_ADS_CLIENT_ID, 12),
-    CLIENT_SECRET:    peek(process.env.GOOGLE_ADS_CLIENT_SECRET),
-    REFRESH_TOKEN:    peek(process.env.GOOGLE_ADS_REFRESH_TOKEN, 8),
-    CUSTOMER_ID:      process.env.GOOGLE_ADS_CUSTOMER_ID || 'MISSING',
-    PIPEDRIVE_TOKEN:  peek(process.env.PIPEDRIVE_API_TOKEN),
-  });
-});
 
 app.get('/api/campaigns', async (req, res) => {
   res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
