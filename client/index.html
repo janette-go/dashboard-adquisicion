@@ -264,7 +264,7 @@ tr.detecta td:first-child{color:var(--blue)}
 section{scroll-margin-top:calc(var(--header) + 8px)}
 
 /* ── TOOLTIPS ── */
-.tip{display:inline-flex;align-items:center;gap:3px}
+.tip{display:inline-flex;align-items:center;gap:3px;cursor:default}
 .tip-icon{font-size:9px;color:var(--muted);opacity:.55;line-height:1;flex-shrink:0;transition:opacity .15s;cursor:help}
 .tip-icon:hover{opacity:1}
 /* tip-box usa position:fixed via JS para saltar cualquier overflow:hidden */
@@ -1362,18 +1362,29 @@ function closeDealModal() {
 }
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDealModal(); });
 
-// Delegación: hover sobre .deal-num
+// Delegación: hover sobre .deal-num — con delay para que el usuario alcance a clicar
+let _hidePopupTimer = null;
+
+function scheduleHidePopup() {
+  _hidePopupTimer = setTimeout(hideDealPopup, 300);
+}
+function cancelHidePopup() {
+  if (_hidePopupTimer) { clearTimeout(_hidePopupTimer); _hidePopupTimer = null; }
+}
+
 document.addEventListener('mouseover', e => {
   const el = e.target.closest('.deal-num');
-  if (el) showDealPopup(el);
+  if (el) { cancelHidePopup(); showDealPopup(el); }
 });
 document.addEventListener('mouseout', e => {
   const el = e.target.closest('.deal-num');
   if (!el) return;
   const popup = document.getElementById('deal-popup');
-  if (!popup.contains(e.relatedTarget)) hideDealPopup();
+  if (!popup.contains(e.relatedTarget)) scheduleHidePopup();
 });
-document.getElementById('deal-popup').addEventListener('mouseleave', hideDealPopup);
+const _popup = document.getElementById('deal-popup');
+_popup.addEventListener('mouseenter', cancelHidePopup);
+_popup.addEventListener('mouseleave', hideDealPopup);
 
 // Clic sobre .deal-num con muchos deals abre el modal directamente
 document.addEventListener('click', e => {
