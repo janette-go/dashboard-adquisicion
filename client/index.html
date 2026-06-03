@@ -264,9 +264,9 @@ tr.detecta td:first-child{color:var(--blue)}
 section{scroll-margin-top:calc(var(--header) + 8px)}
 
 /* ── TOOLTIPS ── */
-.tip{display:inline-flex;align-items:center;gap:3px;cursor:help}
-.tip-icon{font-size:9px;color:var(--muted);opacity:.55;line-height:1;flex-shrink:0;transition:opacity .15s}
-.tip:hover .tip-icon{opacity:1}
+.tip{display:inline-flex;align-items:center;gap:3px}
+.tip-icon{font-size:9px;color:var(--muted);opacity:.55;line-height:1;flex-shrink:0;transition:opacity .15s;cursor:help}
+.tip-icon:hover{opacity:1}
 /* tip-box usa position:fixed via JS para saltar cualquier overflow:hidden */
 .tip-box{
   display:none;position:fixed;
