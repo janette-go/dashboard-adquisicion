@@ -649,7 +649,7 @@ window.addEventListener('scroll', () => {
 async function loadData() {
   let data;
   try {
-    const res = await fetch(`/api/campaigns?period=${currentPeriod}`, { cache: 'no-store' });
+    const res = await fetch(`/api/campaigns?period=${currentPeriod}&t=${Date.now()}`, { cache: 'no-store' });
     data = res.ok ? await res.json() : null;
   } catch(e) { data = null; }
 
