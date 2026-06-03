@@ -1386,41 +1386,44 @@ document.addEventListener('click', e => {
   if (deals.length) openDealModal();
 });
 
-// ── TOOLTIPS (position:fixed para saltar overflow:hidden de cards) ────────────
+// ── TOOLTIPS — solo se activan al pasar sobre el ícono ⓘ, no sobre el texto ──
 document.addEventListener('mouseover', e => {
-  const tip = e.target.closest('.tip');
+  // Solo el ícono ⓘ dispara el tooltip (no el texto del label)
+  const icon = e.target.closest('.tip-icon');
+  if (!icon) return;
+  const tip = icon.closest('.tip');
   if (!tip) return;
   const box = tip.querySelector('.tip-box');
   if (!box) return;
 
-  const r   = tip.getBoundingClientRect();
+  const r   = icon.getBoundingClientRect();
   const W   = window.innerWidth;
-  const BOX = 210; // ancho del tooltip
+  const BOX = 210;
   const GAP = 8;
 
   box.style.display = 'block';
   const boxH = box.offsetHeight;
 
-  // Intentar arriba primero; si no cabe, abajo
   const topAbove = r.top - boxH - GAP;
   const showAbove = topAbove > 10;
   box.classList.toggle('tip-above', showAbove);
   box.classList.toggle('tip-below', !showAbove);
-  box.style.top = showAbove ? topAbove + 'px' : (r.bottom + GAP) + 'px';
+  box.style.top  = showAbove ? topAbove + 'px' : (r.bottom + GAP) + 'px';
 
-  // Centrar horizontalmente, ajustar para no salirse del viewport
   let left = r.left + r.width / 2 - BOX / 2;
   left = Math.max(10, Math.min(left, W - BOX - 10));
   box.style.left = left + 'px';
 
-  // Posición de la flecha relativa al box
   const arrowLeft = (r.left + r.width / 2) - left;
   box.style.setProperty('--arrow-left', Math.max(14, Math.min(arrowLeft, BOX - 14)) + 'px');
 });
 
 document.addEventListener('mouseout', e => {
-  const tip = e.target.closest('.tip');
+  const icon = e.target.closest('.tip-icon');
+  if (!icon) return;
+  const tip = icon.closest('.tip');
   if (!tip) return;
+  // No ocultar si el ratón se mueve al interior del tip-box
   if (tip.contains(e.relatedTarget)) return;
   const box = tip.querySelector('.tip-box');
   if (box) box.style.display = 'none';
