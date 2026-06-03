@@ -1430,15 +1430,27 @@ document.addEventListener('mouseover', e => {
 });
 
 document.addEventListener('mouseout', e => {
+  // Saliendo del ícono ⓘ
   const icon = e.target.closest('.tip-icon');
-  if (!icon) return;
-  const tip = icon.closest('.tip');
-  if (!tip) return;
-  // No ocultar si el ratón se mueve al interior del tip-box
-  if (tip.contains(e.relatedTarget)) return;
-  const box = tip.querySelector('.tip-box');
+  if (icon) {
+    const tip = icon.closest('.tip');
+    if (tip && !tip.contains(e.relatedTarget)) {
+      const box = tip.querySelector('.tip-box');
+      if (box) box.style.display = 'none';
+    }
+    return;
+  }
+  // Saliendo del propio tooltip box → siempre cerrar
+  const box = e.target.closest('.tip-box');
   if (box) box.style.display = 'none';
 });
+
+// Cierre de seguridad: cualquier clic o scroll cierra tooltips abiertos
+function closeAllTips() {
+  document.querySelectorAll('.tip-box').forEach(b => { b.style.display = 'none'; });
+}
+document.addEventListener('click',  closeAllTips);
+document.addEventListener('scroll', closeAllTips, true);
 
 loadData();
 </script>
