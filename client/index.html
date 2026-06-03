@@ -1273,11 +1273,18 @@ const POPUP_PREVIEW = 5;  // deals visibles en el popup antes de "ver todos"
 
 const STATUS_COLOR = { 'Ganado':'var(--green)', 'Perdido':'var(--red)', 'Abierto':'var(--blue)' };
 
+const PIPE_URL = id => `https://app.pipedrive.com/deal/${id}`;
+
 function dealRow(d, border = true) {
   const sc = STATUS_COLOR[d.status] || 'var(--muted)';
-  return `<div style="display:grid;grid-template-columns:1fr auto;gap:4px 8px;padding:.45rem .75rem;${border?'border-bottom:1px solid var(--gray-lt)':''}">
+  return `<a href="${PIPE_URL(d.id)}" target="_blank" rel="noopener"
+    style="display:grid;grid-template-columns:1fr auto;gap:4px 8px;padding:.45rem .75rem;
+           ${border?'border-bottom:1px solid var(--gray-lt)':''};
+           text-decoration:none;cursor:pointer;transition:background .12s"
+    onmouseover="this.style.background='var(--blue-lt)'"
+    onmouseout="this.style.background=''">
     <div style="min-width:0">
-      <div style="font-size:11px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${d.title}</div>
+      <div style="font-size:11px;font-weight:600;color:var(--blue);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${d.title}</div>
       <div style="font-size:9px;color:var(--muted);margin-top:2px">${d.stage} · ${d.owner}</div>
     </div>
     <div style="text-align:right;flex-shrink:0">
@@ -1285,7 +1292,7 @@ function dealRow(d, border = true) {
       <div style="font-size:9px;font-weight:600;color:${sc}">${d.status}</div>
     </div>
     ${d.origenSQL !== '–' ? `<div style="grid-column:1/-1;font-size:9px;color:var(--muted)">Origen SQL: <b style="color:var(--text)">${d.origenSQL}</b></div>` : ''}
-  </div>`;
+  </a>`;
 }
 
 function showDealPopup(el) {
@@ -1335,8 +1342,11 @@ function openDealModal() {
   const tbody = document.getElementById('dm-tbody');
   tbody.innerHTML = _activeList.map(d => {
     const sc = STATUS_COLOR[d.status] || 'var(--muted)';
-    return `<tr style="border-bottom:1px solid var(--gray-lt)">
-      <td style="padding:.4rem .75rem;font-weight:600;color:var(--text)">${d.title}</td>
+    return `<tr style="border-bottom:1px solid var(--gray-lt);cursor:pointer;transition:background .12s"
+               onclick="window.open('${PIPE_URL(d.id)}','_blank','noopener')"
+               onmouseover="this.style.background='var(--blue-lt)'"
+               onmouseout="this.style.background=''">
+      <td style="padding:.4rem .75rem;font-weight:600;color:var(--blue)">${d.title} ↗</td>
       <td style="padding:.4rem .75rem;color:var(--muted)">${d.stage}</td>
       <td style="padding:.4rem .75rem;color:var(--muted)">${d.owner}</td>
       <td style="padding:.4rem .75rem;text-align:right;font-family:'Roboto Mono',monospace">${d.value}</td>
