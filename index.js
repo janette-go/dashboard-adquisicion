@@ -308,7 +308,10 @@ async function fetchPipelineStages() {
 
 // Construye un resumen de deals para mostrar en el popup del dashboard
 function buildDealSummaries(deals, fieldOrigen, origenMap, stageMap) {
-  return deals.slice(0, 100).map(d => ({
+  // Más recientes primero para que aparezcan en el popup sin necesitar "Ver todos"
+  return [...deals]
+    .sort((a, b) => (b.add_time || '').localeCompare(a.add_time || ''))
+    .slice(0, 100).map(d => ({
     id:        d.id,
     title:     d.title || '(sin título)',
     value:     d.value != null ? `$${Number(d.value).toLocaleString('es-MX')} ${d.currency || ''}`.trim() : '–',
