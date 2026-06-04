@@ -1039,9 +1039,13 @@ async function fetchFromGoogleAds(period = 'this_month') {
     const kw = row.ad_group_criterion.keyword      || {};
     // match_type viene como entero enum: 2=broad, 3=phrase, 4=exact
     // Maneja tanto enteros (2/3/4) como strings ('BROAD'/'PHRASE'/'EXACT') de la API
+    // Log primero para diagnosticar el valor real del enum
     const MATCH = { 2:'broad',3:'phrase',4:'exact', BROAD:'broad',PHRASE:'phrase',EXACT:'exact' };
+    const rawMT = kw.match_type;
+    const resolvedMatch = MATCH[rawMT] || MATCH[String(rawMT).toUpperCase()] || String(rawMT||'').toLowerCase();
+    if (!MATCH[rawMT]) console.log('[match_type raw]', JSON.stringify(rawMT), typeof rawMT, '→', resolvedMatch);
     adGroupMap[agId].keywords.push({
-      match:                  MATCH[kw.match_type] || String(kw.match_type || ''),
+      match: resolvedMatch,
       text:                   kw.text || '',
       qs:                     qi.quality_score          || null,
       adRelevance:            qi.creative_quality_score || null,   // Ad relevance actual
