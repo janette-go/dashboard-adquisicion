@@ -1589,11 +1589,52 @@ function renderChanges(d) {
     'Presupuesto':'#B3D6A7','Campaña':'#8A8A8A','Grupo':'#999999',
     'Segmentación':'#5658A3',
   };
-  list.innerHTML = changes.map(c => `
-    <div class="change-item" style="border-left-color:${typeColors[c.type]||'#999999'}">
-      <p class="ci-date">${c.date}</p>
+  // Mapa de campos técnicos → español legible
+  const FIELD_LABELS = {
+    'status':'Estado','cpc_bid_micros':'Puja CPC','match_type':'Concordancia',
+    'headlines':'Títulos','descriptions':'Descripciones','final_urls':'URLs finales',
+    'path1':'Ruta 1','path2':'Ruta 2','amount_micros':'Presupuesto',
+    'target_cpa_micros':'CPA objetivo','target_roas':'ROAS objetivo',
+    'name':'Nombre','bidding_strategy':'Estrategia de puja',
+    'ad_schedule':'Programación','keyword':'Palabra clave',
+    'geo_target_type':'Tipo segmentación geo',
+  };
+  const parseFields = (fields) => {
+    if (!fields) return [];
+    return fields.split(',').map(f => {
+      const parts = f.trim().split('.');
+      const last  = parts[parts.length - 1];
+      return FIELD_LABELS[last] || last.replace(/_/g,' ');
+    }).filter((v,i,a) => a.indexOf(v)===i); // unique
+  };
+
+  list.innerHTML = changes.map((c,i) => {
+    const parsedFields = parseFields(c.fields);
+    const hasDetail = parsedFields.length > 0;
+    return `
+    <div class="change-item" style="border-left-color:${typeColors[c.type]||'#999999'};cursor:${hasDetail?'pointer':'default'}"
+         onclick="${hasDetail ? `toggleChangeDetail(${i})` : ''}">
+      <p class="ci-date">${c.date}${hasDetail ? ' <span style="color:var(--muted);font-size:8px">▼ ver detalle</span>' : ''}</p>
       <p class="ci-desc">${c.desc}</p>
-    </div>`).join('');
+      ${hasDetail ? `<div id="change-detail-${i}" style="display:none;margin-top:5px;padding-top:4px;border-top:1px solid rgba(255,255,255,0.08)">
+        <p style="font-size:9px;color:var(--muted);margin-bottom:3px">Campos modificados:</p>
+        ${parsedFields.map(f=>`<span style="display:inline-block;font-size:9px;background:rgba(255,255,255,0.06);border-radius:3px;padding:1px 5px;margin:1px;color:var(--text)">${f}</span>`).join('')}
+      </div>` : ''}
+    </div>`;
+  }).join('');
+
+  // Inicializar flecha
+  window.toggleChangeDetail = (i) => {
+    const el = document.getElementById('change-detail-'+i);
+    if (!el) return;
+    const open = el.style.display === 'block';
+    el.style.display = open ? 'none' : 'block';
+    const item = el.closest('.change-item');
+    if (item) {
+      const arrow = item.querySelector('.ci-date span');
+      if (arrow) arrow.textContent = open ? '▼ ver detalle' : '▲ ocultar';
+    }
+  };
 }
 
 // ── SUBASTA ───────────────────────────────────────────────────────────────────

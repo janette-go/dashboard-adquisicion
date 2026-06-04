@@ -1204,9 +1204,11 @@ async function fetchFromGoogleAds(period = 'this_month') {
         desc = `${CHANGE_TYPE_ES[typeKey]||typeKey} — ${ctx}`;
     }
 
-    if (user) desc += ` (${user})`;
+    if (user) desc += ` · ${user}`;
     const type = CHANGE_TYPE_ES[typeKey] || typeKey || 'Cambio';
-    return { date: dateStr, type, campaign: ag || camp, desc };
+    // Guardar changed_fields para el detalle expandible
+    const rawFields = (row.change_event.changed_fields || '');
+    return { date: dateStr, type, campaign: ag || camp, desc, fields: rawFields };
   });
 
   return { summary, convPorMes, gastoPorMes, campaigns, changes, auctionData };
