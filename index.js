@@ -223,6 +223,10 @@ function parsePeriod(period = 'this_month') {
     case 'q2': start = new Date(year, 3, 1);  end = new Date(year, 5,  30, 23, 59, 59); break;
     case 'q3': start = new Date(year, 6, 1);  end = new Date(year, 8,  30, 23, 59, 59); break;
     case 'q4': start = new Date(year, 9, 1);  end = new Date(year, 11, 31, 23, 59, 59); break;
+    case 'this_year':
+      start = new Date(year, 0, 1, 0, 0, 0);
+      end   = now;
+      break;
     default:
       if (period.startsWith('month-')) {
         // month-1 … month-12
