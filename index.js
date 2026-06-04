@@ -1137,7 +1137,11 @@ async function fetchFromGoogleAds(period = 'this_month') {
     const dt      = new Date(row.change_event.change_date_time);
     const dateStr = dt.toLocaleString('es-MX', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
     const typeKey = row.change_event.change_resource_type;
-    const fields  = (row.change_event.changed_fields || '').toLowerCase();
+    // changed_fields puede ser string o FieldMask {paths:[...]}
+    const cfRaw   = row.change_event.changed_fields;
+    const fields  = (typeof cfRaw === 'string' ? cfRaw
+                  : Array.isArray(cfRaw) ? cfRaw.join(',')
+                  : cfRaw?.paths?.join(',') || String(cfRaw||'')).toLowerCase();
     const user    = (row.change_event.user_email || '').split('@')[0];
     const ag      = row.ad_group?.name  || '';
     const camp    = row.campaign?.name  || '';
@@ -1207,7 +1211,7 @@ async function fetchFromGoogleAds(period = 'this_month') {
     if (user) desc += ` · ${user}`;
     const type = CHANGE_TYPE_ES[typeKey] || typeKey || 'Cambio';
     // Guardar changed_fields para el detalle expandible
-    const rawFields = (row.change_event.changed_fields || '');
+    const rawFields = fields; // ya procesado arriba
     return { date: dateStr, type, campaign: ag || camp, desc, fields: rawFields };
   });
 
