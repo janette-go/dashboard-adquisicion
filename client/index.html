@@ -1585,14 +1585,13 @@ function renderChanges(d) {
   const changes = d.changes || [];
   if (!changes.length) { list.innerHTML = '<div class="change-item"><p class="ci-desc" style="color:var(--muted)">Sin cambios recientes.</p></div>'; return; }
   const typeColors = {
-    'Anuncio':'#1A73E8','Puja':'#F9AB00','Keyword':'#D93025',
-    'Presupuesto':'#1E8E3E','Campaña':'#5F6368','Grupo':'#4285F4',
-    'LP':'#5F6368','Segmentación':'#9C27B0',
+    'Anuncio':'#999999','Puja':'#FFED66','Keyword':'#eb0000',
+    'Presupuesto':'#B3D6A7','Campaña':'#8A8A8A','Grupo':'#999999',
+    'Segmentación':'#5658A3',
   };
   list.innerHTML = changes.map(c => `
-    <div class="change-item" style="border-left-color:${typeColors[c.type]||'#1A73E8'}">
-      <p class="ci-date">${c.date} · ${c.campaign}</p>
-      <p class="ci-type" style="color:${typeColors[c.type]||'#1A73E8'}">${c.type}</p>
+    <div class="change-item" style="border-left-color:${typeColors[c.type]||'#999999'}">
+      <p class="ci-date">${c.date}</p>
       <p class="ci-desc">${c.desc}</p>
     </div>`).join('');
 }

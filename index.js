@@ -1133,14 +1133,25 @@ async function fetchFromGoogleAds(period = 'this_month') {
   // ── Cambios recientes ──────────────────────────────────────────────────────
   const changes = changesRows.map(row => {
     const dt      = new Date(row.change_event.change_date_time);
-    const dateStr = dt.toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' });
+    const dateStr = dt.toLocaleString('es-MX', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
     const typeKey = row.change_event.change_resource_type;
-    const type    = CHANGE_TYPE_ES[typeKey] || typeKey || 'Cambio';
     const ag      = row.ad_group?.name  || '';
     const camp    = row.campaign?.name  || '';
-    const desc    = ag
-      ? `Modificación en grupo de anuncios "${ag}"`
-      : `Modificación en campaña "${camp}"`;
+
+    // Descripción específica según el tipo de recurso
+    const descMap = {
+      'AD':                    ag ? `Anuncio modificado — ${ag}` : `Anuncio modificado — ${camp}`,
+      'AD_GROUP_AD':           ag ? `Anuncio modificado — ${ag}` : `Anuncio modificado — ${camp}`,
+      'AD_GROUP':              `Grupo de anuncios — ${ag || camp}`,
+      'AD_GROUP_CRITERION':    ag ? `Keyword modificada — ${ag}` : `Keyword modificada — ${camp}`,
+      'AD_GROUP_BID_MODIFIER': ag ? `Ajuste de puja — ${ag}` : `Ajuste de puja — ${camp}`,
+      'CAMPAIGN':              `Configuración de campaña — ${camp}`,
+      'CAMPAIGN_BUDGET':       `Presupuesto modificado — ${camp}`,
+      'CAMPAIGN_CRITERION':    `Segmentación/exclusión — ${camp}`,
+    };
+    const desc = descMap[typeKey] || `${CHANGE_TYPE_ES[typeKey]||typeKey} — ${ag||camp}`;
+    const type = CHANGE_TYPE_ES[typeKey] || typeKey || 'Cambio';
+
     return { date: dateStr, type, campaign: ag || camp, desc };
   });
 
