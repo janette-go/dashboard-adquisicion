@@ -1038,7 +1038,8 @@ async function fetchFromGoogleAds(period = 'this_month') {
     const qi = row.ad_group_criterion.quality_info || {};
     const kw = row.ad_group_criterion.keyword      || {};
     // match_type viene como entero enum: 2=broad, 3=phrase, 4=exact
-    const MATCH = { 2: 'broad', 3: 'phrase', 4: 'exact' };
+    // Maneja tanto enteros (2/3/4) como strings ('BROAD'/'PHRASE'/'EXACT') de la API
+    const MATCH = { 2:'broad',3:'phrase',4:'exact', BROAD:'broad',PHRASE:'phrase',EXACT:'exact' };
     adGroupMap[agId].keywords.push({
       match:                  MATCH[kw.match_type] || String(kw.match_type || ''),
       text:                   kw.text || '',
