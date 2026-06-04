@@ -293,6 +293,65 @@ function groupByMonth(deals, year) {
   return { labels: MONTHS_ES, data: byMonth };
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// GOOGLE SHEETS — estadísticas de subasta (escritas por Google Ads Script)
+// ─────────────────────────────────────────────────────────────────────────────
+
+let _auctionSheetCache = { data: null, ts: 0 };
+const AUCTION_CACHE_TTL = 60 * 60 * 1000; // 1 hora
+
+async function fetchAuctionFromSheets() {
+  const sheetId = process.env.GOOGLE_SHEETS_AUCTION_ID;
+  if (!sheetId) return null;
+
+  // Cache en memoria para no leer Sheets en cada request
+  if (_auctionSheetCache.data && Date.now() - _auctionSheetCache.ts < AUCTION_CACHE_TTL) {
+    return _auctionSheetCache.data;
+  }
+
+  try {
+    const { google } = require('googleapis');
+
+    // Credenciales desde env var (JSON completo como string)
+    const credJson = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
+    const keyFile  = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
+
+    const auth = new google.auth.GoogleAuth({
+      ...(credJson ? { credentials: JSON.parse(credJson) } : { keyFile }),
+      scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
+    });
+
+    const sheets   = google.sheets({ version: 'v4', auth });
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId: sheetId,
+      range: 'AuctionInsights!A:H',
+    });
+
+    const rows = response.data.values || [];
+    if (rows.length < 2) return [];
+
+    // Primera fila = headers, resto = datos
+    const data = rows.slice(1).map(r => ({
+      domain:     r[0] || '',
+      imprShare:  parseFloat(r[1]) || null,
+      topImpr:    parseFloat(r[2]) || null,
+      absTopImpr: parseFloat(r[3]) || null,
+      overlap:    parseFloat(r[4]) || null,
+      outranking: parseFloat(r[5]) || null,
+      posAbove:   parseFloat(r[6]) || null,
+      updated:    r[7] || '',
+    })).filter(r => r.domain)
+      .sort((a, b) => (b.topImpr || 0) - (a.topImpr || 0));
+
+    _auctionSheetCache = { data, ts: Date.now() };
+    console.log(`[auction sheets] ${data.length} dominios cargados desde Sheets`);
+    return data;
+  } catch (e) {
+    console.warn('[auction sheets]', e.message);
+    return null;
+  }
+}
+
 // Cache de etapas del pipeline de Pipedrive
 let _stageCache = null;
 async function fetchPipelineStages() {
@@ -947,6 +1006,9 @@ async function fetchAllData(period) {
 
   if (!adsOk && !pipeOk) return { ...MOCK };
 
+  // Intentar cargar subasta desde Sheets (independiente de Google Ads API)
+  const _liveAuctionData = await fetchAuctionFromSheets().catch(() => null);
+
   let adsData   = null;
   let pipeData  = null;
   let adsError  = null;
@@ -1028,7 +1090,7 @@ async function fetchAllData(period) {
     origenGanados:   pipeData?.origenGanados  ?? mk.origenGanados,
     changes:         (adsData?.changes?.length ? adsData.changes : null) ?? mk.changes,
     campaigns:       adsData?.campaigns    ?? mk.campaigns,
-    auctionData:     (adsData?.auctionData?.length ? adsData.auctionData : null) ?? mk.auctionData,
+    auctionData:     _liveAuctionData || (adsData?.auctionData?.length ? adsData.auctionData : mk.auctionData),
     dealLists:       pipeData?.dealLists    ?? { leads:[], sqls:[], ganados:[], sqlsPaid:[], sqlsOrg:[] },
     dealsByOrigin:   pipeData?.dealsByOrigin ?? {},
     periodLabel:     parsePeriod(period).periodLabel,
