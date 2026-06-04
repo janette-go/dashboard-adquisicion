@@ -1264,6 +1264,7 @@ async function fetchAllData(period) {
     conversiones:     adsData?.summary.conversiones     ?? mk.summary.conversiones,
     cpl:              adsData?.summary.cpl              ?? mk.summary.cpl,
     ctr:              adsData?.summary.ctr              ?? mk.summary.ctr,
+    cpc:              adsData?.summary.cpc              ?? mk.summary.cpc,
     impr:             adsData?.summary.impr             ?? mk.summary.impr,
     leadsCalificados: pipeData?.totals.leadsCalificados ?? mk.summary.leadsCalificados,
     sqls:             pipeData?.totals.sqls             ?? mk.summary.sqls,
