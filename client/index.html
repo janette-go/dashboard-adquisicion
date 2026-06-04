@@ -73,6 +73,8 @@ body{
 .period-btn:hover{border-color:var(--blue);color:var(--blue);background:rgba(96,165,250,0.08)}
 .period-btn.active{background:var(--detecta-red);color:#fff;border-color:var(--detecta-red)}
 .psep{width:1px;height:14px;background:var(--border);flex-shrink:0}
+.m-opt{padding:5px 10px;font-size:11px;color:rgba(255,255,255,0.7);border-radius:5px;cursor:pointer;white-space:nowrap;font-family:'Google Sans',sans-serif}
+.m-opt:hover{background:rgba(255,255,255,0.08);color:#fff}
 
 /* ── SIDEBAR ── */
 .sidebar{
@@ -346,23 +348,31 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
   <span id="period-label" style="font-size:10px;color:var(--muted);white-space:nowrap"></span>
   <div class="hdr-sep"></div>
   <div class="period-wrap">
-    <select id="month-select" class="period-btn"
-            style="cursor:pointer;padding:3px 8px;appearance:none;-webkit-appearance:none;background-image:none"
-            onchange="setMonthPeriod(this)">
-      <option value="">Mes</option>
-      <option value="month-1">Enero</option>
-      <option value="month-2">Febrero</option>
-      <option value="month-3">Marzo</option>
-      <option value="month-4">Abril</option>
-      <option value="month-5">Mayo</option>
-      <option value="month-6">Junio</option>
-      <option value="month-7">Julio</option>
-      <option value="month-8">Agosto</option>
-      <option value="month-9">Septiembre</option>
-      <option value="month-10">Octubre</option>
-      <option value="month-11">Noviembre</option>
-      <option value="month-12">Diciembre</option>
-    </select>
+    <div style="position:relative;flex-shrink:0" id="month-dropdown-wrap">
+      <button id="month-btn" class="period-btn" onclick="toggleMonthMenu(event)"
+              style="display:flex;align-items:center;gap:4px">
+        <span id="month-label">Mes</span>
+        <span style="font-size:8px;opacity:.6">▾</span>
+      </button>
+      <div id="month-menu" style="display:none;position:fixed;z-index:99999;
+           background:#1a1a22;border:1px solid rgba(255,255,255,0.15);border-radius:8px;
+           box-shadow:0 8px 32px rgba(0,0,0,.8);padding:4px;min-width:110px;
+           display:none">
+        <div onclick="pickMonth(this,'','Mes')"            class="m-opt">Todos</div>
+        <div onclick="pickMonth(this,'month-1','Enero')"   class="m-opt">Enero</div>
+        <div onclick="pickMonth(this,'month-2','Febrero')" class="m-opt">Febrero</div>
+        <div onclick="pickMonth(this,'month-3','Marzo')"   class="m-opt">Marzo</div>
+        <div onclick="pickMonth(this,'month-4','Abril')"   class="m-opt">Abril</div>
+        <div onclick="pickMonth(this,'month-5','Mayo')"    class="m-opt">Mayo</div>
+        <div onclick="pickMonth(this,'month-6','Junio')"   class="m-opt">Junio</div>
+        <div onclick="pickMonth(this,'month-7','Julio')"   class="m-opt">Julio</div>
+        <div onclick="pickMonth(this,'month-8','Agosto')"  class="m-opt">Agosto</div>
+        <div onclick="pickMonth(this,'month-9','Sep')"     class="m-opt">Septiembre</div>
+        <div onclick="pickMonth(this,'month-10','Oct')"    class="m-opt">Octubre</div>
+        <div onclick="pickMonth(this,'month-11','Nov')"    class="m-opt">Noviembre</div>
+        <div onclick="pickMonth(this,'month-12','Dic')"    class="m-opt">Diciembre</div>
+      </div>
+    </div>
     <div class="psep"></div>
     <button class="period-btn active" onclick="setPeriod(this,'this_month')">Este mes</button>
     <button class="period-btn" onclick="setPeriod(this,'last_month')">Mes pasado</button>
@@ -702,19 +712,49 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
 let currentPeriod = 'this_month';
 function setPeriod(btn, period) {
   document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('month-select').value = '';
+  const ml = document.getElementById('month-label');
+  if (ml) ml.textContent = 'Mes';
   btn.classList.add('active');
   currentPeriod = period;
   loadData();
 }
 
-function setMonthPeriod(sel) {
-  if (!sel.value) return;
-  document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
-  sel.classList.add('active');
-  currentPeriod = sel.value;
-  loadData();
+function toggleMonthMenu(e) {
+  e.stopPropagation();
+  const menu = document.getElementById('month-menu');
+  const btn  = document.getElementById('month-btn');
+  const open = menu.style.display === 'block';
+  menu.style.display = open ? 'none' : 'block';
+  if (!open) {
+    // Posicionar debajo del botón
+    const r = btn.getBoundingClientRect();
+    menu.style.top  = (r.bottom + 4) + 'px';
+    menu.style.left = r.left + 'px';
+  }
 }
+
+function pickMonth(el, value, label) {
+  document.getElementById('month-menu').style.display = 'none';
+  document.getElementById('month-label').textContent = label;
+  document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById('month-btn');
+  if (value) {
+    btn.classList.add('active');
+    currentPeriod = value;
+    loadData();
+  } else {
+    btn.classList.remove('active');
+  }
+}
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('#month-dropdown-wrap')) {
+    const menu = document.getElementById('month-menu');
+    if (menu) menu.style.display = 'none';
+  }
+});
+
+function setMonthPeriod(sel) {} // legacy, no-op
 
 // ── SIDEBAR ───────────────────────────────────────────────────────────────────
 function sbClick(el) {
