@@ -806,9 +806,26 @@ function renderSummary(d) {
 // ── CHARTS ────────────────────────────────────────────────────────────────────
 const charts = {};
 function dc(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
+// ── Defaults globales Chart.js para tema oscuro ───────────────────────────────
+Chart.defaults.color          = 'rgba(255,255,255,0.45)';
+Chart.defaults.borderColor    = 'rgba(255,255,255,0.08)';
+Chart.defaults.font.family    = "'Google Sans','Segoe UI',sans-serif";
+
+// Paleta de colores — Detecta brand (rojo + gris) + complementarios en dark
 const C = {
-  blue:'#60a5fa', green:'#4ade80', yellow:'#fbbf24', red:'#CC1010', muted:'rgba(255,255,255,0.4)', border:'rgba(255,255,255,0.1)',
-  pal: ['#60a5fa','#4ade80','#fbbf24','#CC1010','#8A8A8A','#a78bfa','#34d399'],
+  // Primarios de marca
+  red:    '#CC1010',   // Detecta Red — SQLs, KPIs principales
+  gray:   '#8A8A8A',   // Detecta Gray — métricas secundarias
+  // Complementarios para dark
+  blue:   '#60a5fa',   // Google Ads / inversión
+  green:  '#4ade80',   // Orgánico / Pipedrive / positivo
+  yellow: '#fbbf24',   // Costo / advertencia
+  purple: '#a78bfa',   // Acento / diversificación
+  teal:   '#2dd4bf',   // GSC / Search Console
+  muted:  'rgba(255,255,255,0.35)',
+  border: 'rgba(255,255,255,0.08)',
+  // Paleta para donuts y multi-serie
+  pal: ['#60a5fa','#4ade80','#fbbf24','#a78bfa','#8A8A8A','#2dd4bf','#f472b6'],
 };
 
 function renderCharts(d) {
@@ -821,11 +838,12 @@ function renderCharts(d) {
   setText('total-year',  cm.data.reduce((a,b) => a+b, 0) + ' leads');
   charts['conv'] = new Chart(document.getElementById('convChart'), {
     type: 'bar',
-    data: { labels: cm.labels, datasets: [{ label:'Leads', data: cm.data,
-      backgroundColor: cm.data.map((_,i) => i===bi ? C.green+'CC' : C.blue+'99'),
-      borderRadius: 3, borderSkipped: false }] },
+    data: { labels: cm.labels, datasets: [{ label:'Leads (conv. Ads)', data: cm.data,
+      backgroundColor: cm.data.map((_,i) => i===bi ? C.blue : C.blue+'55'),
+      borderColor: cm.data.map((_,i) => i===bi ? C.blue : 'transparent'),
+      borderWidth: 1, borderRadius: 4, borderSkipped: false }] },
     options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
-      scales:{ y:{beginAtZero:true,grid:{color:C.border}}, x:{grid:{display:false}} } },
+      scales:{ y:{beginAtZero:true,grid:{color:C.border},ticks:{color:C.muted}}, x:{grid:{display:false},ticks:{color:C.muted}} } },
   });
 
   // SQLs por mes — recortado al mes actual para evitar hueco en meses futuros
@@ -848,14 +866,16 @@ function renderCharts(d) {
     type: 'bar',
     data: { labels: sm.labels, datasets: [
       { label:'Total SQLs', data: sm.data, yAxisID:'y',
-        backgroundColor: C.yellow+'88', borderRadius:3, borderSkipped:false,
+        backgroundColor: C.red+'55', borderColor: C.red+'88', borderWidth:1,
+        borderRadius:4, borderSkipped:false,
         barPercentage:1.0, categoryPercentage:0.75, order:2 },
       { label:'Paid+Orgánico', data: spoData, yAxisID:'y',
-        backgroundColor: C.blue+'CC', borderRadius:3, borderSkipped:false,
+        backgroundColor: C.red, borderColor: C.red, borderWidth:1,
+        borderRadius:4, borderSkipped:false,
         barPercentage:0.6, categoryPercentage:0.75, order:1 },
       { label:'Costo/SQL', data: cpsm.data, yAxisID:'y2', type:'line',
-        borderColor: C.blue, backgroundColor: C.blue+'22',
-        borderWidth:2, pointRadius:3, pointBackgroundColor:C.blue,
+        borderColor: C.yellow, backgroundColor: C.yellow+'22',
+        borderWidth:2, pointRadius:3, pointBackgroundColor:C.yellow,
         tension:0.35, spanGaps:true, order:0 },
     ]},
     options: { responsive:true, maintainAspectRatio:false,
@@ -927,18 +947,20 @@ function renderCharts(d) {
     type: 'bar',
     data: { labels: gm.labels, datasets: [
       { label:'Gasto Ads (MXN)', data: gm.data, yAxisID:'y',
-        backgroundColor: C.blue+'99', borderRadius:3, borderSkipped:false, order:2 },
-      { label:'SQLs', data: sm2.data, yAxisID:'y2', type:'line',
-        borderColor: C.green, backgroundColor: C.green+'22',
-        borderWidth:2, pointRadius:3, pointBackgroundColor:C.green,
+        backgroundColor: C.blue+'55', borderColor: C.blue+'99', borderWidth:1,
+        borderRadius:4, borderSkipped:false, order:2 },
+      { label:'SQLs Paid+Org', data: sm2.data, yAxisID:'y2', type:'line',
+        borderColor: C.red, backgroundColor: C.red+'22',
+        borderWidth:2.5, pointRadius:4, pointBackgroundColor: C.red,
+        pointBorderColor:'#0d0d0f', pointBorderWidth:1.5,
         tension:0.35, spanGaps:false, order:1 },
     ]},
     options: { responsive:true, maintainAspectRatio:false,
       plugins:{ legend:{ position:'top', labels:{ boxWidth:10, font:{size:10} } } },
       scales:{
-        y:  { beginAtZero:true, grid:{color:C.border}, ticks:{ font:{size:9}, callback:v=>'$'+v.toLocaleString('es-MX') }, position:'left' },
-        y2: { beginAtZero:true, grid:{display:false},  ticks:{ font:{size:9} }, position:'right', title:{ display:true, text:'SQLs', font:{size:9} } },
-        x:  { grid:{display:false} },
+        y:  { beginAtZero:true, grid:{color:C.border}, ticks:{ font:{size:9}, color:C.muted, callback:v=>'$'+v.toLocaleString('es-MX') }, position:'left' },
+        y2: { beginAtZero:true, grid:{display:false},  ticks:{ font:{size:9}, color:C.muted }, position:'right', title:{ display:true, text:'SQLs', font:{size:9}, color:C.muted } },
+        x:  { grid:{display:false}, ticks:{color:C.muted} },
       },
     },
   });
@@ -1031,11 +1053,12 @@ function renderGSC(d) {
       type: 'line',
       data: { labels: yearly.map(r => r.date.slice(5)), datasets: [
         { label:'Clics', data: yearly.map(r => r.clicks),
-          borderColor:'#4285F4', backgroundColor:'#4285F422',
-          borderWidth:2, pointRadius:yearly.length > 60 ? 0 : 2, tension:0.3, yAxisID:'y', fill:true },
+          borderColor: C.teal, backgroundColor: C.teal+'22',
+          borderWidth:2.5, pointRadius:yearly.length > 60 ? 0 : 3,
+          pointBackgroundColor:C.teal, tension:0.3, yAxisID:'y', fill:true },
         { label:'Impresiones', data: yearly.map(r => r.impressions),
-          borderColor:'#7B2FBE', backgroundColor:'#7B2FBE11',
-          borderWidth:2, pointRadius:yearly.length > 60 ? 0 : 2, tension:0.3, yAxisID:'y2', fill:false },
+          borderColor: C.gray, backgroundColor: C.gray+'18',
+          borderWidth:1.5, pointRadius:yearly.length > 60 ? 0 : 2, tension:0.3, yAxisID:'y2', fill:false },
       ]},
       options: { responsive:true, maintainAspectRatio:false,
         plugins:{ legend:{ position:'top', labels:{ boxWidth:8, font:{size:9} } } },
