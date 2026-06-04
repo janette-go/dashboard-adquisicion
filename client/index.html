@@ -326,14 +326,10 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
 
 <!-- HEADER FIJO -->
 <div class="hdr">
-  <!-- Isotipo Detecta Security -->
-  <svg viewBox="0 0 100 100" width="26" height="26" style="flex-shrink:0;display:block">
-    <circle cx="50" cy="50" r="48" fill="#8A8A8A"/>
-    <polygon points="50,36 100,36 100,64 50,64" fill="#0d0d0f"/>
-    <circle cx="50" cy="50" r="26" fill="white"/>
-    <circle cx="48" cy="46" r="21" fill="#CC1010"/>
-    <circle cx="60" cy="58" r="13" fill="white"/>
-  </svg>
+  <!-- Isotipo Detecta — coloca el PNG en client/isotipo.png -->
+  <img src="/isotipo.png" alt="Detecta" width="28" height="28"
+       style="flex-shrink:0;object-fit:contain"
+       onerror="this.style.display='none'">
   <span class="hdr-title">Dashboard Adquisición</span>
   <span class="source-badge source-mock" id="source-badge"><span class="pulse">●</span> Mock</span>
   <span id="period-label" style="font-size:10px;color:var(--muted);white-space:nowrap"></span>
@@ -902,17 +898,23 @@ function renderCharts(d) {
   const osTotal = os.data.reduce((a,b) => a+b, 0);
   const origenEl = document.getElementById('origen-total');
   if (origenEl) origenEl.textContent = osTotal > 0 ? `${osTotal} SQLs · clic en segmento para ver deals` : '';
-  // Colores sólidos y vibrantes para el donut en fondo oscuro
-  const donutColors = ['#60a5fa','#4ade80','#fbbf24','#a78bfa','#8A8A8A','#2dd4bf','#f472b6'];
+  // Colores semitransparentes para que el donut se funda con el glassmorphism
+  const donutColors = [
+    'rgba(96,165,250,0.65)', 'rgba(74,222,128,0.65)', 'rgba(251,191,36,0.65)',
+    'rgba(167,139,250,0.65)', 'rgba(138,138,138,0.55)', 'rgba(45,212,191,0.65)', 'rgba(244,114,182,0.65)'
+  ];
+  const donutHover = [
+    'rgba(96,165,250,0.9)', 'rgba(74,222,128,0.9)', 'rgba(251,191,36,0.9)',
+    'rgba(167,139,250,0.9)', 'rgba(138,138,138,0.8)', 'rgba(45,212,191,0.9)', 'rgba(244,114,182,0.9)'
+  ];
   dc('origs'); charts['origs'] = new Chart(document.getElementById('originSqlChart'), {
     type: 'doughnut',
     data: { labels: os.labels, datasets:[{
       data: os.data,
       backgroundColor: donutColors,
-      borderColor: '#0d0d0f',
+      hoverBackgroundColor: donutHover,
+      borderColor: 'rgba(255,255,255,0.06)',
       borderWidth: 2,
-      hoverBorderColor: '#0d0d0f',
-      hoverBorderWidth: 2,
     }] },
     options: {
       responsive:true, maintainAspectRatio:false, cutout:'65%',
@@ -1670,7 +1672,6 @@ document.addEventListener('click', e => {
 
 // ── TOOLTIPS — solo se activan al pasar sobre el ícono ⓘ, no sobre el texto ──
 document.addEventListener('mouseover', e => {
-  // Solo el ícono ⓘ dispara el tooltip (no el texto del label)
   const icon = e.target.closest('.tip-icon');
   if (!icon) return;
   const tip = icon.closest('.tip');
@@ -1680,20 +1681,34 @@ document.addEventListener('mouseover', e => {
 
   const r   = icon.getBoundingClientRect();
   const W   = window.innerWidth;
-  const BOX = 210;
-  const GAP = 8;
+  const H   = window.innerHeight;
+  const BOX = 220;
+  const GAP = 10;
 
   box.style.display = 'block';
   const boxH = box.offsetHeight;
 
+  // SIEMPRE arriba — solo baja si no cabe en absoluto
+  let top;
   const topAbove = r.top - boxH - GAP;
-  const showAbove = topAbove > 10;
-  box.classList.toggle('tip-above', showAbove);
-  box.classList.toggle('tip-below', !showAbove);
-  box.style.top  = showAbove ? topAbove + 'px' : (r.bottom + GAP) + 'px';
+  if (topAbove >= 4) {
+    // Cabe arriba: preferido
+    top = topAbove;
+    box.classList.add('tip-above'); box.classList.remove('tip-below');
+  } else if (r.bottom + boxH + GAP <= H - 4) {
+    // No cabe arriba pero sí abajo
+    top = r.bottom + GAP;
+    box.classList.add('tip-below'); box.classList.remove('tip-above');
+  } else {
+    // Ni arriba ni abajo completamente → posicionar lo más arriba posible
+    top = Math.max(4, r.top - boxH - GAP);
+    box.classList.add('tip-above'); box.classList.remove('tip-below');
+  }
 
+  // Centrar horizontalmente, sin salirse del viewport
   let left = r.left + r.width / 2 - BOX / 2;
-  left = Math.max(10, Math.min(left, W - BOX - 10));
+  left = Math.max(8, Math.min(left, W - BOX - 8));
+  box.style.top  = top + 'px';
   box.style.left = left + 'px';
 
   const arrowLeft = (r.left + r.width / 2) - left;
