@@ -871,6 +871,7 @@ async function fetchFromGoogleAds(period = 'this_month') {
     WHERE campaign.status = 'ENABLED'
       AND ad_group.status = 'ENABLED'
       AND ad_group_criterion.status = 'ENABLED'
+      AND ad_group_criterion.negative = false
       ${dateWhere}
   `;
 
