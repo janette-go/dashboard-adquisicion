@@ -341,7 +341,7 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
     <a class="sb-item"        href="#origen"   onclick="sbClick(this)"><span class="sb-icon">🧭</span>Origen de SQLs</a>
     <a class="sb-item"        href="#gsc"          onclick="sbClick(this)"><span class="sb-icon">🔍</span>Search Console</a>
     <a class="sb-item"        href="#campanas"     onclick="sbClick(this)"><span class="sb-icon">🗺️</span>Mapa de campañas</a>
-    <a class="sb-item"        href="#subasta"      onclick="sbClick(this)"><span class="sb-icon">⚖️</span>Subasta · Competidores</a>
+    <!-- <a class="sb-item" href="#subasta"><span class="sb-icon">⚖️</span>Subasta · Competidores</a> -->
   </nav>
   <div class="sb-footer">
     <div class="sb-footer-inner">
@@ -603,36 +603,10 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
     </div>
   </section>
 
-  <!-- ESTADÍSTICAS DE SUBASTA -->
-  <section id="subasta">
-    <div class="card">
-      <div class="card-hdr">
-        <span class="card-title">Estadísticas de subasta · Competidores</span>
-        <span class="card-src"><span class="src-dot gads live"></span>Google Ads</span>
-      </div>
-      <div class="auction-wrap">
-        <div class="auction-tbl-wrap">
-          <table>
-            <thead><tr>
-              <th>Competidor</th>
-              <th>% Parte sup.</th>
-              <th>% Abs. top</th>
-              <th style="background:var(--blue-lt);color:var(--blue)">% Impr. ★</th>
-              <th>% Superpos.</th>
-              <th>% Pos. sup.</th>
-              <th>% Ranking sup.</th>
-            </tr></thead>
-            <tbody id="auction-tbody">
-              <tr><td colspan="7" style="text-align:center;color:var(--muted);padding:1rem">Cargando…</td></tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="auction-chart-wrap">
-          <div class="cc-title">Comparativa de visibilidad SEM</div>
-          <div class="chart-h-lg"><canvas id="auctionChart"></canvas></div>
-        </div>
-      </div>
-    </div>
+  <!-- ESTADÍSTICAS DE SUBASTA (oculto temporalmente) -->
+  <section id="subasta" style="display:none">
+    <canvas id="auctionChart" style="display:none"></canvas>
+    <tbody id="auction-tbody" style="display:none"></tbody>
   </section>
 
 </div><!-- /main -->
@@ -699,7 +673,7 @@ function sbClick(el) {
   el.classList.add('active');
 }
 window.addEventListener('scroll', () => {
-  const ids = ['resumen','sqls-mes','gasto-sqls','origen','gsc','campanas','subasta'];
+  const ids = ['resumen','sqls-mes','gasto-sqls','origen','gsc','campanas'];
   let current = 'resumen';
   ids.forEach(id => {
     const el = document.getElementById(id);
