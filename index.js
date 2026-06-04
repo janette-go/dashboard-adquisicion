@@ -882,6 +882,7 @@ async function fetchFromGoogleAds(period = 'this_month') {
       ad_group_criterion.keyword.text,
       ad_group_criterion.keyword.match_type,
       metrics.impressions, metrics.conversions,
+      metrics.cost_micros, metrics.clicks,
       metrics.historical_quality_score,
       metrics.historical_creative_quality_score,
       metrics.historical_landing_page_quality_score,
@@ -1068,7 +1069,7 @@ async function fetchFromGoogleAds(period = 'this_month') {
       qs:          qi.quality_score          || null,
       adRelevance: qi.creative_quality_score || null,
       lpExperience:qi.post_click_quality_score || null,
-      impressions: 0, conversions: 0, // se actualizan en paso 2
+      impressions: 0, conversions: 0, cost: 0, clicks: 0, // se actualizan en paso 2
       historicalQs: null, historicalAdRelevance: null,
       historicalLpExperience: null, historicalCtr: null,
     });
@@ -1083,6 +1084,8 @@ async function fetchFromGoogleAds(period = 'this_month') {
     kwMetricsMap[key] = {
       impressions:            num(row.metrics.impressions),
       conversions:            parseFloat(num(row.metrics.conversions).toFixed(2)),
+      cost:                   num(row.metrics.cost_micros),
+      clicks:                 num(row.metrics.clicks),
       historicalQs:           row.metrics.historical_quality_score              || null,
       historicalAdRelevance:  row.metrics.historical_creative_quality_score     || null,
       historicalLpExperience: row.metrics.historical_landing_page_quality_score || null,
