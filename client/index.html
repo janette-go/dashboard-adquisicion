@@ -44,11 +44,7 @@ body{
   backdrop-filter:blur(14px);
   -webkit-backdrop-filter:blur(14px);
 }
-.card-hdr{
-  background:rgba(0,0,0,0.95) !important;
-  border:none !important;
-}
-.card-title{color:#ffffff !important}
+.card-hdr{background:rgba(255,255,255,0.04) !important;border-bottom:1px solid var(--border) !important}
 
 /* ── HEADER ── */
 .hdr{
@@ -980,7 +976,7 @@ function renderCharts(d) {
         tension:0.35, spanGaps:true, order:0 },
     ]},
     options: { responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{ position:'top', labels:{ usePointStyle:true, pointStyleWidth:8, boxHeight:8, font:{size:9}, padding:10 } } },
+      plugins:{ legend:{ position:'top', labels:{ usePointStyle:true, boxWidth:8, boxHeight:8, font:{size:9}, padding:10 } } },
       scales:{
         y:  { beginAtZero:true, grid:{color:C.border}, ticks:{font:{size:9}}, position:'left' },
         y2: { beginAtZero:true, grid:{display:false}, ticks:{font:{size:9}, callback:v=>'$'+v.toLocaleString()}, position:'right' },
@@ -1081,7 +1077,7 @@ function renderCharts(d) {
         tension:0.35, spanGaps:false, order:1 },
     ]},
     options: { responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{ position:'top', labels:{ usePointStyle:true, pointStyleWidth:8, boxHeight:8, font:{size:10}, padding:10 } } },
+      plugins:{ legend:{ position:'top', labels:{ usePointStyle:true, boxWidth:8, boxHeight:8, font:{size:10}, padding:10 } } },
       scales:{
         y:  { beginAtZero:true, grid:{color:C.border}, ticks:{ font:{size:9}, color:C.muted, callback:v=>'$'+v.toLocaleString('es-MX') }, position:'left' },
         y2: { beginAtZero:true, grid:{display:false},  ticks:{ font:{size:9}, color:C.muted }, position:'right', title:{ display:true, text:'SQLs', font:{size:9}, color:C.muted } },
