@@ -1415,7 +1415,6 @@ function renderKwBody() {
     return _kwSortDir==='desc' ? bv-av : av-bv;
   });
 
-  const MONTHS_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
   const qsBg  = q => q>=8?'var(--green-lt)':q>=6?'var(--yellow-lt)':q?'var(--red-lt)':'rgba(255,255,255,0.05)';
   const qsTc  = q => q>=8?'var(--green)':q>=6?'var(--yellow)':q?'var(--red)':'var(--muted)';
   const ratClass = v => v==='above_average'?'rat-above':v==='below_average'?'rat-below':'rat-avg';
@@ -1423,18 +1422,11 @@ function renderKwBody() {
   const ratPill  = v => v?`<span class="rat-pill ${ratClass(v)}">${ratLabel(v)}</span>`:'–';
   const fmtCtr   = v => v>0?(v*100).toFixed(2)+'%':'–';
   const fmtCost  = v => v>0?'$'+(v/1e6).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}):'–';
-  const fmtCpC   = (cost,conv) => conv>0?'$'+((cost/1e6)/conv).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}):'–';
   const matchText = k => {
     const t = k.text || '';
     if (k.match==='exact')  return t.startsWith('[') ? t : `[${t}]`;
     if (k.match==='phrase') return t.startsWith('"') ? t : `"${t}"`;
     return t;
-  };
-  const monthLabel = m => {
-    if (!m) return '–';
-    const idx = parseInt(m.split('-')[1], 10) - 1;
-    const yr  = m.slice(0,4);
-    return `${MONTHS_ES[idx]||m} de ${yr}`;
   };
 
   const sortArrow = col => _kwSortCol===col ? (_kwSortDir==='desc'?'▼':'▲') : '';
@@ -1447,35 +1439,12 @@ function renderKwBody() {
   const totClicks = sorted.reduce((s,k)=>s+(k.clicks||0),0);
   const totCost   = sorted.reduce((s,k)=>s+(k.cost||0),0);
 
-  const monthSubRows = (k, uid) => {
-    if (!k.monthly?.length) return '';
-    // más reciente primero
-    const months = [...k.monthly].sort((a,b) => b.month.localeCompare(a.month));
-    return months.map(m => {
-      const hqs = m.historicalQs || 0;
-      return `<tr data-kwm="${uid}" style="display:none;background:rgba(255,255,255,0.025)">
-        <td style="padding:.3rem .4rem;text-align:center"></td>
-        <td style="padding:.3rem .75rem;color:var(--muted);font-size:10px;padding-left:2rem;white-space:nowrap">${monthLabel(m.month)}</td>
-        <td style="text-align:right;padding:.3rem .5rem;font-family:'Roboto Mono',monospace;font-size:10px">${m.conversions>0?m.conversions.toFixed(2):'–'}</td>
-        <td style="text-align:right;padding:.3rem .5rem;font-family:'Roboto Mono',monospace;font-size:10px">${fmtCpC(m.cost,m.conversions)}</td>
-        <td style="text-align:right;padding:.3rem .5rem;font-family:'Roboto Mono',monospace;font-size:10px">${m.impressions>0?m.impressions.toLocaleString('es-MX'):'–'}</td>
-        <td style="text-align:right;padding:.3rem .5rem;font-family:'Roboto Mono',monospace;font-size:10px">${m.clicks>0&&m.impressions>0?fmtCtr(m.clicks/m.impressions):'–'}</td>
-        <td style="text-align:center;padding:.3rem .5rem">${hqs?`<span class="qs-badge" style="background:${qsBg(hqs)};color:${qsTc(hqs)}">${hqs}/10</span>`:'–'}</td>
-        <td style="text-align:center;padding:.3rem .5rem">${ratPill(m.historicalAdRelevance)}</td>
-        <td style="text-align:center;padding:.3rem .5rem">${ratPill(m.historicalLpExperience)}</td>
-        <td style="text-align:right;padding:.3rem .5rem;font-family:'Roboto Mono',monospace;font-size:10px">${fmtCost(m.cost)}</td>
-      </tr>`;
-    }).join('');
-  };
-
   el.innerHTML = `
-    <table class="kw-tbl" style="min-width:820px">
+    <table class="kw-tbl" style="min-width:720px">
       <thead>
         <tr>
-          <th style="${thN};width:22px;text-align:center"></th>
           <th onclick="sortKw('text')" style="${thS('text')};text-align:left">Palabra clave ${sortArrow('text')}</th>
           <th onclick="sortKw('conversions')" style="${thS('conversions')}">Conv. ${sortArrow('conversions')}</th>
-          <th style="${thN}">Costo/conv.</th>
           <th onclick="sortKw('impressions')" style="${thS('impressions')}">Impr. ${sortArrow('impressions')}</th>
           <th style="${thN}">CTR</th>
           <th onclick="sortKw('qs')" style="${thS('qs')}">QS ${sortArrow('qs')}</th>
@@ -1486,47 +1455,112 @@ function renderKwBody() {
       </thead>
       <tbody>
         <tr class="kw-total-row">
-          <td></td>
           <td style="text-align:left">Total: ${sorted.length} palabras clave</td>
           <td>${totConv>0?totConv.toFixed(2):'–'}</td>
-          <td>${fmtCpC(totCost,totConv)}</td>
           <td>${totImpr>0?totImpr.toLocaleString('es-MX'):'–'}</td>
           <td>${totImpr>0?fmtCtr(totClicks/totImpr):'–'}</td>
           <td colspan="3"></td>
           <td>${fmtCost(totCost)}</td>
         </tr>
-        ${sorted.map((k, i) => {
+        ${sorted.map(k => {
           const qs = k.qs || 0;
-          const hasMonths = k.monthly?.length > 0;
-          const expandBtn = hasMonths
-            ? `<button onclick="toggleKwMonths('${i}',this)" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:9px;padding:0;line-height:1;font-family:inherit">▶</button>`
-            : '';
           return `<tr>
-            <td style="text-align:center;padding:.35rem .3rem">${expandBtn}</td>
             <td style="text-align:left;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
               <span style="color:var(--green);font-size:8px;margin-right:5px">●</span>${matchText(k)}
             </td>
             <td>${k.conversions>0?Number(k.conversions).toFixed(2):'–'}</td>
-            <td>${fmtCpC(k.cost,k.conversions)}</td>
             <td>${k.impressions>0?(k.impressions).toLocaleString('es-MX'):'–'}</td>
             <td>${k.clicks>0&&k.impressions>0?fmtCtr(k.clicks/k.impressions):'–'}</td>
             <td style="text-align:center">${qs?`<span class="qs-badge" style="background:${qsBg(qs)};color:${qsTc(qs)}">${qs}/10</span>`:'–'}</td>
             <td style="text-align:center">${ratPill(k.adRelevance)}</td>
             <td style="text-align:center">${ratPill(k.lpExperience)}</td>
             <td>${fmtCost(k.cost)}</td>
-          </tr>
-          ${monthSubRows(k, i)}`;
+          </tr>`;
         }).join('')}
       </tbody>
     </table>`;
 }
 
-function toggleKwMonths(uid, btn) {
-  const rows = document.querySelectorAll(`#kw-card-body tr[data-kwm="${uid}"]`);
-  const open = btn.textContent === '▼';
-  rows.forEach(r => r.style.display = open ? 'none' : '');
-  btn.textContent = open ? '▶' : '▼';
-  btn.style.color = open ? 'var(--muted)' : '#4285F4';
+// ── MODAL HISTÓRICO ANUAL DE KEYWORDS ────────────────────────────────────────
+function openKwHistModal() {
+  const MONTHS_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  const qsBg  = q => q>=8?'var(--green-lt)':q>=6?'var(--yellow-lt)':q?'var(--red-lt)':'rgba(255,255,255,0.05)';
+  const qsTc  = q => q>=8?'var(--green)':q>=6?'var(--yellow)':q?'var(--red)':'var(--muted)';
+  const ratClass = v => v==='above_average'?'rat-above':v==='below_average'?'rat-below':'rat-avg';
+  const ratLabel = v => v==='above_average'?'Superior al prom.':v==='below_average'?'Inferior al prom.':v?'Promedio':'–';
+  const ratPill  = v => v?`<span class="rat-pill ${ratClass(v)}">${ratLabel(v)}</span>`:'–';
+  const fmtCtr   = v => v>0?(v*100).toFixed(2)+'%':'–';
+  const fmtCost  = v => v>0?'$'+(v/1e6).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}):'–';
+  const fmtCpC   = (cost,conv) => conv>0?'$'+((cost/1e6)/conv).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}):'–';
+  const matchText = k => {
+    const t=k.text||'';
+    if(k.match==='exact')  return t.startsWith('[')?t:`[${t}]`;
+    if(k.match==='phrase') return t.startsWith('"')?t:`"${t}"`;
+    return t;
+  };
+  const monthLabel = m => {
+    if (!m) return '–';
+    const idx = parseInt(m.split('-')[1],10)-1;
+    return `${MONTHS_ES[idx]||m} de ${m.slice(0,4)}`;
+  };
+
+  const thStyle = `padding:.35rem .55rem;text-align:right;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap;background:var(--gray-lt);position:sticky;top:0`;
+
+  const kwsWithData = _kwData.filter(k => k.monthly?.length);
+  const tbody = document.getElementById('kw-hist-tbody');
+
+  if (!kwsWithData.length) {
+    tbody.innerHTML = '<tr><td colspan="9" style="padding:1.5rem;text-align:center;color:var(--muted);font-size:11px">Sin datos históricos disponibles para el periodo.</td></tr>';
+    document.getElementById('kw-hist-modal').style.display = 'block';
+    return;
+  }
+
+  // Genera filas: para cada keyword, primero la fila de la keyword, luego los meses desc
+  const rows = kwsWithData.flatMap(k => {
+    const kwRow = `<tr style="background:rgba(255,255,255,0.045);border-top:1px solid rgba(255,255,255,0.1)">
+      <td colspan="9" style="padding:.4rem .75rem;font-family:'Roboto Mono',monospace;font-size:10px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:300px">
+        <span style="color:var(--green);margin-right:5px;font-size:8px">●</span>${matchText(k)}
+      </td>
+    </tr>`;
+    const months = [...k.monthly].sort((a,b)=>b.month.localeCompare(a.month));
+    const monthRows = months.map(m => {
+      const hqs = m.historicalQs||0;
+      return `<tr style="border-bottom:1px solid var(--gray-lt)">
+        <td style="padding:.3rem .75rem .3rem 2rem;color:var(--muted);font-size:10px;white-space:nowrap">${monthLabel(m.month)}</td>
+        <td style="padding:.3rem .55rem;text-align:right;font-family:'Roboto Mono',monospace;font-size:10px">${m.conversions>0?m.conversions.toFixed(2):'–'}</td>
+        <td style="padding:.3rem .55rem;text-align:right;font-family:'Roboto Mono',monospace;font-size:10px">${fmtCpC(m.cost,m.conversions)}</td>
+        <td style="padding:.3rem .55rem;text-align:right;font-family:'Roboto Mono',monospace;font-size:10px">${m.impressions>0?m.impressions.toLocaleString('es-MX'):'–'}</td>
+        <td style="padding:.3rem .55rem;text-align:right;font-family:'Roboto Mono',monospace;font-size:10px">${m.clicks>0&&m.impressions>0?fmtCtr(m.clicks/m.impressions):'–'}</td>
+        <td style="padding:.3rem .55rem;text-align:center">${hqs?`<span class="qs-badge" style="background:${qsBg(hqs)};color:${qsTc(hqs)}">${hqs}/10</span>`:'–'}</td>
+        <td style="padding:.3rem .55rem;text-align:center">${ratPill(m.historicalAdRelevance)}</td>
+        <td style="padding:.3rem .55rem;text-align:center">${ratPill(m.historicalLpExperience)}</td>
+        <td style="padding:.3rem .55rem;text-align:right;font-family:'Roboto Mono',monospace;font-size:10px">${fmtCost(m.cost)}</td>
+      </tr>`;
+    }).join('');
+    return kwRow + monthRows;
+  }).join('');
+
+  tbody.innerHTML = `
+    <thead><tr>
+      <th style="${thStyle};text-align:left">Mes</th>
+      <th style="${thStyle}">Conv.</th>
+      <th style="${thStyle}">Costo/conv.</th>
+      <th style="${thStyle}">Impr.</th>
+      <th style="${thStyle}">CTR</th>
+      <th style="${thStyle}">QS hist.</th>
+      <th style="${thStyle}">Rel. anuncio hist.</th>
+      <th style="${thStyle}">Exp. LP hist.</th>
+      <th style="${thStyle}">Costo</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>`;
+
+  document.getElementById('kw-hist-title').textContent =
+    `Histórico anual · ${document.getElementById('kw-group-name')?.textContent || 'Keywords'}`;
+  document.getElementById('kw-hist-modal').style.display = 'block';
+}
+
+function closeKwHistModal() {
+  document.getElementById('kw-hist-modal').style.display = 'none';
 }
 
 
