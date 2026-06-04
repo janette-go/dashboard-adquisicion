@@ -294,6 +294,79 @@ function groupByMonth(deals, year) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// GOOGLE SEARCH CONSOLE
+// ─────────────────────────────────────────────────────────────────────────────
+
+function getGSCAuth() {
+  const { google } = require('googleapis');
+  const credJson = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
+  const keyFile  = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
+  return new google.auth.GoogleAuth({
+    ...(credJson ? { credentials: JSON.parse(credJson) } : { keyFile }),
+    scopes: ['https://www.googleapis.com/auth/webmasters.readonly'],
+  });
+}
+
+async function fetchSearchConsoleData(period) {
+  const siteUrl  = process.env.GOOGLE_SEARCH_CONSOLE_SITE_URL || 'https://www.detectasecurity.io/';
+  const keyword  = process.env.GSC_QUERY_FILTER || 'custodia';
+  const pc       = parsePeriod(period);
+
+  try {
+    const { google } = require('googleapis');
+    const sc = google.searchconsole({ version: 'v1', auth: getGSCAuth() });
+
+    const base = {
+      siteUrl,
+      requestBody: {
+        startDate: pc.startStr,
+        endDate:   pc.endStr,
+        dimensionFilterGroups: [{ filters: [{
+          dimension: 'query', operator: 'contains', expression: keyword,
+        }] }],
+      },
+    };
+
+    const [dailyRes, queryRes] = await Promise.all([
+      sc.searchanalytics.query({ ...base, requestBody: { ...base.requestBody, dimensions: ['date'], rowLimit: 1000 } }),
+      sc.searchanalytics.query({ ...base, requestBody: { ...base.requestBody, dimensions: ['query'], rowLimit: 25 } }),
+    ]);
+
+    const daily   = (dailyRes.data.rows  || []);
+    const queries = (queryRes.data.rows  || []);
+
+    const totalClicks = daily.reduce((s, r) => s + (r.clicks || 0), 0);
+    const totalImpr   = daily.reduce((s, r) => s + (r.impressions || 0), 0);
+    const avgCtr      = totalImpr > 0 ? parseFloat((totalClicks / totalImpr * 100).toFixed(1)) : 0;
+    const avgPos      = daily.length
+      ? parseFloat((daily.reduce((s, r) => s + (r.position || 0), 0) / daily.length).toFixed(1))
+      : 0;
+
+    return {
+      summary: { clicks: totalClicks, impressions: totalImpr, ctr: avgCtr, position: avgPos },
+      daily:   daily.map(r => ({
+        date:        r.keys[0],
+        clicks:      r.clicks      || 0,
+        impressions: r.impressions || 0,
+        ctr:         parseFloat(((r.ctr || 0) * 100).toFixed(1)),
+        position:    parseFloat((r.position || 0).toFixed(1)),
+      })),
+      queries: queries.map(r => ({
+        query:       r.keys[0],
+        clicks:      r.clicks      || 0,
+        impressions: r.impressions || 0,
+        ctr:         parseFloat(((r.ctr || 0) * 100).toFixed(1)),
+        position:    parseFloat((r.position || 0).toFixed(1)),
+      })),
+      keyword,
+    };
+  } catch (e) {
+    console.warn('[GSC]', e.message);
+    return null;
+  }
+}
+
 // GOOGLE SHEETS — estadísticas de subasta (escritas por Google Ads Script)
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -1009,6 +1082,9 @@ async function fetchAllData(period) {
   // Intentar cargar subasta desde Sheets (independiente de Google Ads API)
   const _liveAuctionData = await fetchAuctionFromSheets().catch(() => null);
 
+  // Google Search Console — rendimiento orgánico
+  const gscData = await fetchSearchConsoleData(period).catch(() => null);
+
   let adsData   = null;
   let pipeData  = null;
   let adsError  = null;
@@ -1091,6 +1167,7 @@ async function fetchAllData(period) {
     changes:         (adsData?.changes?.length ? adsData.changes : null) ?? mk.changes,
     campaigns:       adsData?.campaigns    ?? mk.campaigns,
     auctionData:     _liveAuctionData || (adsData?.auctionData?.length ? adsData.auctionData : mk.auctionData),
+    gsc:             gscData,
     dealLists:       pipeData?.dealLists    ?? { leads:[], sqls:[], ganados:[], sqlsPaid:[], sqlsOrg:[] },
     dealsByOrigin:   pipeData?.dealsByOrigin ?? {},
     periodLabel:     parsePeriod(period).periodLabel,

@@ -339,6 +339,7 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
     <a class="sb-item active" href="#resumen"  onclick="sbClick(this)"><span class="sb-icon">📊</span>Resumen ejecutivo</a>
     <a class="sb-item"        href="#sqls-mes" onclick="sbClick(this)"><span class="sb-icon">🎯</span>SQLs por mes</a>
     <a class="sb-item"        href="#origen"   onclick="sbClick(this)"><span class="sb-icon">🧭</span>Origen de SQLs</a>
+    <a class="sb-item"        href="#gsc"          onclick="sbClick(this)"><span class="sb-icon">🔍</span>Search Console</a>
     <a class="sb-item"        href="#campanas"     onclick="sbClick(this)"><span class="sb-icon">🗺️</span>Mapa de campañas</a>
     <a class="sb-item"        href="#subasta"      onclick="sbClick(this)"><span class="sb-icon">⚖️</span>Subasta · Competidores</a>
   </nav>
@@ -468,6 +469,62 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
 
   <!-- canvas oculto para compatibilidad de leads por mes (no se muestra) -->
   <canvas id="convChart" style="display:none"></canvas>
+
+  <!-- SEARCH CONSOLE -->
+  <section id="gsc">
+    <div class="card">
+      <div class="card-hdr">
+        <span class="card-title">Rendimiento orgánico · Consultas con "<span id="gsc-keyword">custodia</span>"</span>
+        <span class="card-src"><span class="src-dot" style="background:#4285F4"></span>Google Search Console</span>
+      </div>
+
+      <!-- Métricas resumen -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--border)">
+        <div style="padding:.6rem .85rem;border-right:1px solid var(--border)">
+          <p style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">Clics totales</p>
+          <p class="ec-val" id="gsc-clicks" style="font-size:24px;margin-top:4px">–</p>
+        </div>
+        <div style="padding:.6rem .85rem;border-right:1px solid var(--border)">
+          <p style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">Impresiones totales</p>
+          <p class="ec-val" id="gsc-impr" style="font-size:24px;margin-top:4px">–</p>
+        </div>
+        <div style="padding:.6rem .85rem;border-right:1px solid var(--border)">
+          <p style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">CTR medio</p>
+          <p class="ec-val" id="gsc-ctr" style="font-size:24px;margin-top:4px">–</p>
+        </div>
+        <div style="padding:.6rem .85rem">
+          <p style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">Posición media</p>
+          <p class="ec-val" id="gsc-pos" style="font-size:24px;margin-top:4px">–</p>
+        </div>
+      </div>
+
+      <!-- Gráfico + tabla -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0">
+        <!-- Gráfico clicks + impresiones -->
+        <div style="padding:.75rem .85rem;border-right:1px solid var(--border)">
+          <div style="height:200px"><canvas id="gscChart"></canvas></div>
+        </div>
+
+        <!-- Tabla top queries -->
+        <div style="overflow:auto;max-height:250px">
+          <table id="gsc-table" style="width:100%;border-collapse:collapse;font-size:11px">
+            <thead style="position:sticky;top:0;background:var(--gray-lt)">
+              <tr>
+                <th style="padding:.35rem .6rem;text-align:left;font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--border)">Consulta</th>
+                <th style="padding:.35rem .6rem;text-align:right;font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--border)">Clics</th>
+                <th style="padding:.35rem .6rem;text-align:right;font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--border)">Impr.</th>
+                <th style="padding:.35rem .6rem;text-align:right;font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--border)">CTR</th>
+                <th style="padding:.35rem .6rem;text-align:right;font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--border)">Pos.</th>
+              </tr>
+            </thead>
+            <tbody id="gsc-tbody">
+              <tr><td colspan="5" style="padding:1rem;text-align:center;color:var(--muted)">Cargando…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
 
   <!-- MAPA DE CAMPAÑAS — rediseño -->
   <section id="campanas">
@@ -637,7 +694,7 @@ function sbClick(el) {
   el.classList.add('active');
 }
 window.addEventListener('scroll', () => {
-  const ids = ['resumen','sqls-mes','gasto-sqls','origen','campanas','subasta'];
+  const ids = ['resumen','sqls-mes','gasto-sqls','origen','gsc','campanas','subasta'];
   let current = 'resumen';
   ids.forEach(id => {
     const el = document.getElementById(id);
@@ -702,6 +759,7 @@ async function loadData() {
   renderSummary(data);
   if (typeof renderInsights === 'function') renderInsights(data);
   renderCharts(data);
+  renderGSC(data);
   renderTree(data);
   renderChanges(data);
 }
@@ -878,6 +936,59 @@ function renderCharts(d) {
   });
 
   renderAuction(d);
+}
+
+// ── SEARCH CONSOLE ────────────────────────────────────────────────────────────
+function renderGSC(d) {
+  const gsc = d.gsc;
+  if (!gsc) return;
+
+  const s = gsc.summary || {};
+  const kw = document.getElementById('gsc-keyword');
+  if (kw) kw.textContent = gsc.keyword || 'custodia';
+  setText('gsc-clicks', fmt(s.clicks));
+  setText('gsc-impr',   fmt(s.impressions));
+  setText('gsc-ctr',    s.ctr != null ? s.ctr.toFixed(1) + '%' : '–');
+  setText('gsc-pos',    s.position != null ? s.position.toFixed(1) : '–');
+
+  // Gráfico clics + impresiones
+  dc('gscChart');
+  const daily = gsc.daily || [];
+  if (daily.length) {
+    const labels = daily.map(r => r.date.slice(5)); // MM-DD
+    charts['gscChart'] = new Chart(document.getElementById('gscChart'), {
+      type: 'line',
+      data: { labels, datasets: [
+        { label:'Clics', data: daily.map(r => r.clicks),
+          borderColor:'#4285F4', backgroundColor:'#4285F422',
+          borderWidth:2, pointRadius:2, tension:0.3, yAxisID:'y', fill:true },
+        { label:'Impresiones', data: daily.map(r => r.impressions),
+          borderColor:'#7B2FBE', backgroundColor:'#7B2FBE11',
+          borderWidth:2, pointRadius:2, tension:0.3, yAxisID:'y2', fill:false },
+      ]},
+      options: { responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{ position:'top', labels:{ boxWidth:8, font:{size:9} } } },
+        scales:{
+          y:  { beginAtZero:true, position:'left',  grid:{color:C.border}, ticks:{font:{size:9}}, title:{display:true,text:'Clics',font:{size:9}} },
+          y2: { beginAtZero:true, position:'right', grid:{display:false},  ticks:{font:{size:9}}, title:{display:true,text:'Impresiones',font:{size:9}} },
+          x:  { grid:{display:false}, ticks:{font:{size:8}, maxTicksLimit:10} },
+        },
+      },
+    });
+  }
+
+  // Tabla top queries
+  const tbody = document.getElementById('gsc-tbody');
+  const rows  = gsc.queries || [];
+  if (tbody) tbody.innerHTML = rows.length
+    ? rows.map(r => `<tr style="border-bottom:1px solid var(--gray-lt)">
+        <td style="padding:.35rem .6rem;color:var(--text);max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.query}</td>
+        <td style="padding:.35rem .6rem;text-align:right;font-family:'Roboto Mono',monospace;font-weight:600;color:${r.clicks>0?'var(--blue)':'var(--muted)'}">${r.clicks}</td>
+        <td style="padding:.35rem .6rem;text-align:right;font-family:'Roboto Mono',monospace;color:var(--muted)">${r.impressions}</td>
+        <td style="padding:.35rem .6rem;text-align:right;font-family:'Roboto Mono',monospace;color:var(--muted)">${r.ctr}%</td>
+        <td style="padding:.35rem .6rem;text-align:right;font-family:'Roboto Mono',monospace;color:var(--muted)">${r.position}</td>
+      </tr>`).join('')
+    : '<tr><td colspan="5" style="padding:1rem;text-align:center;color:var(--muted)">Sin datos para este periodo</td></tr>';
 }
 
 // ── MAPA DE CAMPAÑAS ──────────────────────────────────────────────────────────
