@@ -342,11 +342,8 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
 <!-- HEADER FIJO -->
 <div class="hdr">
   <!-- Logo + título clicable para actualizar datos -->
-  <div onclick="document.querySelectorAll('.period-btn').forEach(b=>b.classList.remove('active'));document.querySelector('[onclick*=this_month]')?.classList.add('active');const ml=document.getElementById('month-label');if(ml)ml.textContent='Mes';currentPeriod='this_month';loadData();" title="Ir a Este mes y actualizar"
-       style="display:flex;align-items:center;gap:8px;cursor:pointer;flex-shrink:0;
-              border-radius:6px;padding:2px 6px 2px 2px;transition:background .15s"
-       onmouseover="this.style.background='rgba(255,255,255,0.06)'"
-       onmouseout="this.style.background=''">
+  <div onclick="resetToThisMonth()" title="Ir a Este mes y actualizar"
+       style="display:flex;align-items:center;gap:8px;cursor:pointer;flex-shrink:0;padding:2px 6px 2px 2px">
     <img src="/isotipo.png" alt="Detecta" width="28" height="28"
          style="flex-shrink:0;object-fit:contain"
          onerror="this.style.display='none'">
@@ -744,6 +741,17 @@ function setPeriod(btn, period) {
   if (ml) ml.textContent = 'Mes';
   btn.classList.add('active');
   currentPeriod = period;
+  loadData();
+}
+
+function resetToThisMonth() {
+  document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+  const ml = document.getElementById('month-label');
+  if (ml) ml.textContent = 'Mes';
+  // Activar botón "Este mes"
+  const estesMes = [...document.querySelectorAll('.period-btn')].find(b => b.textContent.trim() === 'Este mes');
+  if (estesMes) estesMes.classList.add('active');
+  currentPeriod = 'this_month';
   loadData();
 }
 
