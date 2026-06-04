@@ -852,8 +852,9 @@ async function fetchFromGoogleAds(period = 'this_month') {
       ${dateWhere}
   `;
 
-  // ── Query 3: keywords con Quality Score ──────────────────────────────────────
-  const keywordQ = `
+  // ── Query 3a: TODAS las keywords activas (sin filtro de fecha)
+  // ad_group_criterion devuelve todas sin importar si tuvieron actividad
+  const kwAllQ = `
     SELECT
       campaign.id, ad_group.id,
       ad_group_criterion.keyword.text,
@@ -861,7 +862,21 @@ async function fetchFromGoogleAds(period = 'this_month') {
       ad_group_criterion.quality_info.quality_score,
       ad_group_criterion.quality_info.creative_quality_score,
       ad_group_criterion.quality_info.post_click_quality_score,
-      ad_group_criterion.quality_info.search_predicted_ctr,
+      ad_group_criterion.quality_info.search_predicted_ctr
+    FROM ad_group_criterion
+    WHERE campaign.status = 'ENABLED'
+      AND ad_group.status = 'ENABLED'
+      AND ad_group_criterion.status = 'ENABLED'
+      AND ad_group_criterion.type = 'KEYWORD'
+      AND ad_group_criterion.negative = false
+  `;
+
+  // ── Query 3b: métricas del periodo para keywords con actividad
+  const keywordQ = `
+    SELECT
+      campaign.id, ad_group.id,
+      ad_group_criterion.keyword.text,
+      ad_group_criterion.keyword.match_type,
       metrics.impressions, metrics.conversions,
       metrics.historical_quality_score,
       metrics.historical_creative_quality_score,
@@ -897,10 +912,11 @@ async function fetchFromGoogleAds(period = 'this_month') {
     LIMIT 20
   `;
 
-  // Ejecuta las 4 primeras en paralelo; changes con fallback independiente
-  const [summaryRows, adGroupRows, keywordRows, monthlyRows] = await Promise.all([
+  // Ejecuta en paralelo; kwAllRows = lista completa, keywordRows = métricas del periodo
+  const [summaryRows, adGroupRows, kwAllRows, keywordRows, monthlyRows] = await Promise.all([
     customer.query(summaryQ),
     customer.query(adGroupQ),
+    customer.query(kwAllQ),
     customer.query(keywordQ),
     customer.query(monthlyQ),
   ]);
@@ -1032,31 +1048,49 @@ async function fetchFromGoogleAds(period = 'this_month') {
     campaignMap[cId].groups.push(group);
   }
 
-  for (const row of keywordRows) {
+  const MATCH = { 2:'broad',3:'phrase',4:'exact', BROAD:'broad',PHRASE:'phrase',EXACT:'exact' };
+  const resolveMatch = mt => MATCH[mt] || MATCH[String(mt).toUpperCase()] || String(mt||'').toLowerCase();
+
+  // Paso 1: cargar TODAS las keywords (sin filtro de fecha) con QS
+  for (const row of kwAllRows) {
     const agId = String(row.ad_group.id);
     if (!adGroupMap[agId]) continue;
     const qi = row.ad_group_criterion.quality_info || {};
     const kw = row.ad_group_criterion.keyword      || {};
-    // match_type viene como entero enum: 2=broad, 3=phrase, 4=exact
-    // Maneja tanto enteros (2/3/4) como strings ('BROAD'/'PHRASE'/'EXACT') de la API
-    // Log primero para diagnosticar el valor real del enum
-    const MATCH = { 2:'broad',3:'phrase',4:'exact', BROAD:'broad',PHRASE:'phrase',EXACT:'exact' };
-    const rawMT = kw.match_type;
-    const resolvedMatch = MATCH[rawMT] || MATCH[String(rawMT).toUpperCase()] || String(rawMT||'').toLowerCase();
-    if (!MATCH[rawMT]) console.log('[match_type raw]', JSON.stringify(rawMT), typeof rawMT, '→', resolvedMatch);
+    if (!kw.text) continue;
     adGroupMap[agId].keywords.push({
-      match: resolvedMatch,
-      text:                   kw.text || '',
-      qs:                     qi.quality_score          || null,
-      adRelevance:            qi.creative_quality_score || null,   // Ad relevance actual
-      lpExperience:           qi.post_click_quality_score || null, // LP experience actual
-      expectedCtr:            qi.search_predicted_ctr  || null,   // CTR esperado actual
+      match:       resolveMatch(kw.match_type),
+      text:        kw.text,
+      qs:          qi.quality_score          || null,
+      adRelevance: qi.creative_quality_score || null,
+      lpExperience:qi.post_click_quality_score || null,
+      impressions: 0, conversions: 0, // se actualizan en paso 2
+      historicalQs: null, historicalAdRelevance: null,
+      historicalLpExperience: null, historicalCtr: null,
+    });
+  }
+
+  // Paso 2: mezclar métricas del periodo desde keyword_view
+  const kwMetricsMap = {};
+  for (const row of keywordRows) {
+    const agId = String(row.ad_group.id);
+    const kw   = row.ad_group_criterion.keyword || {};
+    const key  = `${agId}::${kw.text}::${resolveMatch(kw.match_type)}`;
+    kwMetricsMap[key] = {
       impressions:            num(row.metrics.impressions),
       conversions:            parseFloat(num(row.metrics.conversions).toFixed(2)),
       historicalQs:           row.metrics.historical_quality_score              || null,
       historicalAdRelevance:  row.metrics.historical_creative_quality_score     || null,
       historicalLpExperience: row.metrics.historical_landing_page_quality_score || null,
       historicalCtr:          row.metrics.historical_search_predicted_ctr       || null,
+    };
+  }
+  // Aplicar métricas a keywords
+  for (const agId in adGroupMap) {
+    adGroupMap[agId].keywords.forEach(kw => {
+      const key = `${agId}::${kw.text}::${kw.match}`;
+      const m   = kwMetricsMap[key];
+      if (m) Object.assign(kw, m);
     });
   }
 
