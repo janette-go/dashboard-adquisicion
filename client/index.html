@@ -123,8 +123,9 @@ body{
 .card-title{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
 .card-src{font-size:10px;color:var(--muted);display:flex;align-items:center;gap:4px}
 .src-dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:3px}
-.src-dot.gads{background:var(--blue)}
+.src-dot.gads{background:#4285F4}
 .src-dot.pipe{background:var(--green)}
+.src-dot.gsc{background:var(--yellow)}
 .src-dot.live{animation:pulse 1.8s ease-in-out infinite}
 .sb-footer-inner{display:flex;flex-direction:column;gap:4px}
 .sb-src-row{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--muted)}
@@ -432,7 +433,7 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
     <div class="sb-footer-inner">
       <div class="sb-src-row"><span class="src-dot gads live" id="dot-gads"></span> Google Ads <span id="status-gads" style="margin-left:auto">–</span></div>
       <div class="sb-src-row"><span class="src-dot pipe live" id="dot-pipe"></span> Pipedrive   <span id="status-pipe" style="margin-left:auto">–</span></div>
-      <div class="sb-src-row"><span class="src-dot live" id="dot-gsc" style="background:#4285F4"></span> Search Console <span id="status-gsc" style="margin-left:auto">–</span></div>
+      <div class="sb-src-row"><span class="src-dot gsc live" id="dot-gsc"></span> Search Console <span id="status-gsc" style="margin-left:auto">–</span></div>
       <div class="sb-updated" id="last-updated">Última actualización: –</div>
     </div>
   </div>
@@ -561,7 +562,7 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
     <div class="card">
       <div class="card-hdr">
         <span class="card-title">Rendimiento orgánico · Consultas que contienen "<span id="gsc-keyword">custodia</span>"</span>
-        <span class="card-src"><span class="src-dot" style="background:#4285F4"></span>Google Search Console</span>
+        <span class="card-src"><span class="src-dot gsc live"></span>Google Search Console</span>
       </div>
 
       <!-- Métricas resumen con comparativo -->
@@ -820,23 +821,17 @@ async function loadData() {
   if (data.source === 'google-ads-api') {
     badge.innerHTML   = '<span class="pulse">●</span> Live';
     badge.className   = 'source-badge source-real';
-    dotG.style.background = 'var(--green)';
-    dotP.style.background = 'var(--green)';
     setText('status-gads', 'Conectado');
     setText('status-pipe', 'Conectado');
   } else if (data.source === 'pipedrive-only') {
     badge.innerHTML   = '<span class="pulse">●</span> Pipedrive';
     badge.className   = 'source-badge source-mock';
-    dotG.style.background = 'var(--red)';
-    dotP.style.background = 'var(--green)';
     setText('status-gads', 'Error');
     setText('status-pipe', 'Conectado');
     if (data._adsError) console.warn('[Google Ads error]', data._adsError);
   } else {
     badge.innerHTML   = '<span class="pulse">●</span> Mock';
     badge.className   = 'source-badge source-mock';
-    dotG.style.background = 'var(--yellow)';
-    dotP.style.background = 'var(--yellow)';
     setText('status-gads', 'Demo');
     setText('status-pipe', 'Demo');
   }
@@ -1128,11 +1123,9 @@ function renderGSC(d) {
   const stGsc  = document.getElementById('status-gsc');
 
   if (!gsc) {
-    if (dotGsc) dotGsc.style.background = 'var(--muted)';
     if (stGsc)  stGsc.textContent = 'Sin datos';
     return;
   }
-  if (dotGsc) dotGsc.style.background = '#4285F4';
   if (stGsc)  stGsc.textContent = 'Conectado';
 
   const s = gsc.summary  || {};
