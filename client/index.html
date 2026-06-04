@@ -991,13 +991,24 @@ function renderCharts(d) {
   const origenEl = document.getElementById('origen-total');
   if (origenEl) origenEl.textContent = osTotal > 0 ? `${osTotal} SQLs · clic en segmento para ver deals` : '';
   // Colores semitransparentes para que el donut se funda con el glassmorphism
+  // Paleta donut — Detecta brandbook (opacidad sin modificar)
   const donutColors = [
-    'rgba(96,165,250,0.65)', 'rgba(74,222,128,0.65)', 'rgba(251,191,36,0.65)',
-    'rgba(167,139,250,0.65)', 'rgba(138,138,138,0.55)', 'rgba(45,212,191,0.65)', 'rgba(244,114,182,0.65)'
+    'rgba(153,153,153,0.65)',  // #999999 gris principal
+    'rgba(235,0,0,0.65)',      // #eb0000 rojo acento
+    'rgba(21,93,159,0.65)',    // #155D9F azul secundario
+    'rgba(255,237,102,0.65)',  // #FFED66 amarillo secundario
+    'rgba(86,88,163,0.65)',    // #5658A3 morado secundario
+    'rgba(179,214,169,0.65)',  // #B3D6A7 verde secundario
+    'rgba(255,255,255,0.45)',  // blanco
   ];
   const donutHover = [
-    'rgba(96,165,250,0.9)', 'rgba(74,222,128,0.9)', 'rgba(251,191,36,0.9)',
-    'rgba(167,139,250,0.9)', 'rgba(138,138,138,0.8)', 'rgba(45,212,191,0.9)', 'rgba(244,114,182,0.9)'
+    'rgba(153,153,153,0.9)',
+    'rgba(235,0,0,0.9)',
+    'rgba(21,93,159,0.9)',
+    'rgba(255,237,102,0.9)',
+    'rgba(86,88,163,0.9)',
+    'rgba(179,214,169,0.9)',
+    'rgba(255,255,255,0.7)',
   ];
   dc('origs'); charts['origs'] = new Chart(document.getElementById('originSqlChart'), {
     type: 'doughnut',
