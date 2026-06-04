@@ -895,7 +895,25 @@ async function fetchFromGoogleAds(period = 'this_month') {
       ${dateWhere}
   `;
 
-  // ── Query 4: conversiones y gasto mensuales del año en curso ─────────────────
+  // ── Query 3c: métricas mensuales del año en curso por keyword ────────────────
+  const keywordMonthlyQ = `
+    SELECT
+      ad_group.id,
+      ad_group_criterion.keyword.text,
+      ad_group_criterion.keyword.match_type,
+      segments.month,
+      metrics.impressions, metrics.conversions, metrics.cost_micros, metrics.clicks,
+      metrics.historical_quality_score,
+      metrics.historical_creative_quality_score,
+      metrics.historical_landing_page_quality_score,
+      metrics.historical_search_predicted_ctr
+    FROM keyword_view
+    WHERE campaign.status = 'ENABLED'
+      AND ad_group.status = 'ENABLED'
+      AND ad_group_criterion.status = 'ENABLED'
+      AND ad_group_criterion.negative = false
+      AND segments.date BETWEEN '${pc.year}-01-01' AND '${pc.endStr}'
+  `;
   const monthlyQ = `
     SELECT segments.month, metrics.conversions, metrics.cost_micros
     FROM campaign
@@ -922,12 +940,13 @@ async function fetchFromGoogleAds(period = 'this_month') {
   `;
 
   // Ejecuta en paralelo; kwAllRows = lista completa, keywordRows = métricas del periodo
-  const [summaryRows, adGroupRows, kwAllRows, keywordRows, monthlyRows] = await Promise.all([
+  const [summaryRows, adGroupRows, kwAllRows, keywordRows, monthlyRows, kwMonthlyRows] = await Promise.all([
     customer.query(summaryQ),
     customer.query(adGroupQ),
     customer.query(kwAllQ),
     customer.query(keywordQ),
     customer.query(monthlyQ),
+    customer.query(keywordMonthlyQ),
   ]);
 
   let changesRows = [];
@@ -1098,6 +1117,35 @@ async function fetchFromGoogleAds(period = 'this_month') {
       const key = `${agId}::${kw.text}::${kw.match}`;
       const m   = kwMetricsMap[key];
       if (m) Object.assign(kw, m);
+    });
+  }
+
+  // Paso 2b: datos mensuales por keyword (año en curso)
+  const kwMonthlyMap = {};
+  for (const row of kwMonthlyRows) {
+    const agId  = String(row.ad_group.id);
+    const kw    = row.ad_group_criterion.keyword || {};
+    const key   = `${agId}::${kw.text}::${resolveMatch(kw.match_type)}`;
+    const month = row.segments?.month || '';  // formato "2026-05-01"
+    if (!kwMonthlyMap[key]) kwMonthlyMap[key] = {};
+    kwMonthlyMap[key][month] = {
+      month,
+      impressions:  num(row.metrics.impressions),
+      conversions:  parseFloat(num(row.metrics.conversions).toFixed(2)),
+      cost:         num(row.metrics.cost_micros),
+      clicks:       num(row.metrics.clicks),
+      historicalQs:           row.metrics.historical_quality_score              || null,
+      historicalAdRelevance:  row.metrics.historical_creative_quality_score     || null,
+      historicalLpExperience: row.metrics.historical_landing_page_quality_score || null,
+      historicalCtr:          row.metrics.historical_search_predicted_ctr       || null,
+    };
+  }
+  // Adjuntar monthly a cada keyword como array ordenado por mes
+  for (const agId in adGroupMap) {
+    adGroupMap[agId].keywords.forEach(kw => {
+      const key = `${agId}::${kw.text}::${kw.match}`;
+      const byMonth = kwMonthlyMap[key] || {};
+      kw.monthly = Object.values(byMonth).sort((a, b) => a.month.localeCompare(b.month));
     });
   }
 
