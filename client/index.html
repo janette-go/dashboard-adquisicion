@@ -992,7 +992,7 @@ function renderCharts(d) {
   if (origenEl) origenEl.textContent = osTotal > 0 ? `${osTotal} SQLs · clic en segmento para ver deals` : '';
   // Colores semitransparentes para que el donut se funda con el glassmorphism
   // Paleta donut — solo gris, negro y rojo Detecta (mismos colores en leyenda y rebanadas)
-  const donutPalSolid = ['#999999','#eb0000','#555555','#eb0000','#777777','#333333','#aaaaaa'];
+  const donutPalSolid = ['#999999','#eb0000','#191919','#999999','#eb0000','#191919','#999999'];
   const donutColors = donutPalSolid.map(c => c + 'AA'); // ~67% opacidad
   const donutHover  = donutPalSolid.map(c => c + 'EE'); // ~93% opacidad
   dc('origs'); charts['origs'] = new Chart(document.getElementById('originSqlChart'), {
