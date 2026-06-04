@@ -1174,9 +1174,9 @@ function renderGSC(d) {
       type: 'line',
       data: { labels: yearly.map(r => r.date.slice(5)), datasets: [
         { label:'Clics', data: yearly.map(r => r.clicks),
-          borderColor: C.teal, backgroundColor: C.teal+'22',
+          borderColor: '#191919', backgroundColor: '#19191922',
           borderWidth:2.5, pointRadius:yearly.length > 60 ? 0 : 3,
-          pointBackgroundColor:C.teal, tension:0.3, yAxisID:'y', fill:true },
+          pointBackgroundColor:'#191919', tension:0.3, yAxisID:'y', fill:true },
         { label:'Impresiones', data: yearly.map(r => r.impressions),
           borderColor: C.gray, backgroundColor: C.gray+'18',
           borderWidth:1.5, pointRadius:yearly.length > 60 ? 0 : 2, tension:0.3, yAxisID:'y2', fill:false },
