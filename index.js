@@ -331,15 +331,33 @@ async function fetchSearchConsoleData(period) {
     const yearStart = `${new Date().getFullYear()}-01-01`;
     const yearEnd   = pc.endStr;
 
-    const [dailyRes, queryRes, yearlyRes] = await Promise.all([
+    // Periodo anterior: misma duración, justo antes del actual
+    const fmtD = d => {
+      const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), dd = String(d.getDate()).padStart(2,'0');
+      return `${y}-${m}-${dd}`;
+    };
+    const startMs     = new Date(pc.startStr).getTime();
+    const endMs       = new Date(pc.endStr).getTime();
+    const durMs       = endMs - startMs + 86_400_000;
+    const prevEndStr  = fmtD(new Date(startMs - 86_400_000));
+    const prevStartStr= fmtD(new Date(startMs - durMs));
+
+    const [dailyRes, queryRes, yearlyRes, prevRes] = await Promise.all([
       sc.searchanalytics.query({ ...base, requestBody: { ...base.requestBody, dimensions: ['date'], rowLimit: 1000 } }),
       sc.searchanalytics.query({ ...base, requestBody: { ...base.requestBody, dimensions: ['query'], rowLimit: 25 } }),
       sc.searchanalytics.query({ ...base, requestBody: { ...base.requestBody, startDate: yearStart, endDate: yearEnd, dimensions: ['date'], rowLimit: 1000 } }),
+      sc.searchanalytics.query({ ...base, requestBody: { ...base.requestBody, startDate: prevStartStr, endDate: prevEndStr, dimensions: ['date'], rowLimit: 1000 } }),
     ]);
 
     const daily   = (dailyRes.data.rows  || []);
     const queries = (queryRes.data.rows  || []);
     const yearly  = (yearlyRes.data.rows || []);
+    const prevRows= (prevRes.data.rows   || []);
+
+    const prevClicks = prevRows.reduce((s,r) => s+(r.clicks||0), 0);
+    const prevImpr   = prevRows.reduce((s,r) => s+(r.impressions||0), 0);
+    const prevCtr    = prevImpr > 0 ? parseFloat((prevClicks/prevImpr*100).toFixed(1)) : 0;
+    const prevPos    = prevRows.length ? parseFloat((prevRows.reduce((s,r)=>s+(r.position||0),0)/prevRows.length).toFixed(1)) : 0;
 
     const totalClicks = daily.reduce((s, r) => s + (r.clicks || 0), 0);
     const totalImpr   = daily.reduce((s, r) => s + (r.impressions || 0), 0);
@@ -371,6 +389,8 @@ async function fetchSearchConsoleData(period) {
         ctr:         parseFloat(((r.ctr || 0) * 100).toFixed(1)),
         position:    parseFloat((r.position || 0).toFixed(1)),
       })),
+      previous: { clicks: prevClicks, impressions: prevImpr, ctr: prevCtr, position: prevPos },
+      prevPeriod: `${prevStartStr} – ${prevEndStr}`,
       keyword,
     };
   } catch (e) {
