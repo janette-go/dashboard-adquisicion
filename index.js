@@ -328,13 +328,18 @@ async function fetchSearchConsoleData(period) {
       },
     };
 
-    const [dailyRes, queryRes] = await Promise.all([
+    const yearStart = `${new Date().getFullYear()}-01-01`;
+    const yearEnd   = pc.endStr;
+
+    const [dailyRes, queryRes, yearlyRes] = await Promise.all([
       sc.searchanalytics.query({ ...base, requestBody: { ...base.requestBody, dimensions: ['date'], rowLimit: 1000 } }),
       sc.searchanalytics.query({ ...base, requestBody: { ...base.requestBody, dimensions: ['query'], rowLimit: 25 } }),
+      sc.searchanalytics.query({ ...base, requestBody: { ...base.requestBody, startDate: yearStart, endDate: yearEnd, dimensions: ['date'], rowLimit: 1000 } }),
     ]);
 
     const daily   = (dailyRes.data.rows  || []);
     const queries = (queryRes.data.rows  || []);
+    const yearly  = (yearlyRes.data.rows || []);
 
     const totalClicks = daily.reduce((s, r) => s + (r.clicks || 0), 0);
     const totalImpr   = daily.reduce((s, r) => s + (r.impressions || 0), 0);
@@ -354,6 +359,13 @@ async function fetchSearchConsoleData(period) {
       })),
       queries: queries.map(r => ({
         query:       r.keys[0],
+        clicks:      r.clicks      || 0,
+        impressions: r.impressions || 0,
+        ctr:         parseFloat(((r.ctr || 0) * 100).toFixed(1)),
+        position:    parseFloat((r.position || 0).toFixed(1)),
+      })),
+      daily_year: yearly.map(r => ({
+        date:        r.keys[0],
         clicks:      r.clicks      || 0,
         impressions: r.impressions || 0,
         ctr:         parseFloat(((r.ctr || 0) * 100).toFixed(1)),

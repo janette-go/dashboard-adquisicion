@@ -347,6 +347,7 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
     <div class="sb-footer-inner">
       <div class="sb-src-row"><span class="src-dot gads live" id="dot-gads"></span> Google Ads <span id="status-gads" style="margin-left:auto">–</span></div>
       <div class="sb-src-row"><span class="src-dot pipe live" id="dot-pipe"></span> Pipedrive   <span id="status-pipe" style="margin-left:auto">–</span></div>
+      <div class="sb-src-row"><span class="src-dot live" id="dot-gsc" style="background:#4285F4"></span> Search Console <span id="status-gsc" style="margin-left:auto">–</span></div>
       <div class="sb-updated" id="last-updated">Última actualización: –</div>
     </div>
   </div>
@@ -474,7 +475,7 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
   <section id="gsc">
     <div class="card">
       <div class="card-hdr">
-        <span class="card-title">Rendimiento orgánico · Consultas con "<span id="gsc-keyword">custodia</span>"</span>
+        <span class="card-title">Rendimiento orgánico · Consultas que contienen "<span id="gsc-keyword">custodia</span>"</span>
         <span class="card-src"><span class="src-dot" style="background:#4285F4"></span>Google Search Console</span>
       </div>
 
@@ -511,10 +512,10 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
             <thead style="position:sticky;top:0;background:var(--gray-lt)">
               <tr>
                 <th style="padding:.35rem .6rem;text-align:left;font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--border)">Consulta</th>
-                <th style="padding:.35rem .6rem;text-align:right;font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--border)">Clics</th>
-                <th style="padding:.35rem .6rem;text-align:right;font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--border)">Impr.</th>
-                <th style="padding:.35rem .6rem;text-align:right;font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--border)">CTR</th>
-                <th style="padding:.35rem .6rem;text-align:right;font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--border)">Pos.</th>
+                <th onclick="sortGSC('clicks')"      style="padding:.35rem .6rem;text-align:right;font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--border);cursor:pointer" title="Ordenar por clics">Clics <span id="gsc-sort-clicks"></span></th>
+                <th onclick="sortGSC('impressions')" style="padding:.35rem .6rem;text-align:right;font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--border);cursor:pointer" title="Ordenar por impresiones">Impr. <span id="gsc-sort-impressions"></span></th>
+                <th onclick="sortGSC('ctr')"         style="padding:.35rem .6rem;text-align:right;font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--border);cursor:pointer" title="Ordenar por CTR">CTR <span id="gsc-sort-ctr"></span></th>
+                <th onclick="sortGSC('position')"    style="padding:.35rem .6rem;text-align:right;font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--border);cursor:pointer" title="Ordenar por posición (↑ mejor)">Pos. <span id="gsc-sort-position"></span></th>
               </tr>
             </thead>
             <tbody id="gsc-tbody">
@@ -939,9 +940,55 @@ function renderCharts(d) {
 }
 
 // ── SEARCH CONSOLE ────────────────────────────────────────────────────────────
+let _gscQueries = [], _gscSortCol = 'clicks', _gscSortDir = 'desc';
+
+function sortGSC(col) {
+  // Posición: mejor = número más bajo → primer clic ordena ascendente
+  const defaultDesc = col !== 'position';
+  if (_gscSortCol === col) {
+    _gscSortDir = _gscSortDir === 'desc' ? 'asc' : 'desc';
+  } else {
+    _gscSortCol = col;
+    _gscSortDir = defaultDesc ? 'desc' : 'asc';
+  }
+  // Actualizar indicadores de columna
+  ['clicks','impressions','ctr','position'].forEach(c => {
+    const el = document.getElementById('gsc-sort-'+c);
+    if (el) el.textContent = c === _gscSortCol ? (_gscSortDir === 'desc' ? '▼' : '▲') : '';
+  });
+  renderGSCTable();
+}
+
+function renderGSCTable() {
+  const sorted = [..._gscQueries].sort((a, b) => {
+    const av = a[_gscSortCol] ?? 0, bv = b[_gscSortCol] ?? 0;
+    return _gscSortDir === 'desc' ? bv - av : av - bv;
+  });
+  const tbody = document.getElementById('gsc-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = sorted.length
+    ? sorted.map(r => `<tr style="border-bottom:1px solid var(--gray-lt)">
+        <td style="padding:.35rem .6rem;color:var(--text);max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.query}</td>
+        <td style="padding:.35rem .6rem;text-align:right;font-family:'Roboto Mono',monospace;font-weight:600;color:${r.clicks>0?'var(--blue)':'var(--muted)'}">${r.clicks}</td>
+        <td style="padding:.35rem .6rem;text-align:right;font-family:'Roboto Mono',monospace;color:var(--muted)">${r.impressions}</td>
+        <td style="padding:.35rem .6rem;text-align:right;font-family:'Roboto Mono',monospace;color:var(--muted)">${r.ctr}%</td>
+        <td style="padding:.35rem .6rem;text-align:right;font-family:'Roboto Mono',monospace;color:var(--muted)">${r.position}</td>
+      </tr>`).join('')
+    : '<tr><td colspan="5" style="padding:1rem;text-align:center;color:var(--muted)">Sin datos para este periodo</td></tr>';
+}
+
 function renderGSC(d) {
   const gsc = d.gsc;
-  if (!gsc) return;
+  const dotGsc = document.getElementById('dot-gsc');
+  const stGsc  = document.getElementById('status-gsc');
+
+  if (!gsc) {
+    if (dotGsc) dotGsc.style.background = 'var(--muted)';
+    if (stGsc)  stGsc.textContent = 'Sin datos';
+    return;
+  }
+  if (dotGsc) dotGsc.style.background = '#4285F4';
+  if (stGsc)  stGsc.textContent = 'Conectado';
 
   const s = gsc.summary || {};
   const kw = document.getElementById('gsc-keyword');
@@ -951,44 +998,37 @@ function renderGSC(d) {
   setText('gsc-ctr',    s.ctr != null ? s.ctr.toFixed(1) + '%' : '–');
   setText('gsc-pos',    s.position != null ? s.position.toFixed(1) : '–');
 
-  // Gráfico clics + impresiones
+  // Gráfico: siempre año completo (daily_year)
   dc('gscChart');
-  const daily = gsc.daily || [];
-  if (daily.length) {
-    const labels = daily.map(r => r.date.slice(5)); // MM-DD
+  const yearly = gsc.daily_year || gsc.daily || [];
+  if (yearly.length) {
     charts['gscChart'] = new Chart(document.getElementById('gscChart'), {
       type: 'line',
-      data: { labels, datasets: [
-        { label:'Clics', data: daily.map(r => r.clicks),
+      data: { labels: yearly.map(r => r.date.slice(5)), datasets: [
+        { label:'Clics', data: yearly.map(r => r.clicks),
           borderColor:'#4285F4', backgroundColor:'#4285F422',
-          borderWidth:2, pointRadius:2, tension:0.3, yAxisID:'y', fill:true },
-        { label:'Impresiones', data: daily.map(r => r.impressions),
+          borderWidth:2, pointRadius:yearly.length > 60 ? 0 : 2, tension:0.3, yAxisID:'y', fill:true },
+        { label:'Impresiones', data: yearly.map(r => r.impressions),
           borderColor:'#7B2FBE', backgroundColor:'#7B2FBE11',
-          borderWidth:2, pointRadius:2, tension:0.3, yAxisID:'y2', fill:false },
+          borderWidth:2, pointRadius:yearly.length > 60 ? 0 : 2, tension:0.3, yAxisID:'y2', fill:false },
       ]},
       options: { responsive:true, maintainAspectRatio:false,
         plugins:{ legend:{ position:'top', labels:{ boxWidth:8, font:{size:9} } } },
         scales:{
           y:  { beginAtZero:true, position:'left',  grid:{color:C.border}, ticks:{font:{size:9}}, title:{display:true,text:'Clics',font:{size:9}} },
           y2: { beginAtZero:true, position:'right', grid:{display:false},  ticks:{font:{size:9}}, title:{display:true,text:'Impresiones',font:{size:9}} },
-          x:  { grid:{display:false}, ticks:{font:{size:8}, maxTicksLimit:10} },
+          x:  { grid:{display:false}, ticks:{font:{size:8}, maxTicksLimit:12} },
         },
       },
     });
   }
 
-  // Tabla top queries
-  const tbody = document.getElementById('gsc-tbody');
-  const rows  = gsc.queries || [];
-  if (tbody) tbody.innerHTML = rows.length
-    ? rows.map(r => `<tr style="border-bottom:1px solid var(--gray-lt)">
-        <td style="padding:.35rem .6rem;color:var(--text);max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.query}</td>
-        <td style="padding:.35rem .6rem;text-align:right;font-family:'Roboto Mono',monospace;font-weight:600;color:${r.clicks>0?'var(--blue)':'var(--muted)'}">${r.clicks}</td>
-        <td style="padding:.35rem .6rem;text-align:right;font-family:'Roboto Mono',monospace;color:var(--muted)">${r.impressions}</td>
-        <td style="padding:.35rem .6rem;text-align:right;font-family:'Roboto Mono',monospace;color:var(--muted)">${r.ctr}%</td>
-        <td style="padding:.35rem .6rem;text-align:right;font-family:'Roboto Mono',monospace;color:var(--muted)">${r.position}</td>
-      </tr>`).join('')
-    : '<tr><td colspan="5" style="padding:1rem;text-align:center;color:var(--muted)">Sin datos para este periodo</td></tr>';
+  // Tabla sortable
+  _gscQueries = gsc.queries || [];
+  // Init sort indicator
+  const initEl = document.getElementById('gsc-sort-'+_gscSortCol);
+  if (initEl) initEl.textContent = _gscSortDir === 'desc' ? '▼' : '▲';
+  renderGSCTable();
 }
 
 // ── MAPA DE CAMPAÑAS ──────────────────────────────────────────────────────────
