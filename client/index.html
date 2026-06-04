@@ -1230,19 +1230,21 @@ function renderTree(d) {
     (c.groups||[]).forEach(g => { _groupMap[g.id] = g; _groupMap[g.id]._campId = c.id; });
   });
 
-  // Custodia primero, Brand al final
-  const sorted = [...camps].sort((a,b) => (a.type==='Brand'?1:0) - (b.type==='Brand'?1:0));
+  // Custodia primero — campañas con "brand" o "detecta" en el nombre van al final
+  const isBrandCamp = c => /brand|detecta/i.test(c.name);
+  const sorted = [...camps].sort((a,b) => (isBrandCamp(a)?1:0) - (isBrandCamp(b)?1:0));
 
   const qCls  = s => s==='green'?'qs-green':s==='red'?'qs-red':'qs-yellow';
-  const lostC = v => v>40?'var(--red)':v>20?'var(--yellow)':'var(--green)';
 
   panel.innerHTML = sorted.map(camp => `
     <div style="margin-bottom:12px">
-      <!-- Header de campaña -->
-      <div style="font-size:9px;font-weight:700;color:var(--muted);letter-spacing:.05em;text-transform:uppercase;
-                  padding:.3rem .4rem;background:var(--gray-lt);border-radius:4px;margin-bottom:3px;
-                  white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
-        ${camp.type} · ${camp.name}
+      <!-- Header de campaña — clicable para ver todas las keywords, sin tipo, nombre completo -->
+      <div class="camp-grp-row" data-cid="${camp.id}" onclick="selectCampaign('${camp.id}')"
+           style="font-size:9px;font-weight:700;color:rgba(255,255,255,0.7);letter-spacing:.04em;
+                  padding:.35rem .5rem;background:rgba(255,255,255,0.06);border-radius:5px;margin-bottom:3px;
+                  cursor:pointer;border:1px solid transparent;transition:all .12s;
+                  line-height:1.4;word-break:break-word">
+        ${camp.name}
       </div>
       ${(camp.groups||[]).map(g => `
         <div class="camp-grp-row" data-gid="${g.id}" onclick="selectAdGroup('${g.id}')"
@@ -1265,24 +1267,19 @@ function renderTree(d) {
         </div>`).join('')}
     </div>`).join('');
 
-  // Default: mostrar todas las keywords de la primera campaña (Custodia)
+  // Default: seleccionar la primera campaña (Custodia) al cargar
   const firstCamp = sorted[0];
-  if (firstCamp) {
-    _kwData = (firstCamp.groups||[]).flatMap(g => (g.keywords||[]).filter(k=>k.text).map(k=>({...k,_group:g.name})));
-    const nm = document.getElementById('kw-group-name');
-    if (nm) nm.textContent = firstCamp.name;
-    // Resaltar la fila de campaña
-    document.querySelectorAll('.camp-grp-row').forEach(r => { r.style.background=''; r.style.borderColor='transparent'; });
-    renderKwBody();
-  }
+  if (firstCamp) setTimeout(() => selectCampaign(firstCamp.id), 0);
 }
 
 function selectCampaign(cid) {
   _selGroupId = null;
   // Highlight
   document.querySelectorAll('.camp-grp-row').forEach(r => {
-    r.style.background    = r.dataset.cid === cid ? 'var(--blue-lt)' : r.dataset.cid ? 'var(--gray-lt)' : '';
-    r.style.borderColor   = r.dataset.cid === cid ? 'var(--blue)' : 'transparent';
+    const selC = r.dataset.cid === cid;
+    r.style.background  = selC ? 'rgba(235,0,0,0.18)' : r.dataset.cid ? 'rgba(255,255,255,0.06)' : '';
+    r.style.borderColor = selC ? '#eb0000' : 'transparent';
+    r.style.color       = selC ? '#fff' : '';
   });
   const camp = _campMap[cid];
   if (!camp) return;
