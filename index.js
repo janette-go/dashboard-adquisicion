@@ -1048,7 +1048,8 @@ async function fetchFromGoogleAds(period = 'this_month') {
     campaignMap[cId].groups.push(group);
   }
 
-  const MATCH = { 2:'broad',3:'phrase',4:'exact', BROAD:'broad',PHRASE:'phrase',EXACT:'exact' };
+  // google-ads-api npm enum: 2=EXACT, 3=PHRASE, 4=BROAD (¡NO al revés!)
+  const MATCH = { 2:'exact',3:'phrase',4:'broad', EXACT:'exact',PHRASE:'phrase',BROAD:'broad' };
   const resolveMatch = mt => MATCH[mt] || MATCH[String(mt).toUpperCase()] || String(mt||'').toLowerCase();
 
   // Paso 1: cargar TODAS las keywords (sin filtro de fecha) con QS
