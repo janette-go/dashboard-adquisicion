@@ -1074,6 +1074,15 @@ async function fetchFromGoogleAds(period = 'this_month') {
   // google-ads-api npm enum: 2=EXACT, 3=PHRASE, 4=BROAD (¡NO al revés!)
   const MATCH = { 2:'exact',3:'phrase',4:'broad', EXACT:'exact',PHRASE:'phrase',BROAD:'broad' };
   const resolveMatch = mt => MATCH[mt] || MATCH[String(mt).toUpperCase()] || String(mt||'').toLowerCase();
+  // QualityScoreBucket: API puede devolver 'ABOVE_AVERAGE', 'AVERAGE', 'BELOW_AVERAGE' o int 4/3/2
+  const normalizeQuality = v => {
+    if (!v && v !== 0) return null;
+    const s = String(v).toLowerCase();
+    if (s === '4' || s === 'above_average') return 'above_average';
+    if (s === '3' || s === 'average') return 'average';
+    if (s === '2' || s === 'below_average') return 'below_average';
+    return null;
+  };
 
   // Paso 1: cargar TODAS las keywords (sin filtro de fecha) con QS
   for (const row of kwAllRows) {
@@ -1086,8 +1095,8 @@ async function fetchFromGoogleAds(period = 'this_month') {
       match:       resolveMatch(kw.match_type),
       text:        kw.text,
       qs:          qi.quality_score          || null,
-      adRelevance: qi.creative_quality_score || null,
-      lpExperience:qi.post_click_quality_score || null,
+      adRelevance: normalizeQuality(qi.creative_quality_score),
+      lpExperience:normalizeQuality(qi.post_click_quality_score),
       impressions: 0, conversions: 0, cost: 0, clicks: 0, // se actualizan en paso 2
       historicalQs: null, historicalAdRelevance: null,
       historicalLpExperience: null, historicalCtr: null,
@@ -1106,9 +1115,9 @@ async function fetchFromGoogleAds(period = 'this_month') {
       cost:                   num(row.metrics.cost_micros),
       clicks:                 num(row.metrics.clicks),
       historicalQs:           row.metrics.historical_quality_score              || null,
-      historicalAdRelevance:  row.metrics.historical_creative_quality_score     || null,
-      historicalLpExperience: row.metrics.historical_landing_page_quality_score || null,
-      historicalCtr:          row.metrics.historical_search_predicted_ctr       || null,
+      historicalAdRelevance:  normalizeQuality(row.metrics.historical_creative_quality_score),
+      historicalLpExperience: normalizeQuality(row.metrics.historical_landing_page_quality_score),
+      historicalCtr:          normalizeQuality(row.metrics.historical_search_predicted_ctr),
     };
   }
   // Aplicar métricas a keywords
@@ -1135,9 +1144,9 @@ async function fetchFromGoogleAds(period = 'this_month') {
       cost:         num(row.metrics.cost_micros),
       clicks:       num(row.metrics.clicks),
       historicalQs:           row.metrics.historical_quality_score              || null,
-      historicalAdRelevance:  row.metrics.historical_creative_quality_score     || null,
-      historicalLpExperience: row.metrics.historical_landing_page_quality_score || null,
-      historicalCtr:          row.metrics.historical_search_predicted_ctr       || null,
+      historicalAdRelevance:  normalizeQuality(row.metrics.historical_creative_quality_score),
+      historicalLpExperience: normalizeQuality(row.metrics.historical_landing_page_quality_score),
+      historicalCtr:          normalizeQuality(row.metrics.historical_search_predicted_ctr),
     };
   }
   // Adjuntar monthly a cada keyword como array ordenado por mes
