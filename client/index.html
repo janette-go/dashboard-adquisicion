@@ -1396,55 +1396,81 @@ function renderKwBody() {
     const av=a[_kwSortCol]??0, bv=b[_kwSortCol]??0;
     return _kwSortDir==='desc' ? bv-av : av-bv;
   });
-  const maxImpr = Math.max(1, ...sorted.map(k=>k.impressions||0));
-  const qC = v => v>=8?'var(--green)':v>=6?'var(--yellow)':v>0?'var(--red)':'var(--muted)';
-  // Notación real: añade corchetes/comillas si el texto NO los tiene ya
+
+  const qsBg  = q => q>=8?'var(--green-lt)':q>=6?'var(--yellow-lt)':q?'var(--red-lt)':'rgba(255,255,255,0.05)';
+  const qsTc  = q => q>=8?'var(--green)':q>=6?'var(--yellow)':q?'var(--red)':'var(--muted)';
+  const ratClass = v => v==='above_average'?'rat-above':v==='below_average'?'rat-below':'rat-avg';
+  const ratLabel = v => v==='above_average'?'Superior':v==='below_average'?'Inferior':'Promedio';
+  const ratPill  = v => v?`<span class="rat-pill ${ratClass(v)}">${ratLabel(v)}</span>`:'–';
+  const fmtCtr   = v => v>0?(v*100).toFixed(2)+'%':'–';
+  const fmtCost  = v => v>0?'$'+(v/1e6).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}):'–';
+  const fmtCpC   = (cost,conv) => conv>0?'$'+((cost/1e6)/conv).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}):'–';
   const matchText = k => {
     const t = k.text || '';
-    if (k.match === 'exact')  return (t.startsWith('[') ? t : `[${t}]`);
-    if (k.match === 'phrase') return (t.startsWith('"') ? t : `"${t}"`);
+    if (k.match==='exact')  return t.startsWith('[') ? t : `[${t}]`;
+    if (k.match==='phrase') return t.startsWith('"') ? t : `"${t}"`;
     return t;
   };
-  // Mismo color verde para todas — la notación ([],"",'') ya diferencia el tipo
-  const MATCH_COLOR = {
-    exact:  'var(--green)',
-    phrase: 'var(--green)',
-    broad:  'var(--green)',
-  };
+
   const sortArrow = col => _kwSortCol===col ? (_kwSortDir==='desc'?'▼':'▲') : '';
-  const thS = col => `padding:.3rem .5rem;text-align:right;font-size:9px;font-weight:700;
-    color:${_kwSortCol===col?'var(--blue)':'var(--muted)'};text-transform:uppercase;
-    letter-spacing:.04em;border-bottom:1px solid var(--border);cursor:pointer;
-    white-space:normal;word-break:break-word;max-width:60px;line-height:1.3;vertical-align:bottom`;
+  const thStyle = `position:sticky;top:0;background:var(--gray-lt);padding:.3rem .5rem;text-align:right;
+    font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;
+    border-bottom:1px solid var(--border);cursor:pointer;white-space:nowrap;vertical-align:bottom`;
+  const thSortStyle = col => `${thStyle};color:${_kwSortCol===col?'#4285F4':'var(--muted)'}`;
+
+  const totConv   = sorted.reduce((s,k)=>s+(k.conversions||0),0);
+  const totImpr   = sorted.reduce((s,k)=>s+(k.impressions||0),0);
+  const totClicks = sorted.reduce((s,k)=>s+(k.clicks||0),0);
+  const totCost   = sorted.reduce((s,k)=>s+(k.cost||0),0);
 
   el.innerHTML = `
-    <table style="width:100%;border-collapse:collapse;font-size:11px">
-      <thead style="position:sticky;top:0;background:var(--gray-lt)">
+    <table class="kw-tbl" style="min-width:900px">
+      <thead>
         <tr>
-          <th style="padding:.3rem .6rem;text-align:left;font-size:9px;font-weight:700;color:var(--muted);
-              text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--border)">Keyword</th>
-          <th onclick="sortKw('qs')"          style="${thS('qs')}">QS ${sortArrow('qs')}</th>
-          <th onclick="sortKw('impressions')" style="${thS('impressions')}">Impr. ${sortArrow('impressions')}</th>
-          <th onclick="sortKw('conversions')" style="${thS('conversions')}">Conv. ${sortArrow('conversions')}</th>
+          <th onclick="sortKw('text')" style="${thSortStyle('text')};text-align:left;position:sticky;top:0">
+            Palabra clave ${sortArrow('text')}</th>
+          <th onclick="sortKw('conversions')" style="${thSortStyle('conversions')}">Conv. ${sortArrow('conversions')}</th>
+          <th onclick="sortKw('cost')"        style="${thSortStyle('cost')}">Costo/conv. ${sortArrow('cost')}</th>
+          <th onclick="sortKw('impressions')" style="${thSortStyle('impressions')}">Impr. ${sortArrow('impressions')}</th>
+          <th onclick="sortKw('clicks')"      style="${thSortStyle('clicks')}">CTR ${sortArrow('clicks')}</th>
+          <th onclick="sortKw('qs')"          style="${thSortStyle('qs')}">QS ${sortArrow('qs')}</th>
+          <th onclick="sortKw('historicalQs')" style="${thSortStyle('historicalQs')}">QS hist. ${sortArrow('historicalQs')}</th>
+          <th style="${thStyle}">Rel. anuncio</th>
+          <th style="${thStyle}">Rel. anuncio hist.</th>
+          <th style="${thStyle}">Exp. LP</th>
+          <th style="${thStyle}">Exp. LP hist.</th>
+          <th onclick="sortKw('historicalCtr')" style="${thSortStyle('historicalCtr')}">CTR prev. ${sortArrow('historicalCtr')}</th>
+          <th onclick="sortKw('cost')"        style="${thSortStyle('cost')}">Costo ${sortArrow('cost')}</th>
         </tr>
       </thead>
       <tbody>
-        ${sorted.map(k=>{
-          const qs=k.qs||0, bw=Math.round((k.impressions||0)/maxImpr*80);
-          const kwLabel = matchText(k);
-          const kwColor = MATCH_COLOR[k.match]||'var(--muted)';
-          return `<tr style="border-bottom:1px solid var(--gray-lt)">
-            <td style="padding:.3rem .6rem;max-width:260px">
-              <div style="font-family:'Roboto Mono',monospace;font-size:10px;white-space:nowrap;overflow:hidden;
-                          text-overflow:ellipsis;color:${kwColor};margin-bottom:2px">${kwLabel}</div>
-              <div style="height:2px;background:var(--gray-lt);border-radius:1px">
-                <div style="height:100%;width:${bw}%;background:var(--blue);opacity:.35;border-radius:1px"></div>
-              </div>
+        <tr class="kw-total-row">
+          <td style="text-align:left">Total: ${sorted.length} keywords</td>
+          <td>${totConv>0?totConv.toFixed(2):'–'}</td>
+          <td>${fmtCpC(totCost,totConv)}</td>
+          <td>${totImpr>0?totImpr.toLocaleString('es-MX'):'–'}</td>
+          <td>${totImpr>0?fmtCtr(totClicks/totImpr):'–'}</td>
+          <td colspan="6"></td>
+          <td>${fmtCost(totCost)}</td>
+        </tr>
+        ${sorted.map(k => {
+          const qs=k.qs||0, hqs=k.historicalQs||0;
+          return `<tr>
+            <td style="text-align:left;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+              ${matchText(k)}
             </td>
-            <td style="padding:.3rem .6rem;text-align:right;font-family:'Roboto Mono',monospace;font-weight:700;color:${qC(qs)}">${qs||'–'}</td>
-            <td style="padding:.3rem .6rem;text-align:right;color:var(--muted);font-family:'Roboto Mono',monospace;font-size:10px">${(k.impressions||0).toLocaleString('es-MX')}</td>
-            <td style="padding:.3rem .6rem;text-align:right;font-weight:700;font-family:'Roboto Mono',monospace;
-              color:${(k.conversions||0)>0?'var(--green)':'var(--muted)'}">${k.conversions||0}</td>
+            <td>${k.conversions>0?Number(k.conversions).toFixed(2):'–'}</td>
+            <td>${fmtCpC(k.cost,k.conversions)}</td>
+            <td>${k.impressions>0?(k.impressions).toLocaleString('es-MX'):'–'}</td>
+            <td>${k.clicks>0&&k.impressions>0?fmtCtr(k.clicks/k.impressions):'–'}</td>
+            <td style="text-align:center">${qs?`<span class="qs-badge" style="background:${qsBg(qs)};color:${qsTc(qs)}">${qs}/10</span>`:'–'}</td>
+            <td style="text-align:center">${hqs?`<span class="qs-badge" style="background:${qsBg(hqs)};color:${qsTc(hqs)}">${hqs}/10</span>`:'–'}</td>
+            <td style="text-align:center">${ratPill(k.adRelevance)}</td>
+            <td style="text-align:center">${ratPill(k.historicalAdRelevance)}</td>
+            <td style="text-align:center">${ratPill(k.lpExperience)}</td>
+            <td style="text-align:center">${ratPill(k.historicalLpExperience)}</td>
+            <td>${k.historicalCtr?fmtCtr(k.historicalCtr):'–'}</td>
+            <td>${fmtCost(k.cost)}</td>
           </tr>`;
         }).join('')}
       </tbody>
