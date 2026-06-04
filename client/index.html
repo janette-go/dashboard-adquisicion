@@ -992,15 +992,15 @@ function renderCharts(d) {
   if (origenEl) origenEl.textContent = osTotal > 0 ? `${osTotal} SQLs · clic en segmento para ver deals` : '';
   // Colores semitransparentes para que el donut se funda con el glassmorphism
   // Paleta donut — solo gris, negro y rojo Detecta (mismos colores en leyenda y rebanadas)
-  // 7 variaciones únicas de gris/rojo/negro — sin repetir aunque haya muchas fuentes
+  // Los 3 primeros = colores primarios Detecta; del 4° en adelante = secundarios brand claramente distintos
   const donutPalSolid = [
     '#999999',  // gris Detecta
     '#eb0000',  // rojo Detecta
-    '#191919',  // negro Detecta
-    '#c4c4c4',  // gris claro
-    '#aa0000',  // rojo oscuro
-    '#4d4d4d',  // gris medio
-    '#ff4040',  // rojo vivo
+    '#ffffff',  // blanco
+    '#155D9F',  // azul secundario brand
+    '#FFED66',  // amarillo secundario brand
+    '#5658A3',  // morado secundario brand
+    '#B3D6A7',  // verde secundario brand
   ];
   const donutColors = donutPalSolid.map(c => c + 'AA'); // ~67% opacidad
   const donutHover  = donutPalSolid.map(c => c + 'EE'); // ~93% opacidad
@@ -1030,16 +1030,20 @@ function renderCharts(d) {
       },
     },
   });
-  // Leyenda con números
+  // Leyenda con números y porcentajes
   const legendEl = document.getElementById('origen-sql-legend');
-  if (legendEl) legendEl.innerHTML = os.labels.map((lbl,i) => `
-    <div style="display:flex;align-items:center;justify-content:space-between;font-size:10px">
-      <div style="display:flex;align-items:center;gap:5px">
+  if (legendEl) legendEl.innerHTML = os.labels.map((lbl,i) => {
+    const pct = osTotal > 0 ? Math.round(os.data[i] / osTotal * 100) : 0;
+    return `<div style="display:flex;align-items:center;justify-content:space-between;font-size:10px;margin-bottom:1px">
+      <div style="display:flex;align-items:center;gap:5px;min-width:0">
         <div style="width:8px;height:8px;border-radius:50%;background:${donutPalSolid[i]||'#999'};flex-shrink:0"></div>
-        <span style="color:var(--muted)">${lbl}</span>
+        <span style="color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${lbl}</span>
       </div>
-      <span style="font-family:'Roboto Mono',monospace;font-weight:600;color:var(--text)">${os.data[i]}</span>
-    </div>`).join('');
+      <span style="font-family:'Roboto Mono',monospace;font-size:9px;color:var(--text);flex-shrink:0;margin-left:6px">
+        ${os.data[i]} <span style="color:var(--muted)">(${pct}%)</span>
+      </span>
+    </div>`;
+  }).join('');
 
   // Won breakdown
   const og = d.origenGanados || { labels:[], data:[] };
