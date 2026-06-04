@@ -627,16 +627,21 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
         </span>
       </div>
 
-      <!-- Grid: [árbol izq] [keywords centro] [cambios+cards der] -->
-      <div style="display:grid;grid-template-columns:260px 1fr 280px;min-height:500px">
+      <!-- Flex: [árbol izq resizable] [drag handle] [keywords centro] [cards der] -->
+      <div id="camp-flex" style="display:flex;min-height:500px">
 
-        <!-- IZQUIERDA: árbol de campañas -->
-        <div style="border-right:1px solid var(--border);overflow-y:auto;padding:.5rem">
+        <!-- IZQUIERDA: árbol de campañas (resizable) -->
+        <div id="camp-left-panel" style="width:260px;min-width:140px;max-width:420px;flex-shrink:0;border-right:1px solid var(--border);overflow-y:auto;padding:.5rem">
           <div id="camp-list"></div>
         </div>
+        <!-- DRAG HANDLE -->
+        <div id="camp-drag" title="Arrastrar para redimensionar"
+             style="width:5px;flex-shrink:0;cursor:col-resize;background:transparent;transition:background .15s"
+             onmouseover="this.style.background='rgba(235,0,0,0.35)'"
+             onmouseout="this.style.background='transparent'"></div>
 
         <!-- CENTRO: Keywords (protagonista) -->
-        <div style="border-right:1px solid var(--border);display:flex;flex-direction:column">
+        <div style="flex:1;min-width:0;border-right:1px solid var(--border);display:flex;flex-direction:column">
           <div style="padding:.35rem .75rem;background:var(--gray-lt);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
             <span class="card-title">Keywords activas</span>
             <span id="kw-group-name" style="font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px"></span>
@@ -647,7 +652,7 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
         </div>
 
         <!-- DERECHA: Cambios | Performance | Calidad (compactos, todos visibles) -->
-        <div style="display:flex;flex-direction:column;overflow-y:auto">
+        <div style="width:280px;flex-shrink:0;display:flex;flex-direction:column;overflow-y:auto">
 
           <!-- Cambios recientes -->
           <div style="border-bottom:1px solid var(--border);flex-shrink:0">
@@ -1260,9 +1265,16 @@ function renderTree(d) {
         </div>`).join('')}
     </div>`).join('');
 
-  // Auto-seleccionar primer grupo
-  const first = sorted[0]?.groups?.[0];
-  if (first) selectAdGroup(first.id);
+  // Default: mostrar todas las keywords de la primera campaña (Custodia)
+  const firstCamp = sorted[0];
+  if (firstCamp) {
+    _kwData = (firstCamp.groups||[]).flatMap(g => (g.keywords||[]).filter(k=>k.text).map(k=>({...k,_group:g.name})));
+    const nm = document.getElementById('kw-group-name');
+    if (nm) nm.textContent = firstCamp.name;
+    // Resaltar la fila de campaña
+    document.querySelectorAll('.camp-grp-row').forEach(r => { r.style.background=''; r.style.borderColor='transparent'; });
+    renderKwBody();
+  }
 }
 
 function selectCampaign(cid) {
@@ -1404,9 +1416,10 @@ function renderKwBody() {
     broad:  'var(--muted)',
   };
   const sortArrow = col => _kwSortCol===col ? (_kwSortDir==='desc'?'▼':'▲') : '';
-  const thS = col => `padding:.3rem .6rem;text-align:right;font-size:9px;font-weight:700;
+  const thS = col => `padding:.3rem .5rem;text-align:right;font-size:9px;font-weight:700;
     color:${_kwSortCol===col?'var(--blue)':'var(--muted)'};text-transform:uppercase;
-    letter-spacing:.04em;border-bottom:1px solid var(--border);cursor:pointer;white-space:nowrap`;
+    letter-spacing:.04em;border-bottom:1px solid var(--border);cursor:pointer;
+    white-space:normal;word-break:break-word;max-width:60px;line-height:1.3;vertical-align:bottom`;
 
   el.innerHTML = `
     <table style="width:100%;border-collapse:collapse;font-size:11px">
@@ -1770,6 +1783,29 @@ document.addEventListener('click', e => {
   _activeLabel  = el.dataset.label || listKey;
   if (deals.length) openDealModal();
 });
+
+// ── SIDEBAR RESIZABLE (mapa de campañas) ─────────────────────────────────────
+(function(){
+  let dragging=false, startX=0, startW=0;
+  document.addEventListener('mousedown', e=>{
+    if(e.target.id!=='camp-drag') return;
+    dragging=true; startX=e.clientX;
+    const p=document.getElementById('camp-left-panel');
+    startW=p?p.offsetWidth:260;
+    document.body.style.cssText+='cursor:col-resize;user-select:none';
+  });
+  document.addEventListener('mousemove', e=>{
+    if(!dragging) return;
+    const p=document.getElementById('camp-left-panel');
+    if(p) p.style.width=Math.max(140,Math.min(420,startW+e.clientX-startX))+'px';
+  });
+  document.addEventListener('mouseup', ()=>{
+    if(!dragging) return;
+    dragging=false;
+    document.body.style.cursor='';
+    document.body.style.userSelect='';
+  });
+})();
 
 // ── TOOLTIPS — usa #global-tip (hijo directo de body) para evitar que
 // backdrop-filter de .card cree un stacking context que atrape position:fixed ──
