@@ -176,7 +176,7 @@ body{
 .auction-tbl-wrap{flex:1.3;overflow-x:auto;border-right:1px solid var(--border)}
 .auction-chart-wrap{flex:1;padding:.75rem .85rem}
 table{width:100%;border-collapse:collapse;font-size:11px}
-th{padding:.4rem .65rem;text-align:left;font-size:9px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);background:rgba(255,255,255,0.04);white-space:nowrap}
+th{padding:.4rem .65rem;text-align:left;font-size:9px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);background:rgba(13,13,15,0.88);white-space:nowrap}
 td{padding:.45rem .65rem;border-bottom:1px solid rgba(255,255,255,0.05);color:var(--text)}
 tr:last-child td{border-bottom:none}
 tr.detecta td{background:rgba(204,16,16,0.12);font-weight:600}
@@ -959,12 +959,17 @@ function renderCharts(d) {
         borderRadius:4, borderSkipped:false,
         barPercentage:0.6, categoryPercentage:0.75, order:1 },
       { label:'Costo/SQL', data: cpsm.data, yAxisID:'y2', type:'line', pointStyle:'circle',
-        borderColor: '#ffffff', backgroundColor: 'rgba(255,255,255,0.08)',
-        borderWidth:2, pointRadius:3, pointBackgroundColor:'#ffffff',
+        borderColor: '#ffffff', backgroundColor: '#ffffff',
+        borderWidth:0, pointRadius:3, pointBackgroundColor:'#ffffff',
         tension:0.35, spanGaps:true, order:0 },
     ]},
     options: { responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{ position:'top', labels:{ usePointStyle:true, boxWidth:8, boxHeight:8, font:{size:9}, padding:10 } } },
+      plugins:{ legend:{ position:'top', labels:{ usePointStyle:true, boxWidth:8, boxHeight:8, font:{size:9}, padding:10,
+        generateLabels: chart => Chart.defaults.plugins.legend.labels.generateLabels(chart).map(l => {
+          if(l.text==='Costo/SQL'){ l.fillStyle='#ffffff'; l.strokeStyle='#ffffff'; l.lineWidth=0; }
+          return l;
+        })
+      } } },
       scales:{
         y:  { beginAtZero:true, grid:{color:C.border}, ticks:{font:{size:9}}, position:'left' },
         y2: { beginAtZero:true, grid:{display:false}, ticks:{font:{size:9}, callback:v=>'$'+v.toLocaleString()}, position:'right' },
