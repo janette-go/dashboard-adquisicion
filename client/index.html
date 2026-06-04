@@ -10,7 +10,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Roboto+Mono:wght@400;500&display=swap');
 :root{
   /* Dark glassmorphism — colores Detecta Security */
-  --bg:#0d0d0f;
+  --bg:#191919;
   --surface:rgba(255,255,255,0.055);
   --surface-hov:rgba(255,255,255,0.09);
   --border:rgba(255,255,255,0.10);
@@ -31,9 +31,9 @@ body{
   font-family:'Google Sans','Segoe UI',sans-serif;
   background:var(--bg);color:var(--text);font-size:13px;overflow-x:hidden;
   background-image:
-    radial-gradient(ellipse 900px 700px at 15% 25%, rgba(204,16,16,0.13) 0%, transparent 65%),
-    radial-gradient(ellipse 700px 600px at 85% 75%, rgba(138,138,138,0.09) 0%, transparent 65%),
-    radial-gradient(ellipse 500px 400px at 70% 10%, rgba(204,16,16,0.07) 0%, transparent 60%);
+    radial-gradient(ellipse 900px 700px at 15% 25%, rgba(235,0,0,0.10) 0%, transparent 65%),
+    radial-gradient(ellipse 700px 600px at 85% 75%, rgba(153,153,153,0.07) 0%, transparent 65%),
+    radial-gradient(ellipse 500px 400px at 70% 10%, rgba(235,0,0,0.05) 0%, transparent 60%);
   background-attachment:fixed;
 }
 
@@ -907,21 +907,22 @@ Chart.defaults.color          = 'rgba(255,255,255,0.45)';
 Chart.defaults.borderColor    = 'rgba(255,255,255,0.08)';
 Chart.defaults.font.family    = "'Google Sans','Segoe UI',sans-serif";
 
-// Paleta de colores — Detecta brand (rojo + gris) + complementarios en dark
+// Paleta 100% Detecta Security Brandbook 2025
+// Principal: rojo #eb0000 (acento 10%), gris #999999 (dominante 60%), negro #191919
+// Secundaria: azul #155D9F, amarillo #FFED66, morado #5658A3, verde claro #B3D6A7
 const C = {
-  // Primarios de marca
-  red:    '#CC1010',   // Detecta Red — SQLs, KPIs principales
-  gray:   '#8A8A8A',   // Detecta Gray — métricas secundarias
-  // Complementarios para dark
-  blue:   '#60a5fa',   // Google Ads / inversión
-  green:  '#4ade80',   // Orgánico / Pipedrive / positivo
-  yellow: '#fbbf24',   // Costo / advertencia
-  purple: '#a78bfa',   // Acento / diversificación
-  teal:   '#2dd4bf',   // GSC / Search Console
+  red:    '#eb0000',   // Rojo Detecta — KPI principal / SQLs
+  gray:   '#999999',   // Gris Detecta — dato dominante / inversión
+  blue:   '#155D9F',   // Azul secundario — Google Ads / GSC
+  green:  '#B3D6A7',   // Verde secundario — orgánico / positivo
+  yellow: '#FFED66',   // Amarillo secundario — costo / alerta
+  purple: '#5658A3',   // Morado secundario — diversificación
+  teal:   '#155D9F',   // Mismo azul secundario
+  dark:   '#191919',   // Negro marca
   muted:  'rgba(255,255,255,0.35)',
   border: 'rgba(255,255,255,0.08)',
-  // Paleta para donuts y multi-serie
-  pal: ['#60a5fa','#4ade80','#fbbf24','#a78bfa','#8A8A8A','#2dd4bf','#f472b6'],
+  // Paleta donut — colores de marca en orden de relevancia
+  pal: ['#999999','#eb0000','#155D9F','#FFED66','#5658A3','#B3D6A7','#ffffff'],
 };
 
 function renderCharts(d) {
@@ -935,8 +936,8 @@ function renderCharts(d) {
   charts['conv'] = new Chart(document.getElementById('convChart'), {
     type: 'bar',
     data: { labels: cm.labels, datasets: [{ label:'Leads (conv. Ads)', data: cm.data,
-      backgroundColor: cm.data.map((_,i) => i===bi ? C.blue : C.blue+'55'),
-      borderColor: cm.data.map((_,i) => i===bi ? C.blue : 'transparent'),
+      backgroundColor: cm.data.map((_,i) => i===bi ? C.gray : C.gray+'55'),
+      borderColor: cm.data.map((_,i) => i===bi ? C.gray : 'transparent'),
       borderWidth: 1, borderRadius: 4, borderSkipped: false }] },
     options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
       scales:{ y:{beginAtZero:true,grid:{color:C.border},ticks:{color:C.muted}}, x:{grid:{display:false},ticks:{color:C.muted}} } },
@@ -962,7 +963,7 @@ function renderCharts(d) {
     type: 'bar',
     data: { labels: sm.labels, datasets: [
       { label:'Total SQLs', data: sm.data, yAxisID:'y',
-        backgroundColor: C.red+'55', borderColor: C.red+'88', borderWidth:1,
+        backgroundColor: C.gray+'55', borderColor: C.gray+'88', borderWidth:1,
         borderRadius:4, borderSkipped:false,
         barPercentage:1.0, categoryPercentage:0.75, order:2 },
       { label:'Paid+Orgánico', data: spoData, yAxisID:'y',
@@ -1058,12 +1059,12 @@ function renderCharts(d) {
     type: 'bar',
     data: { labels: gm.labels, datasets: [
       { label:'Gasto Ads (MXN)', data: gm.data, yAxisID:'y',
-        backgroundColor: C.blue+'55', borderColor: C.blue+'99', borderWidth:1,
+        backgroundColor: C.gray+'55', borderColor: C.gray+'99', borderWidth:1,
         borderRadius:4, borderSkipped:false, order:2 },
       { label:'SQLs Paid+Org', data: sm2.data, yAxisID:'y2', type:'line',
         borderColor: C.red, backgroundColor: C.red+'22',
         borderWidth:2.5, pointRadius:4, pointBackgroundColor: C.red,
-        pointBorderColor:'#0d0d0f', pointBorderWidth:1.5,
+        pointBorderColor:'#191919', pointBorderWidth:1.5,
         tension:0.35, spanGaps:false, order:1 },
     ]},
     options: { responsive:true, maintainAspectRatio:false,
@@ -1164,9 +1165,9 @@ function renderGSC(d) {
       type: 'line',
       data: { labels: yearly.map(r => r.date.slice(5)), datasets: [
         { label:'Clics', data: yearly.map(r => r.clicks),
-          borderColor: C.teal, backgroundColor: C.teal+'22',
+          borderColor: C.red, backgroundColor: C.red+'22',
           borderWidth:2.5, pointRadius:yearly.length > 60 ? 0 : 3,
-          pointBackgroundColor:C.teal, tension:0.3, yAxisID:'y', fill:true },
+          pointBackgroundColor: C.red, tension:0.3, yAxisID:'y', fill:true },
         { label:'Impresiones', data: yearly.map(r => r.impressions),
           borderColor: C.gray, backgroundColor: C.gray+'18',
           borderWidth:1.5, pointRadius:yearly.length > 60 ? 0 : 2, tension:0.3, yAxisID:'y2', fill:false },
