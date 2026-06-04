@@ -118,7 +118,7 @@ const MOCK = {
   source:  'mock',
   account: { name: 'DETECTA-CUSTODIAS', id: '720-603-7956' },
   summary: {
-    gasto: 48200, conversiones: 89, cpl: 541, ctr: 4.6, impr: 19400,
+    gasto: 48200, conversiones: 89, cpl: 541, ctr: 4.6, cpc: 9.80, impr: 19400,
     leadsCalificados: 62, sqls: 28, clientesGanados: 9,
   },
   costoSQL:      4800,
@@ -803,10 +803,11 @@ async function fetchFromGoogleAds(period = 'this_month') {
   }
   const gasto = parseFloat((totalCost / 1e6).toFixed(2));
   const convs = Math.round(totalConv);
-  const ctr   = totalImpr > 0 ? parseFloat((totalClicks / totalImpr * 100).toFixed(2)) : 0;
-  const cpl   = convs > 0    ? parseFloat((gasto / convs).toFixed(2)) : 0;
+  const ctr   = totalImpr > 0    ? parseFloat((totalClicks / totalImpr * 100).toFixed(2)) : 0;
+  const cpl   = convs > 0       ? parseFloat((gasto / convs).toFixed(2)) : 0;
+  const cpc   = totalClicks > 0 ? parseFloat((gasto / totalClicks).toFixed(2)) : 0;
 
-  const summary = { gasto, conversiones: convs, cpl, ctr, impr: totalImpr };
+  const summary = { gasto, conversiones: convs, cpl, ctr, cpc, impr: totalImpr };
 
   // ── Conversiones y gasto por mes ──────────────────────────────────────────────
   const byMonth      = Array(12).fill(0);
