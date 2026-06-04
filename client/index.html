@@ -17,7 +17,7 @@
   --text:#f0f0f0;
   --muted:rgba(255,255,255,0.45);
   --gray-lt:rgba(255,255,255,0.04);
-  --blue:#60a5fa;   --blue-lt:rgba(96,165,250,0.15);
+  --blue:#999999;   --blue-lt:rgba(153,153,153,0.15);
   --green:#4ade80;  --green-lt:rgba(74,222,128,0.12);
   --yellow:#fbbf24; --yellow-lt:rgba(251,191,36,0.12);
   --red:#CC1010;    --red-lt:rgba(204,16,16,0.18);
@@ -303,19 +303,20 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
 .tip-icon:hover{opacity:1}
 /* tip-box oculto en DOM — el contenido se muestra en #global-tip fuera de cards */
 .tip-box{ display:none !important; }
-/* Global tooltip — hijo directo de body, sin backdrop-filter padre */
+/* Global tooltip — colores Detecta brand */
 #global-tip{
   display:none;position:fixed;
-  background:#1a1a22;color:#f0f0f0;
-  border:1px solid rgba(255,255,255,0.2);
+  background:#191919;color:#f0f0f0;
+  border:1px solid rgba(235,0,0,0.35);
+  border-top:2px solid #eb0000;
   font-size:10px;line-height:1.55;font-weight:400;
   font-family:'Google Sans','Segoe UI',sans-serif;
-  padding:9px 13px;border-radius:9px;
+  padding:9px 13px;border-radius:8px;
   width:230px;max-width:calc(100vw - 16px);text-align:left;
   z-index:999999;pointer-events:none;white-space:normal;
-  box-shadow:0 10px 40px rgba(0,0,0,.85);
+  box-shadow:0 10px 40px rgba(0,0,0,.9), 0 0 0 1px rgba(235,0,0,0.1);
 }
-#global-tip b{color:#60a5fa;font-weight:600}
+#global-tip b{color:#eb0000;font-weight:700}
 #global-tip::after{
   content:'';position:absolute;top:100%;left:var(--arrow-left,50%);
   transform:translateX(-50%);
@@ -696,7 +697,7 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
 <div id="global-tip"></div>
 
 <!-- ── DEAL POPUP (hover sobre número) ─────────────────────────── -->
-<div id="deal-popup" style="display:none;position:fixed;z-index:8500;width:340px;background:#1a1a22;border:1px solid rgba(255,255,255,0.15);border-radius:8px;box-shadow:0 8px 32px rgba(0,0,0,.7);overflow:hidden">
+<div id="deal-popup" style="display:none;position:fixed;z-index:8500;width:340px;background:#191919;border:1px solid rgba(153,153,153,0.25);border-top:2px solid #eb0000;border-radius:8px;box-shadow:0 8px 32px rgba(0,0,0,.85);overflow:hidden">
   <div style="display:flex;align-items:center;justify-content:space-between;padding:.45rem .75rem;background:rgba(255,255,255,0.06);border-bottom:1px solid rgba(255,255,255,0.12)">
     <span id="dp-label" style="font-size:11px;font-weight:700;color:#f0f0f0"></span>
     <span id="dp-count" style="font-size:10px;color:rgba(255,255,255,0.5)"></span>
@@ -709,7 +710,7 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
 
 <!-- ── DEAL MODAL (clic cuando hay muchos deals) ─────────────────── -->
 <div id="deal-modal" onclick="if(event.target===this)closeDealModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9000;overflow:auto;padding:2rem 1rem;backdrop-filter:blur(4px)">
-  <div style="background:#1a1a22;border:1px solid rgba(255,255,255,0.12);border-radius:10px;max-width:800px;margin:0 auto;overflow:hidden;box-shadow:0 16px 48px rgba(0,0,0,.8)">
+  <div style="background:#191919;border:1px solid rgba(153,153,153,0.25);border-top:2px solid #eb0000;border-radius:10px;max-width:800px;margin:0 auto;overflow:hidden;box-shadow:0 16px 48px rgba(0,0,0,.9)">
     <div style="display:flex;align-items:center;justify-content:space-between;padding:.65rem 1rem;border-bottom:1px solid var(--border);background:var(--gray-lt)">
       <span id="dm-label" style="font-size:13px;font-weight:700"></span>
       <button onclick="closeDealModal()" style="background:none;border:none;font-size:16px;cursor:pointer;color:var(--muted);line-height:1">✕</button>
@@ -913,7 +914,7 @@ const C = {
   red:    '#CC1010',   // Detecta Red — SQLs, KPIs principales
   gray:   '#8A8A8A',   // Detecta Gray — métricas secundarias
   // Complementarios para dark
-  blue:   '#60a5fa',   // Google Ads / inversión
+  blue:   '#999999',   // Gris Detecta (reemplaza azul en charts)
   green:  '#4ade80',   // Orgánico / Pipedrive / positivo
   yellow: '#fbbf24',   // Costo / advertencia
   purple: '#a78bfa',   // Acento / diversificación
@@ -921,7 +922,7 @@ const C = {
   muted:  'rgba(255,255,255,0.35)',
   border: 'rgba(255,255,255,0.08)',
   // Paleta para donuts y multi-serie
-  pal: ['#60a5fa','#4ade80','#fbbf24','#a78bfa','#8A8A8A','#2dd4bf','#f472b6'],
+  pal: ['#999999','#4ade80','#fbbf24','#a78bfa','#CC1010','#2dd4bf','#f472b6'],
 };
 
 function renderCharts(d) {
