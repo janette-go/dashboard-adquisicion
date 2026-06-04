@@ -906,12 +906,14 @@ async function fetchFromGoogleAds(period = 'this_month') {
     SELECT
       change_event.change_date_time,
       change_event.change_resource_type,
+      change_event.changed_fields,
+      change_event.user_email,
       campaign.name,
       ad_group.name
     FROM change_event
     WHERE change_event.change_date_time BETWEEN '${changeStart}' AND '${changeEnd}'
     ORDER BY change_event.change_date_time DESC
-    LIMIT 20
+    LIMIT 25
   `;
 
   // Ejecuta en paralelo; kwAllRows = lista completa, keywordRows = métricas del periodo
@@ -1133,25 +1135,77 @@ async function fetchFromGoogleAds(period = 'this_month') {
   // ── Cambios recientes ──────────────────────────────────────────────────────
   const changes = changesRows.map(row => {
     const dt      = new Date(row.change_event.change_date_time);
-    const dateStr = dt.toLocaleString('es-MX', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+    const dateStr = dt.toLocaleString('es-MX', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
     const typeKey = row.change_event.change_resource_type;
+    const fields  = (row.change_event.changed_fields || '').toLowerCase();
+    const user    = (row.change_event.user_email || '').split('@')[0];
     const ag      = row.ad_group?.name  || '';
     const camp    = row.campaign?.name  || '';
+    // Nombres cortos: quitar sufijos largos
+    const agShort   = ag.replace(/\s*[|·—].*/,'').trim() || ag;
+    const campShort = camp.split('|')[0].trim() || camp;
+    const ctx       = agShort || campShort;
 
-    // Descripción específica según el tipo de recurso
-    const descMap = {
-      'AD':                    ag ? `Anuncio modificado — ${ag}` : `Anuncio modificado — ${camp}`,
-      'AD_GROUP_AD':           ag ? `Anuncio modificado — ${ag}` : `Anuncio modificado — ${camp}`,
-      'AD_GROUP':              `Grupo de anuncios — ${ag || camp}`,
-      'AD_GROUP_CRITERION':    ag ? `Keyword modificada — ${ag}` : `Keyword modificada — ${camp}`,
-      'AD_GROUP_BID_MODIFIER': ag ? `Ajuste de puja — ${ag}` : `Ajuste de puja — ${camp}`,
-      'CAMPAIGN':              `Configuración de campaña — ${camp}`,
-      'CAMPAIGN_BUDGET':       `Presupuesto modificado — ${camp}`,
-      'CAMPAIGN_CRITERION':    `Segmentación/exclusión — ${camp}`,
-    };
-    const desc = descMap[typeKey] || `${CHANGE_TYPE_ES[typeKey]||typeKey} — ${ag||camp}`;
+    let desc = '';
+    switch (typeKey) {
+      case 'AD_GROUP_CRITERION':
+        if (fields.includes('status'))
+          desc = `Keyword ${fields.includes('paused')||fields.includes('pause') ? 'pausada' : 'activada'} en ${ctx}`;
+        else if (fields.includes('bid') || fields.includes('cpc'))
+          desc = `Puja de keyword ajustada en ${ctx}`;
+        else if (fields.includes('match'))
+          desc = `Concordancia de keyword cambiada en ${ctx}`;
+        else
+          desc = `Keyword modificada en ${ctx}`;
+        break;
+      case 'AD':
+      case 'AD_GROUP_AD':
+        if (fields.includes('headline') || fields.includes('title'))
+          desc = `Título de anuncio editado en ${ctx}`;
+        else if (fields.includes('description'))
+          desc = `Descripción de anuncio editada en ${ctx}`;
+        else if (fields.includes('status'))
+          desc = `Estado de anuncio cambiado en ${ctx}`;
+        else if (fields.includes('final_url') || fields.includes('url'))
+          desc = `URL de anuncio actualizada en ${ctx}`;
+        else
+          desc = `Anuncio editado en ${ctx}`;
+        break;
+      case 'AD_GROUP':
+        if (fields.includes('cpc_bid') || fields.includes('bid'))
+          desc = `Puja del grupo ajustada — ${ctx}`;
+        else if (fields.includes('status'))
+          desc = `Estado del grupo cambiado — ${ctx}`;
+        else
+          desc = `Configuración del grupo — ${ctx}`;
+        break;
+      case 'AD_GROUP_BID_MODIFIER':
+        desc = `Modificador de puja ajustado — ${ctx}`;
+        break;
+      case 'CAMPAIGN':
+        if (fields.includes('status'))
+          desc = `Estado de campaña cambiado — ${campShort}`;
+        else if (fields.includes('target') || fields.includes('bid'))
+          desc = `Estrategia de puja actualizada — ${campShort}`;
+        else if (fields.includes('name'))
+          desc = `Nombre de campaña editado — ${campShort}`;
+        else
+          desc = `Configuración de campaña — ${campShort}`;
+        break;
+      case 'CAMPAIGN_BUDGET':
+        desc = `Presupuesto de campaña modificado — ${campShort}`;
+        break;
+      case 'CAMPAIGN_CRITERION':
+        desc = fields.includes('negative')
+          ? `Exclusión añadida — ${campShort}`
+          : `Segmentación actualizada — ${campShort}`;
+        break;
+      default:
+        desc = `${CHANGE_TYPE_ES[typeKey]||typeKey} — ${ctx}`;
+    }
+
+    if (user) desc += ` (${user})`;
     const type = CHANGE_TYPE_ES[typeKey] || typeKey || 'Cambio';
-
     return { date: dateStr, type, campaign: ag || camp, desc };
   });
 
