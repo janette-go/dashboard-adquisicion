@@ -664,27 +664,9 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
             </div>
           </div>
 
-          <!-- Performance (junto a cambios) -->
-          <div style="border-bottom:1px solid var(--border);flex-shrink:0">
-            <div style="padding:.3rem .6rem;background:var(--gray-lt);border-bottom:1px solid var(--border);
-                        display:flex;align-items:center;justify-content:space-between">
-              <span class="card-title" style="font-size:9px">Performance</span>
-              <span id="perf-group-name" style="font-size:9px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:130px"></span>
-            </div>
-            <div id="perf-card-body" class="perf-grid" style="border-bottom:none">
-              <div class="perf-cell" style="grid-column:1/-1;text-align:center;padding:.6rem">
-                <span style="font-size:10px;color:var(--muted)">Selecciona un grupo</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Calidad (junto a cambios) -->
-          <div style="flex-shrink:0">
-            <div style="padding:.3rem .6rem;background:var(--gray-lt);border-bottom:1px solid var(--border)">
-              <span class="card-title" style="font-size:9px">Calidad del anuncio</span>
-            </div>
-            <div id="qual-card-body" style="display:flex;flex-direction:column"></div>
-          </div>
+          <!-- Fichas ocultas — mantienen IDs para compatibilidad JS -->
+          <div style="display:none"><div id="perf-group-name"></div><div id="perf-card-body"></div></div>
+          <div style="display:none"><div id="qual-card-body"></div></div>
 
         </div><!-- /derecha -->
       </div><!-- /grid -->

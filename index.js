@@ -898,8 +898,10 @@ async function fetchFromGoogleAds(period = 'this_month') {
   `;
 
   // ── Query 5: historial de cambios (últimos 30 días, ventana fija) ─────────────
-  const changeStart = new Date(Date.now() - 60 * 86_400_000)
+  // change_event requiere BETWEEN con inicio y fin explícitos
+  const changeStart = new Date(Date.now() - 29 * 86_400_000)
     .toISOString().replace('T', ' ').slice(0, 19);
+  const changeEnd = new Date().toISOString().replace('T', ' ').slice(0, 19);
   const changesQ = `
     SELECT
       change_event.change_date_time,
@@ -907,7 +909,7 @@ async function fetchFromGoogleAds(period = 'this_month') {
       campaign.name,
       ad_group.name
     FROM change_event
-    WHERE change_event.change_date_time >= '${changeStart}'
+    WHERE change_event.change_date_time BETWEEN '${changeStart}' AND '${changeEnd}'
     ORDER BY change_event.change_date_time DESC
     LIMIT 20
   `;
