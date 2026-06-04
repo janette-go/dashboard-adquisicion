@@ -300,15 +300,16 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
 /* tip-box usa position:fixed via JS para saltar cualquier overflow:hidden */
 .tip-box{
   display:none;position:fixed;
-  background:#202124;color:#fff;
+  background:#1a1a22;color:#f0f0f0;
+  border:1px solid rgba(255,255,255,0.18);
   font-size:10px;line-height:1.5;font-weight:400;
   font-family:'Google Sans',sans-serif;
-  padding:7px 10px;border-radius:6px;
-  width:210px;text-align:left;
-  z-index:9999;pointer-events:none;white-space:normal;
-  box-shadow:0 4px 14px rgba(0,0,0,.35);
+  padding:8px 12px;border-radius:8px;
+  width:220px;text-align:left;
+  z-index:99999;pointer-events:none;white-space:normal;
+  box-shadow:0 8px 32px rgba(0,0,0,.8);
 }
-.tip-box b{color:#aecbfa;font-weight:600}
+.tip-box b{color:#60a5fa;font-weight:600}
 .tip-box.tip-above::after{
   content:'';position:absolute;top:100%;left:var(--arrow-left,50%);
   transform:translateX(-50%);
@@ -325,6 +326,14 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
 
 <!-- HEADER FIJO -->
 <div class="hdr">
+  <!-- Isotipo Detecta Security -->
+  <svg viewBox="0 0 100 100" width="26" height="26" style="flex-shrink:0;display:block">
+    <circle cx="50" cy="50" r="48" fill="#8A8A8A"/>
+    <polygon points="50,36 100,36 100,64 50,64" fill="#0d0d0f"/>
+    <circle cx="50" cy="50" r="26" fill="white"/>
+    <circle cx="48" cy="46" r="21" fill="#CC1010"/>
+    <circle cx="60" cy="58" r="13" fill="white"/>
+  </svg>
   <span class="hdr-title">Dashboard Adquisición</span>
   <span class="source-badge source-mock" id="source-badge"><span class="pulse">●</span> Mock</span>
   <span id="period-label" style="font-size:10px;color:var(--muted);white-space:nowrap"></span>
@@ -641,10 +650,10 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
 </div><!-- /main -->
 
 <!-- ── DEAL POPUP (hover sobre número) ─────────────────────────── -->
-<div id="deal-popup" style="display:none;position:fixed;z-index:8500;width:340px;background:var(--surface);border:1px solid var(--border);border-radius:8px;box-shadow:0 6px 24px rgba(0,0,0,.15);overflow:hidden">
-  <div style="display:flex;align-items:center;justify-content:space-between;padding:.45rem .75rem;background:var(--gray-lt);border-bottom:1px solid var(--border)">
-    <span id="dp-label" style="font-size:11px;font-weight:700;color:var(--text)"></span>
-    <span id="dp-count" style="font-size:10px;color:var(--muted)"></span>
+<div id="deal-popup" style="display:none;position:fixed;z-index:8500;width:340px;background:#1a1a22;border:1px solid rgba(255,255,255,0.15);border-radius:8px;box-shadow:0 8px 32px rgba(0,0,0,.7);overflow:hidden">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:.45rem .75rem;background:rgba(255,255,255,0.06);border-bottom:1px solid rgba(255,255,255,0.12)">
+    <span id="dp-label" style="font-size:11px;font-weight:700;color:#f0f0f0"></span>
+    <span id="dp-count" style="font-size:10px;color:rgba(255,255,255,0.5)"></span>
   </div>
   <div id="dp-rows" style="max-height:240px;overflow-y:auto"></div>
   <div id="dp-more" style="display:none;padding:.4rem .75rem;border-top:1px solid var(--border);text-align:center">
@@ -653,8 +662,8 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
 </div>
 
 <!-- ── DEAL MODAL (clic cuando hay muchos deals) ─────────────────── -->
-<div id="deal-modal" onclick="if(event.target===this)closeDealModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9000;overflow:auto;padding:2rem 1rem">
-  <div style="background:var(--surface);border-radius:10px;max-width:800px;margin:0 auto;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.25)">
+<div id="deal-modal" onclick="if(event.target===this)closeDealModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9000;overflow:auto;padding:2rem 1rem;backdrop-filter:blur(4px)">
+  <div style="background:#1a1a22;border:1px solid rgba(255,255,255,0.12);border-radius:10px;max-width:800px;margin:0 auto;overflow:hidden;box-shadow:0 16px 48px rgba(0,0,0,.8)">
     <div style="display:flex;align-items:center;justify-content:space-between;padding:.65rem 1rem;border-bottom:1px solid var(--border);background:var(--gray-lt)">
       <span id="dm-label" style="font-size:13px;font-weight:700"></span>
       <button onclick="closeDealModal()" style="background:none;border:none;font-size:16px;cursor:pointer;color:var(--muted);line-height:1">✕</button>
@@ -893,9 +902,18 @@ function renderCharts(d) {
   const osTotal = os.data.reduce((a,b) => a+b, 0);
   const origenEl = document.getElementById('origen-total');
   if (origenEl) origenEl.textContent = osTotal > 0 ? `${osTotal} SQLs · clic en segmento para ver deals` : '';
+  // Colores sólidos y vibrantes para el donut en fondo oscuro
+  const donutColors = ['#60a5fa','#4ade80','#fbbf24','#a78bfa','#8A8A8A','#2dd4bf','#f472b6'];
   dc('origs'); charts['origs'] = new Chart(document.getElementById('originSqlChart'), {
     type: 'doughnut',
-    data: { labels: os.labels, datasets:[{ data:os.data, backgroundColor:C.pal, borderWidth:0 }] },
+    data: { labels: os.labels, datasets:[{
+      data: os.data,
+      backgroundColor: donutColors,
+      borderColor: '#0d0d0f',
+      borderWidth: 2,
+      hoverBorderColor: '#0d0d0f',
+      hoverBorderWidth: 2,
+    }] },
     options: {
       responsive:true, maintainAspectRatio:false, cutout:'65%',
       plugins:{
