@@ -341,11 +341,17 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
 
 <!-- HEADER FIJO -->
 <div class="hdr">
-  <!-- Isotipo Detecta — coloca el PNG en client/isotipo.png -->
-  <img src="/isotipo.png" alt="Detecta" width="28" height="28"
-       style="flex-shrink:0;object-fit:contain"
-       onerror="this.style.display='none'">
-  <span class="hdr-title">Detecta · Adquisición</span>
+  <!-- Logo + título clicable para actualizar datos -->
+  <div onclick="loadData()" title="Actualizar datos"
+       style="display:flex;align-items:center;gap:8px;cursor:pointer;flex-shrink:0;
+              border-radius:6px;padding:2px 6px 2px 2px;transition:background .15s"
+       onmouseover="this.style.background='rgba(255,255,255,0.06)'"
+       onmouseout="this.style.background=''">
+    <img src="/isotipo.png" alt="Detecta" width="28" height="28"
+         style="flex-shrink:0;object-fit:contain"
+         onerror="this.style.display='none'">
+    <span class="hdr-title">Detecta · Adquisición</span>
+  </div>
   <span class="source-badge source-mock" id="source-badge"><span class="pulse">●</span> Mock</span>
   <span id="period-label" style="font-size:10px;color:var(--muted);white-space:nowrap"></span>
   <div class="hdr-sep"></div>
