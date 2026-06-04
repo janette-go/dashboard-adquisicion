@@ -297,19 +297,30 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
 .tip{display:inline-flex;align-items:center;gap:3px;cursor:default}
 .tip-icon{font-size:9px;color:var(--muted);opacity:.55;line-height:1;flex-shrink:0;transition:opacity .15s;cursor:help}
 .tip-icon:hover{opacity:1}
-/* tip-box usa position:fixed via JS para saltar cualquier overflow:hidden */
-.tip-box{
+/* tip-box oculto en DOM — el contenido se muestra en #global-tip fuera de cards */
+.tip-box{ display:none !important; }
+/* Global tooltip — hijo directo de body, sin backdrop-filter padre */
+#global-tip{
   display:none;position:fixed;
   background:#1a1a22;color:#f0f0f0;
-  border:1px solid rgba(255,255,255,0.18);
-  font-size:10px;line-height:1.5;font-weight:400;
-  font-family:'Google Sans',sans-serif;
-  padding:8px 12px;border-radius:8px;
-  width:220px;text-align:left;
-  z-index:99999;pointer-events:none;white-space:normal;
-  box-shadow:0 8px 32px rgba(0,0,0,.8);
+  border:1px solid rgba(255,255,255,0.2);
+  font-size:10px;line-height:1.55;font-weight:400;
+  font-family:'Google Sans','Segoe UI',sans-serif;
+  padding:9px 13px;border-radius:9px;
+  width:230px;max-width:calc(100vw - 16px);text-align:left;
+  z-index:999999;pointer-events:none;white-space:normal;
+  box-shadow:0 10px 40px rgba(0,0,0,.85);
 }
-.tip-box b{color:#60a5fa;font-weight:600}
+#global-tip b{color:#60a5fa;font-weight:600}
+#global-tip::after{
+  content:'';position:absolute;top:100%;left:var(--arrow-left,50%);
+  transform:translateX(-50%);
+  border:5px solid transparent;border-top-color:#1a1a22;
+}
+#global-tip.tip-below::after{
+  top:auto;bottom:100%;
+  border-top-color:transparent;border-bottom-color:#1a1a22;
+}
 .tip-box.tip-above::after{
   content:'';position:absolute;top:100%;left:var(--arrow-left,50%);
   transform:translateX(-50%);
@@ -644,6 +655,9 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
   </section>
 
 </div><!-- /main -->
+
+<!-- Tooltip global — fuera de cualquier card con backdrop-filter -->
+<div id="global-tip"></div>
 
 <!-- ── DEAL POPUP (hover sobre número) ─────────────────────────── -->
 <div id="deal-popup" style="display:none;position:fixed;z-index:8500;width:340px;background:#1a1a22;border:1px solid rgba(255,255,255,0.15);border-radius:8px;box-shadow:0 8px 32px rgba(0,0,0,.7);overflow:hidden">
@@ -1670,61 +1684,53 @@ document.addEventListener('click', e => {
   if (deals.length) openDealModal();
 });
 
-// ── TOOLTIPS — solo se activan al pasar sobre el ícono ⓘ, no sobre el texto ──
+// ── TOOLTIPS — usa #global-tip (hijo directo de body) para evitar que
+// backdrop-filter de .card cree un stacking context que atrape position:fixed ──
+const _gt = () => document.getElementById('global-tip');
+
 document.addEventListener('mouseover', e => {
   const icon = e.target.closest('.tip-icon');
   if (!icon) return;
-  const tip = icon.closest('.tip');
-  if (!tip) return;
-  const box = tip.querySelector('.tip-box');
+  const box = icon.closest('.tip')?.querySelector('.tip-box');
   if (!box) return;
+  const gt = _gt(); if (!gt) return;
+
+  gt.innerHTML = box.innerHTML;
+  gt.style.display = 'block';
 
   const r   = icon.getBoundingClientRect();
   const W   = window.innerWidth;
   const H   = window.innerHeight;
-  const BOX = 220;
+  const BOX = 230;
   const GAP = 10;
+  const boxH = gt.offsetHeight;
 
-  box.style.display = 'block';
-  const boxH = box.offsetHeight;
-
-  // SIEMPRE arriba — solo baja si no cabe en absoluto
-  let top;
+  // Preferir arriba; si no cabe, mostrar abajo
   const topAbove = r.top - boxH - GAP;
-  if (topAbove >= 4) {
-    // Cabe arriba: preferido
+  let top;
+  if (topAbove >= 8) {
     top = topAbove;
-    box.classList.add('tip-above'); box.classList.remove('tip-below');
-  } else if (r.bottom + boxH + GAP <= H - 4) {
-    // No cabe arriba pero sí abajo
-    top = r.bottom + GAP;
-    box.classList.add('tip-below'); box.classList.remove('tip-above');
+    gt.classList.remove('tip-below');
   } else {
-    // Ni arriba ni abajo completamente → posicionar lo más arriba posible
-    top = Math.max(4, r.top - boxH - GAP);
-    box.classList.add('tip-above'); box.classList.remove('tip-below');
+    top = Math.min(r.bottom + GAP, H - boxH - 8);
+    gt.classList.add('tip-below');
   }
 
-  // Centrar horizontalmente, sin salirse del viewport
   let left = r.left + r.width / 2 - BOX / 2;
   left = Math.max(8, Math.min(left, W - BOX - 8));
-  box.style.top  = top + 'px';
-  box.style.left = left + 'px';
+  gt.style.top  = top + 'px';
+  gt.style.left = left + 'px';
 
   const arrowLeft = (r.left + r.width / 2) - left;
-  box.style.setProperty('--arrow-left', Math.max(14, Math.min(arrowLeft, BOX - 14)) + 'px');
+  gt.style.setProperty('--arrow-left', Math.max(14, Math.min(arrowLeft, BOX - 14)) + 'px');
 });
 
-// Cerrar siempre que el ratón sale del ⓘ — sin verificar relatedTarget
-// (evita el bug donde el texto dentro del mismo .tip mantenía el tooltip abierto)
 document.addEventListener('mouseout', e => {
-  if (e.target.closest('.tip-icon')) {
-    closeAllTips();
-  }
+  if (e.target.closest('.tip-icon')) closeAllTips();
 });
 
 function closeAllTips() {
-  document.querySelectorAll('.tip-box').forEach(b => { b.style.display = 'none'; });
+  const gt = _gt(); if (gt) gt.style.display = 'none';
 }
 document.addEventListener('click',  closeAllTips);
 document.addEventListener('scroll', closeAllTips, true);
