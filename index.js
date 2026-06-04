@@ -837,7 +837,7 @@ async function fetchFromGoogleAds(period = 'this_month') {
   const summaryQ = `
     SELECT
       metrics.cost_micros, metrics.conversions, metrics.ctr,
-      metrics.impressions,  metrics.clicks, metrics.average_cpc
+      metrics.impressions,  metrics.clicks
     FROM campaign
     WHERE segments.date BETWEEN '${pc.startStr}' AND '${pc.endStr}'
   `;
@@ -987,22 +987,17 @@ async function fetchFromGoogleAds(period = 'this_month') {
 
   // ── Resumen a nivel cuenta (FROM campaign — fuente autoritativa) ───────────────
   let totalCost = 0, totalConv = 0, totalImpr = 0, totalClicks = 0;
-  let totalCpcMicros = 0, cpcCount = 0;
   for (const row of summaryRows) {
     totalCost   += num(row.metrics.cost_micros);
     totalConv   += num(row.metrics.conversions);
     totalImpr   += num(row.metrics.impressions);
     totalClicks += num(row.metrics.clicks);
-    // average_cpc viene en micros; promediamos entre campañas con clics
-    const rowCpc = num(row.metrics.average_cpc);
-    if (rowCpc > 0) { totalCpcMicros += rowCpc; cpcCount++; }
   }
   const gasto = parseFloat((totalCost / 1e6).toFixed(2));
   const convs = Math.round(totalConv);
   const ctr   = totalImpr > 0 ? parseFloat((totalClicks / totalImpr * 100).toFixed(2)) : 0;
   const cpl   = convs > 0     ? parseFloat((gasto / convs).toFixed(2)) : 0;
-  // CPC promedio directamente desde Google Ads (average_cpc en micros)
-  const cpc   = cpcCount > 0  ? parseFloat((totalCpcMicros / cpcCount / 1e6).toFixed(2)) : 0;
+  const cpc   = totalClicks > 0 ? parseFloat((gasto / totalClicks).toFixed(2)) : 0;
 
   const summary = { gasto, conversiones: convs, cpl, ctr, cpc, impr: totalImpr };
 
