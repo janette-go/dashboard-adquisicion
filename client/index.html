@@ -101,9 +101,9 @@ body{
 }
 .sb-item:hover{background:rgba(255,255,255,0.06);color:var(--text)}
 .sb-item.active{color:#fff;border-left-color:var(--detecta-red);background:rgba(204,16,16,0.18);font-weight:500}
-.sb-icon{width:17px;height:17px;flex-shrink:0;opacity:.6;display:flex;align-items:center;justify-content:center;transition:all .2s}
-.sb-item:hover .sb-icon{opacity:.9;filter:drop-shadow(0 0 4px rgba(204,16,16,0.5))}
-.sb-item.active .sb-icon{opacity:1;filter:drop-shadow(0 0 6px rgba(204,16,16,0.85))}
+.sb-icon{width:17px;height:17px;flex-shrink:0;opacity:.55;display:flex;align-items:center;justify-content:center;transition:all .2s;transform-origin:center}
+.sb-item:hover .sb-icon{opacity:1;transform:scale(1.15);color:#CC1010}
+.sb-item.active .sb-icon{opacity:1;transform:scale(1.1);color:#CC1010}
 .sb-footer{padding:.75rem .9rem;border-top:1px solid var(--border);font-size:10px;color:var(--muted)}
 
 /* ── MAIN ── */
