@@ -364,7 +364,7 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
           <div class="exec-cells">
             <div class="exec-cell"><p class="ec-val" id="m-gasto">$0</p><p class="ec-lbl"><span class="tip">Gasto Ads Total<span class="tip-icon">ⓘ</span><span class="tip-box">Suma del costo de todas las campañas en el periodo.<br><b>Fuente:</b> Google Ads · metrics.cost_micros</span></span></p></div>
             <div class="exec-cell"><p class="ec-val" id="m-conv" >0</p><p class="ec-lbl"><span class="tip">Conversiones (leads)<span class="tip-icon">ⓘ</span><span class="tip-box">Total de conversiones registradas en Google Ads. Generalmente equivale a formularios completados desde los anuncios.<br><b>Fuente:</b> Google Ads · metrics.conversions</span></span></p></div>
-            <div class="exec-cell"><p class="ec-val" id="m-cpl"  >$0</p><p class="ec-lbl"><span class="tip">Costo por Lead (CPL)<span class="tip-icon">ⓘ</span><span class="tip-box"><b>Cálculo:</b> Gasto Ads ÷ Conversiones.<br>Cuánto cuesta en promedio cada lead generado por publicidad.</span></span></p></div>
+            <div class="exec-cell"><p class="ec-val" id="m-cpl"  >$0</p><p class="ec-lbl"><span class="tip">Costo por conversión<span class="tip-icon">ⓘ</span><span class="tip-box"><b>Cálculo:</b> Gasto Ads ÷ Conversiones registradas en Google Ads.<br>Costo promedio de cada formulario completado desde anuncios.</span></span></p></div>
             <div class="exec-cell"><p class="ec-val" id="m-ctr"  >0%</p><p class="ec-lbl"><span class="tip">CTR de la cuenta<span class="tip-icon">ⓘ</span><span class="tip-box"><b>Cálculo:</b> (Clics ÷ Impresiones) × 100.<br>Porcentaje de veces que el anuncio fue visto y recibió un clic.<br><b>Fuente:</b> Google Ads</span></span></p></div>
             <div class="exec-cell"><p class="ec-val" id="m-impr" >0</p><p class="ec-lbl"><span class="tip">Impresiones de la cuenta<span class="tip-icon">ⓘ</span><span class="tip-box">Número de veces que los anuncios aparecieron en resultados de búsqueda en el periodo.<br><b>Fuente:</b> Google Ads</span></span></p></div>
           </div>
@@ -375,6 +375,7 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
             <div class="exec-cell"><p class="ec-val deal-num" id="m-ql" data-list="leads" data-label="Leads calificados" style="cursor:pointer">–</p><p class="ec-lbl"><span class="tip">Leads calificados<span class="tip-icon">ⓘ</span><span class="tip-box">Deals creados en el periodo con el campo <b>"Calificación del Lead"</b> lleno en Pipedrive.</span></span></p></div>
             <div class="exec-cell"><p class="ec-val deal-num" id="m-sql" data-list="sqls" data-label="SQLs" style="cursor:pointer">–</p><p class="ec-lbl"><span class="tip">SQLs<span class="tip-icon">ⓘ</span><span class="tip-box">Deals creados en el periodo con el campo <b>"Calificación SQL"</b> lleno en Pipedrive. Indica que el lead fue calificado como Sales Qualified Lead.</span></span></p></div>
             <div class="exec-cell"><p class="ec-val deal-num" id="m-won" data-list="ganados" data-label="Clientes ganados" style="cursor:pointer">–</p><p class="ec-lbl"><span class="tip">Clientes ganados<span class="tip-icon">ⓘ</span><span class="tip-box">Deals marcados como <b>Ganados</b> en Pipedrive dentro del periodo. Filtrado por la fecha exacta de cierre (won_time).</span></span></p></div>
+            <div class="exec-cell"><p class="ec-val" id="m-costo-lead-cal">–</p><p class="ec-lbl"><span class="tip">Costo por lead cal.<span class="tip-icon">ⓘ</span><span class="tip-box"><b>Cálculo:</b> Gasto Ads Total ÷ Leads calificados del periodo.<br>Cuánto cuesta en promedio convertir un lead en un Lead Calificado.</span></span></p></div>
             <div class="exec-cell"><p class="ec-val" id="m-costo-sql">–</p><p class="ec-lbl"><span class="tip">Costo por SQL<span class="tip-icon">ⓘ</span><span class="tip-box"><b>Cálculo:</b> Gasto Ads ÷ (SQLs Paid Media + SQLs Orgánicos).<br>Solo considera canales pagados y orgánicos para atribuir el costo correctamente.</span></span></p></div>
             <div class="exec-cell"><p class="ec-val" id="m-s2w"      >–</p><p class="ec-lbl"><span class="tip">SQL → Cliente<span class="tip-icon">ⓘ</span><span class="tip-box"><b>Cálculo:</b> (Clientes ganados ÷ SQLs totales) × 100.<br>Tasa de cierre del pipeline de ventas.</span></span></p></div>
           </div>
@@ -722,7 +723,9 @@ function renderSummary(d) {
   setText('m-ql',       fmt(s.leadsCalificados));
   setText('m-sql',      fmt(s.sqls));
   setText('m-won',      fmt(s.clientesGanados));
-  setText('m-costo-sql',d.costoSQL != null ? fmtM(d.costoSQL) : '–');
+  const costoLeadCal = s.leadsCalificados > 0 ? s.gasto / s.leadsCalificados : null;
+  setText('m-costo-lead-cal', costoLeadCal != null ? fmtM(parseFloat(costoLeadCal.toFixed(2))) : '–');
+  setText('m-costo-sql', d.costoSQL != null ? fmtM(d.costoSQL) : '–');
   const s2w = pl.sqls > 0 ? ((pl.ganados / pl.sqls) * 100).toFixed(1) + '%' : '–';
   setText('m-s2w', s2w);
   // Métricas de SQL en sección de gráfico
