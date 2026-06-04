@@ -882,7 +882,7 @@ async function fetchFromGoogleAds(period = 'this_month') {
   `;
 
   // ── Query 5: historial de cambios (últimos 30 días, ventana fija) ─────────────
-  const changeStart = new Date(Date.now() - 30 * 86_400_000)
+  const changeStart = new Date(Date.now() - 60 * 86_400_000)
     .toISOString().replace('T', ' ').slice(0, 19);
   const changesQ = `
     SELECT
@@ -906,7 +906,10 @@ async function fetchFromGoogleAds(period = 'this_month') {
 
   let changesRows = [];
   try { changesRows = await customer.query(changesQ); }
-  catch (e) { console.warn('[change_event]', e.message); }
+  catch (e) {
+    const msg = e?.message || e?.errors?.[0]?.message || JSON.stringify(e?.failure||e).slice(0,200);
+    console.warn('[change_event]', msg);
+  }
 
   // ── Query 5: estadísticas de subasta via REST API directa ────────────────────
   // La librería npm no expone auction_insight.domain; la REST API sí lo permite.

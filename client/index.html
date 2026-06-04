@@ -544,61 +544,58 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
         </span>
       </div>
 
-      <!-- Grid principal: selector izq + cards der -->
-      <div style="display:grid;grid-template-columns:250px 1fr;min-height:480px">
+      <!-- Grid: [árbol izq] [keywords centro] [cambios+cards der] -->
+      <div style="display:grid;grid-template-columns:210px 1fr 260px;min-height:500px">
 
-        <!-- IZQUIERDA: lista de grupos -->
-        <div style="border-right:1px solid var(--border);overflow-y:auto">
-          <div id="camp-list" style="padding:.5rem"></div>
-          <!-- Últimas modificaciones al fondo -->
-          <div style="border-top:1px solid var(--border);padding:.5rem">
-            <div style="font-size:9px;font-weight:700;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin-bottom:5px">🕐 Cambios recientes</div>
-            <div class="changes-list" id="changes-list" style="max-height:180px;overflow-y:auto">
-              <div class="change-item"><p class="ci-desc" style="color:var(--muted)">Cargando…</p></div>
-            </div>
+        <!-- IZQUIERDA: árbol de campañas -->
+        <div style="border-right:1px solid var(--border);overflow-y:auto;padding:.5rem">
+          <div id="camp-list"></div>
+        </div>
+
+        <!-- CENTRO: Keywords (protagonista) -->
+        <div style="border-right:1px solid var(--border);display:flex;flex-direction:column">
+          <div style="padding:.35rem .75rem;background:var(--gray-lt);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+            <span class="card-title">Keywords activas</span>
+            <span id="kw-group-name" style="font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px"></span>
+          </div>
+          <div id="kw-card-body" style="overflow-y:auto;flex:1">
+            <div style="padding:1rem;font-size:11px;color:var(--muted)">Selecciona un grupo o campaña.</div>
           </div>
         </div>
 
-        <!-- DERECHA: cards fijas (actualizan con el grupo seleccionado) -->
-        <div style="display:flex;flex-direction:column;gap:.75rem;padding:.75rem">
+        <!-- DERECHA: Cambios recientes + Performance + Calidad -->
+        <div style="display:flex;flex-direction:column;overflow-y:auto">
 
-          <!-- Fila 1: Performance + Calidad -->
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
-
-            <!-- Card Performance -->
-            <div class="card">
-              <div class="card-hdr" style="padding:.35rem .75rem">
-                <span class="card-title">Performance</span>
-                <span id="perf-group-name" style="font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px"></span>
-              </div>
-              <div id="perf-card-body" class="perf-grid" style="border-bottom:none">
-                <div class="perf-cell" style="grid-column:1/-1;text-align:center;padding:1rem">
-                  <span style="font-size:11px;color:var(--muted)">Selecciona un grupo de anuncios</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Card Calidad -->
-            <div class="card">
-              <div class="card-hdr" style="padding:.35rem .75rem">
-                <span class="card-title">Calidad del anuncio</span>
-              </div>
-              <div id="qual-card-body" style="display:flex;flex-direction:column;gap:0"></div>
+          <!-- Cambios recientes ARRIBA -->
+          <div style="border-bottom:1px solid var(--border)">
+            <div style="font-size:9px;font-weight:700;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;padding:.35rem .6rem;background:var(--gray-lt);border-bottom:1px solid var(--border)">🕐 Cambios recientes</div>
+            <div class="changes-list" id="changes-list" style="max-height:170px;overflow-y:auto">
+              <div class="change-item"><p class="ci-desc" style="color:var(--muted)">Cargando…</p></div>
             </div>
           </div>
 
-          <!-- Fila 2: Keywords activas -->
-          <div class="card" style="flex:1;overflow:hidden;display:flex;flex-direction:column">
-            <div class="card-hdr" style="padding:.35rem .75rem">
-              <span class="card-title">Keywords activas</span>
-              <span id="kw-group-name" style="font-size:10px;color:var(--muted)"></span>
+          <!-- Performance -->
+          <div style="border-bottom:1px solid var(--border)">
+            <div style="padding:.35rem .6rem;background:var(--gray-lt);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+              <span class="card-title" style="font-size:9px">Performance</span>
+              <span id="perf-group-name" style="font-size:9px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px"></span>
             </div>
-            <div id="kw-card-body" style="overflow-y:auto;flex:1;max-height:240px">
-              <div style="padding:1rem;font-size:11px;color:var(--muted)">Selecciona un grupo para ver sus keywords.</div>
+            <div id="perf-card-body" class="perf-grid" style="border-bottom:none">
+              <div class="perf-cell" style="grid-column:1/-1;text-align:center;padding:.75rem">
+                <span style="font-size:10px;color:var(--muted)">Selecciona un grupo</span>
+              </div>
             </div>
           </div>
 
-        </div><!-- /cards -->
+          <!-- Calidad -->
+          <div>
+            <div style="padding:.35rem .6rem;background:var(--gray-lt);border-bottom:1px solid var(--border)">
+              <span class="card-title" style="font-size:9px">Calidad del anuncio</span>
+            </div>
+            <div id="qual-card-body" style="display:flex;flex-direction:column"></div>
+          </div>
+
+        </div><!-- /derecha -->
       </div><!-- /grid -->
     </div>
   </section>
@@ -1028,50 +1025,68 @@ function renderGSC(d) {
 }
 
 // ── MAPA DE CAMPAÑAS ──────────────────────────────────────────────────────────
-let _groupMap = {};   // groupId → group object
+let _groupMap = {};     // groupId → group
+let _campMap  = {};     // campId  → campaign
 let _selGroupId = null;
+
+// Sorting de keywords
+let _kwData = [], _kwSortCol = 'impressions', _kwSortDir = 'desc';
+
+function sortKw(col) {
+  if (_kwSortCol === col) _kwSortDir = _kwSortDir === 'desc' ? 'asc' : 'desc';
+  else { _kwSortCol = col; _kwSortDir = 'desc'; }
+  renderKwBody();
+}
 
 function renderTree(d) {
   const camps = d.campaigns || [];
   const panel = document.getElementById('camp-list');
   if (!panel) return;
 
-  // Rebuild group map
-  _groupMap = {};
-  camps.forEach(c => (c.groups||[]).forEach(g => { _groupMap[g.id] = g; }));
+  _groupMap = {}; _campMap = {};
+  camps.forEach(c => {
+    _campMap[c.id] = c;
+    (c.groups||[]).forEach(g => { _groupMap[g.id] = g; _groupMap[g.id]._campId = c.id; });
+  });
 
-  // Sort: non-Brand first, Brand last
+  // Custodia primero, Brand al final
   const sorted = [...camps].sort((a,b) => (a.type==='Brand'?1:0) - (b.type==='Brand'?1:0));
 
   const qCls  = s => s==='green'?'qs-green':s==='red'?'qs-red':'qs-yellow';
   const lostC = v => v>40?'var(--red)':v>20?'var(--yellow)':'var(--green)';
 
   panel.innerHTML = sorted.map(camp => `
-    <div style="margin-bottom:14px">
-      <div style="font-size:9px;font-weight:700;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;
-                  padding:.3rem .5rem;background:var(--gray-lt);border-radius:4px;margin-bottom:3px">
-        ${camp.type} · ${camp.name}
+    <div style="margin-bottom:12px">
+      <!-- Fila de campaña (clic = ver todas las keywords de la campaña) -->
+      <div class="camp-grp-row" data-cid="${camp.id}" onclick="selectCampaign('${camp.id}')"
+           style="display:flex;align-items:center;gap:6px;padding:.3rem .4rem;border-radius:5px;
+                  cursor:pointer;margin-bottom:3px;border:1px solid transparent;transition:all .12s;
+                  background:var(--gray-lt)">
+        <div style="font-size:9px;font-weight:700;color:var(--muted);letter-spacing:.05em;text-transform:uppercase;flex:1;
+                    white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+          ${camp.type} · ${camp.name}
+        </div>
+        <span style="font-size:8px;color:var(--blue);font-weight:600">ver todo</span>
       </div>
       ${(camp.groups||[]).map(g => `
         <div class="camp-grp-row" data-gid="${g.id}" onclick="selectAdGroup('${g.id}')"
-             style="display:grid;grid-template-columns:30px 1fr auto;gap:6px;align-items:center;
-                    padding:.35rem .4rem;border-radius:6px;cursor:pointer;margin-bottom:2px;
+             style="display:grid;grid-template-columns:26px 1fr auto;gap:5px;align-items:center;
+                    padding:.3rem .4rem;border-radius:5px;cursor:pointer;margin-bottom:2px;
                     border:1px solid transparent;transition:all .12s">
           <div class="${qCls(g.qsStatus)}"
-               style="width:28px;height:28px;border-radius:50%;border:2px solid;
+               style="width:24px;height:24px;border-radius:50%;border:2px solid;
                       display:flex;align-items:center;justify-content:center;
-                      font-family:'Roboto Mono',monospace;font-size:10px;font-weight:700;flex-shrink:0">
+                      font-family:'Roboto Mono',monospace;font-size:9px;font-weight:700;flex-shrink:0">
             ${g.qs??'–'}
           </div>
           <div style="min-width:0">
-            <div style="font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${g.name}</div>
-            <div style="font-size:9px;color:var(--muted)">
-              ${(g.metrics?.impressions||0).toLocaleString('es-MX')} impr
-              · ${g.metrics?.ctr||0}% CTR
-              · <span style="color:${lostC(g.metrics?.lostImprRanking||0)}">${g.metrics?.lostImprRanking||0}% perd.</span>
+            <div style="font-size:10px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${g.name}</div>
+            <div style="font-size:8px;color:var(--muted)">
+              ${(g.metrics?.impressions||0).toLocaleString('es-MX')} impr · ${g.metrics?.ctr||0}% CTR
+              · <span style="color:${lostC(g.metrics?.lostImprRanking||0)}">${g.metrics?.lostImprRanking||0}% perd</span>
             </div>
           </div>
-          <div style="font-size:12px;font-weight:700;font-family:'Roboto Mono',monospace;
+          <div style="font-size:11px;font-weight:700;font-family:'Roboto Mono',monospace;
                       color:${(g.metrics?.conversions||0)>0?'var(--green)':'var(--muted)'}">
             ${g.metrics?.conversions||0}
           </div>
@@ -1083,14 +1098,34 @@ function renderTree(d) {
   if (first) selectAdGroup(first.id);
 }
 
+function selectCampaign(cid) {
+  _selGroupId = null;
+  // Highlight
+  document.querySelectorAll('.camp-grp-row').forEach(r => {
+    r.style.background    = r.dataset.cid === cid ? 'var(--blue-lt)' : r.dataset.cid ? 'var(--gray-lt)' : '';
+    r.style.borderColor   = r.dataset.cid === cid ? 'var(--blue)' : 'transparent';
+  });
+  const camp = _campMap[cid];
+  if (!camp) return;
+  // Merge all keywords from all groups
+  const allKws = (camp.groups||[]).flatMap(g => (g.keywords||[]).map(k => ({ ...k, _group: g.name })));
+  _kwData = allKws.filter(k => k.text);
+  const nm = document.getElementById('kw-group-name');
+  if (nm) nm.textContent = `${camp.name} — todas las keywords`;
+  renderKwBody();
+  // Clear metric cards
+  const pb = document.getElementById('perf-card-body');
+  if (pb) pb.innerHTML = '<div class="perf-cell" style="grid-column:1/-1;text-align:center;padding:.75rem"><span style="font-size:10px;color:var(--muted)">Selecciona un grupo</span></div>';
+  const qb = document.getElementById('qual-card-body');
+  if (qb) qb.innerHTML = '';
+}
+
 function selectAdGroup(gid) {
   _selGroupId = gid;
-  // Highlight
   document.querySelectorAll('.camp-grp-row').forEach(row => {
     const sel = row.dataset.gid === gid;
-    row.style.background    = sel ? 'var(--blue-lt)' : '';
-    row.style.borderColor   = sel ? 'var(--blue)'    : 'transparent';
-    row.style.fontWeight    = sel ? '600'             : '';
+    row.style.background  = sel ? 'var(--blue-lt)' : row.dataset.cid ? 'var(--gray-lt)' : '';
+    row.style.borderColor = sel ? 'var(--blue)'    : 'transparent';
   });
   const g = _groupMap[gid];
   if (!g) return;
@@ -1171,49 +1206,65 @@ function renderQualCard(g) {
 }
 
 function renderKwCard(g) {
-  const el = document.getElementById('kw-card-body');
   const nm = document.getElementById('kw-group-name');
-  if (!el) return;
   if (nm) nm.textContent = g.name;
+  _kwData = (g.keywords||[]).filter(k => k.text);
+  renderKwBody();
+}
 
-  const kws = (g.keywords||[])
-    .filter(k => k.text)
-    .sort((a,b) => (b.impressions||0)-(a.impressions||0));
-
-  if (!kws.length) {
+function renderKwBody() {
+  const el = document.getElementById('kw-card-body');
+  if (!el) return;
+  if (!_kwData.length) {
     el.innerHTML = '<div style="padding:1rem;font-size:11px;color:var(--muted)">Sin keywords activas.</div>';
     return;
   }
-
-  const SYM = { exact:'[]', phrase:'""', broad:'~' };
-  const maxI = Math.max(1, ...kws.map(k=>k.impressions||0));
-  const qC   = v => v>=8?'var(--green)':v>=6?'var(--yellow)':v>0?'var(--red)':'var(--muted)';
+  const sorted = [..._kwData].sort((a,b) => {
+    const av=a[_kwSortCol]??0, bv=b[_kwSortCol]??0;
+    return _kwSortDir==='desc' ? bv-av : av-bv;
+  });
+  const maxImpr = Math.max(1, ...sorted.map(k=>k.impressions||0));
+  const qC = v => v>=8?'var(--green)':v>=6?'var(--yellow)':v>0?'var(--red)':'var(--muted)';
+  const MATCH_BADGE = {
+    exact:  { label:'Exacta', bg:'var(--blue-lt)',   color:'var(--blue)'   },
+    phrase: { label:'Frase',  bg:'var(--green-lt)',  color:'var(--green)'  },
+    broad:  { label:'Amplia', bg:'var(--yellow-lt)', color:'var(--yellow)' },
+  };
+  const sortArrow = col => _kwSortCol===col ? (_kwSortDir==='desc'?'▼':'▲') : '';
+  const thS = col => `padding:.3rem .6rem;text-align:right;font-size:9px;font-weight:700;
+    color:${_kwSortCol===col?'var(--blue)':'var(--muted)'};text-transform:uppercase;
+    letter-spacing:.04em;border-bottom:1px solid var(--border);cursor:pointer;white-space:nowrap`;
 
   el.innerHTML = `
     <table style="width:100%;border-collapse:collapse;font-size:11px">
       <thead style="position:sticky;top:0;background:var(--gray-lt)">
         <tr>
-          <th style="padding:.3rem .6rem;text-align:left;font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--border)">Concordancia</th>
-          <th style="padding:.3rem .6rem;text-align:left;font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--border)">Keyword</th>
-          <th style="padding:.3rem .6rem;text-align:center;font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--border)">QS</th>
-          <th style="padding:.3rem .6rem;text-align:right;font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--border)">Impr.</th>
-          <th style="padding:.3rem .6rem;text-align:right;font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--border)">Conv.</th>
+          <th style="padding:.3rem .6rem;text-align:left;font-size:9px;font-weight:700;color:var(--muted);
+              text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--border)">Keyword</th>
+          <th onclick="sortKw('qs')"          style="${thS('qs')}">QS ${sortArrow('qs')}</th>
+          <th onclick="sortKw('impressions')" style="${thS('impressions')}">Impr. ${sortArrow('impressions')}</th>
+          <th onclick="sortKw('conversions')" style="${thS('conversions')}">Conv. ${sortArrow('conversions')}</th>
         </tr>
       </thead>
       <tbody>
-        ${kws.map(k=>{
-          const qs=k.qs||0, bw=Math.round((k.impressions||0)/maxI*80);
+        ${sorted.map(k=>{
+          const qs=k.qs||0, bw=Math.round((k.impressions||0)/maxImpr*80);
+          const mb=MATCH_BADGE[k.match]||{label:k.match||'?',bg:'var(--gray-lt)',color:'var(--muted)'};
           return `<tr style="border-bottom:1px solid var(--gray-lt)">
-            <td style="padding:.3rem .6rem;font-family:'Roboto Mono',monospace;font-size:10px;color:var(--muted);white-space:nowrap">${SYM[k.match]||k.match}</td>
-            <td style="padding:.3rem .6rem;max-width:220px">
-              <div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:'Roboto Mono',monospace;font-size:10px">${k.text}</div>
-              <div style="height:2px;background:var(--gray-lt);border-radius:1px;margin-top:2px">
-                <div style="height:100%;width:${bw}%;background:var(--blue-lt);border-radius:1px;border-right:2px solid var(--blue)"></div>
+            <td style="padding:.3rem .6rem;max-width:260px">
+              <div style="display:flex;align-items:center;gap:5px;margin-bottom:2px">
+                <span style="font-size:8px;font-weight:700;padding:1px 5px;border-radius:3px;
+                  background:${mb.bg};color:${mb.color};flex-shrink:0;white-space:nowrap">${mb.label}</span>
+                <span style="font-family:'Roboto Mono',monospace;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${k.text}</span>
+              </div>
+              <div style="height:2px;background:var(--gray-lt);border-radius:1px">
+                <div style="height:100%;width:${bw}%;background:var(--blue);opacity:.35;border-radius:1px"></div>
               </div>
             </td>
-            <td style="padding:.3rem .6rem;text-align:center;font-family:'Roboto Mono',monospace;font-weight:700;color:${qC(qs)}">${qs||'–'}</td>
+            <td style="padding:.3rem .6rem;text-align:right;font-family:'Roboto Mono',monospace;font-weight:700;color:${qC(qs)}">${qs||'–'}</td>
             <td style="padding:.3rem .6rem;text-align:right;color:var(--muted);font-family:'Roboto Mono',monospace;font-size:10px">${(k.impressions||0).toLocaleString('es-MX')}</td>
-            <td style="padding:.3rem .6rem;text-align:right;font-weight:700;font-family:'Roboto Mono',monospace;color:${(k.conversions||0)>0?'var(--green)':'var(--muted)'}">${k.conversions||0}</td>
+            <td style="padding:.3rem .6rem;text-align:right;font-weight:700;font-family:'Roboto Mono',monospace;
+              color:${(k.conversions||0)>0?'var(--green)':'var(--muted)'}">${k.conversions||0}</td>
           </tr>`;
         }).join('')}
       </tbody>
