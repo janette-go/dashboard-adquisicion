@@ -1,3 +1,4 @@
+process.env.TZ = 'America/Mexico_City'; // fuerza timezone México en todo el proceso
 require('dotenv').config();
 const express = require('express');
 const path    = require('path');
@@ -193,13 +194,10 @@ function mostCommon(arr) {
 // `during` → cláusula GAQL top-level (ej. "DURING THIS_MONTH")
 // `where`  → fragmento para añadir en WHERE con AND (ej. "segments.date BETWEEN '...' AND '...'")
 function parsePeriod(period = 'this_month') {
-  // Railway corre en UTC; México es UTC-6. Usamos hora local mexicana para
-  // que "hoy" y "ayer" coincidan con las fechas que Pipedrive guarda.
-  const MX_OFFSET_MS = -6 * 60 * 60 * 1000;
-  const now   = new Date(Date.now() + MX_OFFSET_MS - new Date().getTimezoneOffset() * 60000);
-  const year  = now.getUTCFullYear();
-  const month = now.getUTCMonth();
-  const day   = now.getUTCDate();
+  const now   = new Date(); // ya en hora México gracias a process.env.TZ
+  const year  = now.getFullYear();
+  const month = now.getMonth();
+  const day   = now.getDate();
   let start, end;
 
   switch (period) {
@@ -212,7 +210,7 @@ function parsePeriod(period = 'this_month') {
       end   = new Date(year, month, day - 1, 23, 59, 59);
       break;
     case '7d': {
-      const dow = now.getUTCDay();
+      const dow = now.getDay();
       const daysToMon = dow === 0 ? 6 : dow - 1;
       start = new Date(year, month, day - daysToMon, 0, 0, 0);
       end   = now;
