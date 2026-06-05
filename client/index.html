@@ -2704,9 +2704,10 @@ function generateReport() {
 
   const { insights, recs } = analyzeData(d);
 
-  const CH_COLORS = {'Paid Search':'#c0392b','Orgánico':'#1a7a3c','IA':'#6d28d9',
-    'LinkedIn · Paid':'#0A66C2','LinkedIn · Orgánico':'#5BADE2','Mailing':'#d97706',
-    'Directo':'#6b7280','Display':'#0891b2','Referral / Social':'#4b5563','Otro':'#9ca3af'};
+  // Paleta brandbook Detecta: primarios #191919 #999999 #eb0000; secundarios #155D9F #FFED66 #5658A3 #B3D6A7
+  const CH_COLORS = {'Paid Search':'#eb0000','Orgánico':'#B3D6A7','IA':'#5658A3',
+    'LinkedIn · Paid':'#155D9F','LinkedIn · Orgánico':'#999999','Mailing':'#FFED66',
+    'Directo':'#cccccc','Display':'#155D9F','Referral / Social':'#555555','Otro':'#dddddd'};
 
   const chs = (ga4.channels||[]).slice(0,7);
   const chBar = svgBarH(chs.map(c=>({l:c.channel,v:c.sessions,d:`${fmt(c.sessions)} (${c.pct}%)`,c:CH_COLORS[c.channel]||'#1a4a9c'})), 350, null);
@@ -2730,9 +2731,9 @@ function generateReport() {
   ], 320, 160);
 
   const sqlDonut = svgDonut([
-    {l:'Paid',v:d.sqlsPaidMedia||0,c:'#c0392b'},
-    {l:'Org', v:d.sqlsOrganicos||0,c:'#1a7a3c'},
-    {l:'Out', v:d.sqlsOutbound||0, c:'#d97706'},
+    {l:'Paid',v:d.sqlsPaidMedia||0,c:'#eb0000'},
+    {l:'Org', v:d.sqlsOrganicos||0,c:'#B3D6A7'},
+    {l:'Out', v:d.sqlsOutbound||0, c:'#999999'},
   ], 110);
 
   const qRows = (gsc.queries||[]).slice(0,6).map(q =>
@@ -2745,99 +2746,123 @@ function generateReport() {
   }).join('')||'<tr><td colspan="4" class="muted">Sin datos</td></tr>';
 
   const insightHTML = insights.map(i=>{
-    const map={success:'#1a7a3c|#f0fff5|#bbf7d0',warning:'#c0392b|#fff5f5|#fecaca',ok:'#1a4a9c|#f0f4ff|#bfdbfe',info:'#6d28d9|#faf5ff|#ddd6fe'};
+    const map={success:'#191919|#f5f5f5|#cccccc',warning:'#eb0000|#fff5f5|#ffd0d0',ok:'#191919|#f5f5f5|#cccccc',info:'#5658A3|#f5f5ff|#c8c9e8'};
     const [tc,bg,bd]=(map[i.t]||map.ok).split('|');
-    return `<div style="border-left:3px solid ${tc};background:${bg};border:1px solid ${bd};border-left:3px solid ${tc};padding:8px 11px;border-radius:0 6px 6px 0;margin-bottom:7px;font-size:9.5px;line-height:1.6;color:#1a1a2e">${i.text}</div>`;
+    return `<div style="border-left:3px solid ${tc};background:${bg};padding:8px 11px;margin-bottom:7px;font-size:9.5px;line-height:1.6;color:#191919">${i.text}</div>`;
   }).join('');
 
-  const bStyle={alta:'background:#fee2e2;color:#c0392b',critica:'background:#c0392b;color:white',media:'background:#fef3c7;color:#b45309',estrategico:'background:#dbeafe;color:#1e40af'};
+  const bStyle={alta:'background:#eb0000;color:#fff',critica:'background:#191919;color:#eb0000',media:'background:#f5f5f5;color:#191919',estrategico:'background:#999999;color:#fff'};
   const recHTML = recs.map((r,i)=>`
-    <div style="display:flex;gap:10px;margin-bottom:9px;padding:10px 12px;border:1px solid #e0e8f8;border-radius:7px;background:#fafcff;align-items:flex-start">
-      <div style="background:#0d2b5e;color:white;font-size:10px;font-weight:800;min-width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">${String(i+1).padStart(2,'0')}</div>
+    <div style="display:flex;gap:12px;margin-bottom:9px;padding:10px 12px;border-left:3px solid #eb0000;background:#fafafa;align-items:flex-start">
+      <div style="background:#eb0000;color:white;font-size:10px;font-weight:900;min-width:26px;height:26px;border-radius:0;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">${String(i+1).padStart(2,'0')}</div>
       <div style="flex:1">
-        <div style="font-weight:700;font-size:10.5px;color:#0d2b5e;margin-bottom:3px">${r.title}</div>
-        <div style="font-size:9px;color:#444;line-height:1.55;margin-bottom:5px">${r.desc}</div>
-        <span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:7.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;${bStyle[r.p]||bStyle.media}">${r.p}</span>
+        <div style="font-weight:800;font-size:10.5px;color:#191919;margin-bottom:3px">${r.title}</div>
+        <div style="font-size:9px;color:#555;line-height:1.55;margin-bottom:5px">${r.desc}</div>
+        <span style="display:inline-block;padding:2px 8px;font-size:7.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;${bStyle[r.p]||bStyle.media}">${r.p}</span>
       </div>
     </div>`).join('');
 
-  const CSS = `*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Segoe UI',Arial,sans-serif;font-size:11px;color:#1a1a2e;background:#fff;line-height:1.5;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-@page{size:A4;margin:12mm 14mm}
-@media print{.page{page-break-after:always}.page:last-child{page-break-after:auto}.cover{page-break-after:always}}
-.cover{width:100%;min-height:267mm;background:linear-gradient(155deg,#061a3d 0%,#0d2b5e 40%,#1a4a9c 75%,#0a1f45 100%);display:flex;flex-direction:column;justify-content:space-between;padding:14mm 16mm;color:#fff}
-.page{padding:0;min-height:267mm}
-.page-hdr{border-bottom:2px solid #0d2b5e;padding-bottom:5px;margin-bottom:13px;display:flex;justify-content:space-between;align-items:flex-end}
-.page-tag{font-size:8px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#0d2b5e}
-.page-right{font-size:8px;color:#aaa}
-.sec{font-size:15px;font-weight:800;color:#0d2b5e;margin-bottom:11px;letter-spacing:-.01em}
-.sub{font-size:9px;font-weight:700;color:#1a4a9c;text-transform:uppercase;letter-spacing:.07em;margin:13px 0 6px;border-bottom:1px solid #e8eef8;padding-bottom:3px}
+  // CSS — identidad Detecta Security Brandbook 2025
+  // Paleta: #191919 #999999 #eb0000 #ffffff (primarios) | #155D9F #FFED66 #5658A3 #B3D6A7 (secundarios)
+  // Tipografía: Galano Grotesque → fallback Helvetica Neue / Arial
+  const CSS = `
+@import url('https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,400;0,600;0,700;0,800;0,900&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Barlow','Helvetica Neue',Arial,sans-serif;font-size:11px;color:#191919;background:#fff;line-height:1.5;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+@page{size:A4;margin:0}
+@media print{.page{page-break-after:always;padding:12mm 14mm}.page:last-child{page-break-after:auto}.cover{page-break-after:always}}
+
+/* ── PORTADA ── */
+.cover{width:100%;min-height:297mm;background:#191919;display:flex;flex-direction:column;justify-content:space-between;padding:14mm 16mm;color:#fff;position:relative;overflow:hidden}
+.cover-geo{position:absolute;bottom:0;right:0;width:55%;height:60%;background:#2a2a2a;clip-path:polygon(30% 0%,100% 0%,100% 100%,0% 100%)}
+.cover-geo2{position:absolute;bottom:8mm;right:8mm;width:18mm;height:18mm;background:#eb0000;border-radius:50%}
+
+/* ── PÁGINAS ── */
+.page{padding:12mm 14mm;min-height:297mm}
+.page-hdr{border-bottom:1px solid #999;padding-bottom:5px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center}
+.page-tag{font-size:7.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#999}
+.page-right{font-size:7.5px;color:#999}
+.sec{font-size:16px;font-weight:900;color:#191919;margin-bottom:12px;letter-spacing:-.01em;display:flex;align-items:baseline;gap:6px}
+.sec-num{color:#eb0000;font-weight:900}
+.sub{font-size:8.5px;font-weight:800;color:#191919;text-transform:uppercase;letter-spacing:.09em;margin:14px 0 7px;padding-bottom:3px;border-bottom:1px solid #e0e0e0}
+
+/* ── KPI CARDS ── */
 .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:12px}
 .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:12px}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:12px}
-.kpi{background:#f2f6ff;border:1px solid #cdd8f5;border-top:3px solid #1a4a9c;border-radius:7px;padding:9px 12px}
-.kpi.red{border-top-color:#c0392b;background:#fff5f5;border-color:#fecaca}
-.kpi.green{border-top-color:#1a7a3c;background:#f0fff5;border-color:#bbf7d0}
-.kpi-lbl{font-size:7.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#777;margin-bottom:3px}
-.kpi-val{font-size:21px;font-weight:900;color:#0d2b5e;line-height:1}
+.kpi{background:#fff;border:1px solid #e5e5e5;border-top:3px solid #191919;padding:9px 12px}
+.kpi.accent{border-top-color:#eb0000;background:#fff}
+.kpi.muted{border-top-color:#999;background:#fafafa}
+.kpi-lbl{font-size:7px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#999;margin-bottom:4px}
+.kpi-val{font-size:22px;font-weight:900;color:#191919;line-height:1}
 .kpi-note{font-size:7.5px;color:#999;margin-top:2px}
+
+/* ── TABLAS ── */
 table{width:100%;border-collapse:collapse;font-size:9.5px;margin-bottom:10px}
-thead tr{background:#0d2b5e}
-th{padding:6px 8px;color:#fff;font-size:7.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;text-align:left}
-td{padding:5px 8px;border-bottom:1px solid #eef2fb;color:#222}
-tr:nth-child(even) td{background:#f7f9ff}
-.num{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+thead tr{background:#191919}
+th{padding:6px 8px;color:#fff;font-size:7px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;text-align:left}
+td{padding:5px 8px;border-bottom:1px solid #ebebeb;color:#191919}
+tr:nth-child(even) td{background:#f7f7f7}
+.num{text-align:right;font-variant-numeric:tabular-nums;font-weight:700}
 .muted{color:#bbb;text-align:center;padding:10px;font-style:italic}
-.sep{border:none;border-top:1px solid #e8eef8;margin:11px 0}
+.sep{border:none;border-top:1px solid #e0e0e0;margin:12px 0}
 .ld{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:4px;vertical-align:middle}
-.lr{font-size:9px;color:#444;margin-bottom:4px;display:flex;align-items:center;gap:5px}`;
+.lr{font-size:9px;color:#333;margin-bottom:5px;display:flex;align-items:center;gap:5px}
+`;
 
   const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
 <title>Informe · Detecta Security · ${per}</title><style>${CSS}</style></head><body>
 
-<!-- PORTADA -->
+<!-- PORTADA — identidad brandbook Detecta 2025 -->
 <div class="cover">
-  <div>
-    <div style="font-size:24px;font-weight:900;letter-spacing:.02em">DETECTA</div>
-    <div style="font-size:10px;color:rgba(255,255,255,.5);letter-spacing:.12em;text-transform:uppercase;margin-top:2px">Seguridad Logística · detectasecurity.io</div>
-    <div style="height:4px;background:linear-gradient(90deg,#eb0000,#ff6b6b,transparent);border-radius:2px;margin:18px 0 0"></div>
+  <div class="cover-geo"></div>
+  <div class="cover-geo2"></div>
+  <!-- Header: isotipo top-right (brandbook: logo en esquina superior derecha) -->
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;position:relative;z-index:2">
+    <div style="font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.4)">Dirección de Marketing</div>
+    <img src="/isotipo.png" style="width:36px;height:36px;object-fit:contain;opacity:.85" onerror="this.style.display='none'">
   </div>
-  <div style="flex:1;display:flex;flex-direction:column;justify-content:center;padding:20mm 0 10mm">
-    <div style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.45);margin-bottom:12px">Informe de Marketing &amp; Adquisición</div>
-    <div style="font-size:52px;font-weight:900;line-height:1;color:#fff;margin-bottom:6px">${per.toUpperCase()}</div>
-    <div style="font-size:19px;font-weight:600;color:rgba(255,255,255,.8);margin-bottom:24px">Dashboard integrado de adquisición SEM</div>
-    <div style="margin-bottom:28px">
-      ${['Google Ads','Google Analytics 4','Pipedrive CRM','Search Console'].map(s=>`<span style="background:rgba(255,255,255,.11);border:1px solid rgba(255,255,255,.2);border-radius:20px;padding:4px 13px;font-size:9px;letter-spacing:.04em;margin-right:6px;display:inline-block;margin-bottom:6px">${s}</span>`).join('')}
-    </div>
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;max-width:400px">
+  <!-- Cuerpo -->
+  <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;padding-bottom:18mm;position:relative;z-index:2">
+    <div style="width:60px;height:4px;background:#eb0000;margin-bottom:16px"></div>
+    <div style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.45);margin-bottom:10px">Informe de Marketing &amp; Adquisición</div>
+    <div style="font-size:54px;font-weight:900;line-height:.95;color:#fff;margin-bottom:10px">${per.toUpperCase()}</div>
+    <div style="font-size:16px;font-weight:600;color:rgba(255,255,255,.65);margin-bottom:20px">Dashboard integrado: Google Ads · GA4 · Pipedrive · GSC</div>
+    <!-- KPI resumen en portada -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:rgba(255,255,255,.12);max-width:380px;margin-bottom:20px">
       ${[['Inversión',fmtM(s.gasto)],['Leads',fmt(s.conversiones)],['SQLs',fmt(s.sqls)],['Clientes',fmt(s.clientesGanados)]].map(([l,v])=>`
-      <div style="text-align:center;background:rgba(255,255,255,.09);border-radius:8px;padding:10px 6px;border:1px solid rgba(255,255,255,.15)">
-        <div style="font-size:20px;font-weight:900;color:#fff">${v}</div>
-        <div style="font-size:7.5px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.07em;margin-top:3px">${l}</div>
+      <div style="background:#191919;padding:10px 8px;text-align:center">
+        <div style="font-size:18px;font-weight:900;color:#fff">${v}</div>
+        <div style="font-size:7px;color:#999;text-transform:uppercase;letter-spacing:.08em;margin-top:3px">${l}</div>
       </div>`).join('')}
     </div>
+    <div style="font-size:8.5px;color:rgba(255,255,255,.35)">www.detectasecurity.io</div>
   </div>
-  <div style="font-size:8.5px;color:rgba(255,255,255,.4);border-top:1px solid rgba(255,255,255,.12);padding-top:10px;display:flex;justify-content:space-between">
-    <span>Elaborado por: Dirección de Marketing · Detecta Security / GSM Seguridad</span>
-    <span>Confidencial — Uso interno · Datos: ${now}</span>
+  <!-- Footer -->
+  <div style="font-size:7.5px;color:rgba(255,255,255,.3);border-top:1px solid rgba(255,255,255,.1);padding-top:8px;display:flex;justify-content:space-between;position:relative;z-index:2">
+    <span>Elaborado por: Dirección de Marketing · Detecta Security</span>
+    <span>Confidencial — Uso interno · ${now}</span>
   </div>
 </div>
 
 <!-- PÁG 1: RESUMEN EJECUTIVO -->
 <div class="page">
-  <div class="page-hdr"><span class="page-tag">Resumen Ejecutivo · Métricas del periodo</span><span class="page-right">Detecta Security · ${per} · ${now}</span></div>
-  <div class="sec">Resumen ejecutivo</div>
+  <div class="page-hdr">
+    <span class="page-tag">01 · Resumen Ejecutivo</span>
+    <span class="page-right">detectasecurity.io · ${per} · ${now}</span>
+  </div>
+  <div class="sec"><span class="sec-num">1.</span> Resumen ejecutivo</div>
   <div class="grid4">
-    <div class="kpi red"><div class="kpi-lbl">Inversión Google Ads</div><div class="kpi-val">${fmtM(s.gasto)}</div><div class="kpi-note">MXN · total periodo</div></div>
+    <div class="kpi accent"><div class="kpi-lbl">Inversión Google Ads</div><div class="kpi-val">${fmtM(s.gasto)}</div><div class="kpi-note">MXN · total periodo</div></div>
     <div class="kpi"><div class="kpi-lbl">Costo por Lead (CPL)</div><div class="kpi-val">${fmtM(s.cpl)}</div><div class="kpi-note">por conversión Ads</div></div>
-    <div class="kpi red"><div class="kpi-lbl">Costo por SQL</div><div class="kpi-val">${fmtM(d.costoSQL)}</div><div class="kpi-note">paid + orgánico</div></div>
-    <div class="kpi green"><div class="kpi-lbl">Clientes ganados</div><div class="kpi-val">${fmt(s.clientesGanados)}</div><div class="kpi-note">deals cerrados CRM</div></div>
+    <div class="kpi accent"><div class="kpi-lbl">Costo por SQL</div><div class="kpi-val">${fmtM(d.costoSQL)}</div><div class="kpi-note">paid + orgánico</div></div>
+    <div class="kpi"><div class="kpi-lbl">Clientes ganados</div><div class="kpi-val">${fmt(s.clientesGanados)}</div><div class="kpi-note">deals cerrados CRM</div></div>
   </div>
   <div class="grid4">
-    <div class="kpi"><div class="kpi-lbl">Impresiones</div><div class="kpi-val">${fmt(s.impr)}</div><div class="kpi-note">búsquedas alcanzadas</div></div>
-    <div class="kpi"><div class="kpi-lbl">CTR</div><div class="kpi-val">${fmtP(s.ctr)}</div><div class="kpi-note">clics / impresiones</div></div>
-    <div class="kpi"><div class="kpi-lbl">Conversiones (leads)</div><div class="kpi-val">${fmt(s.conversiones)}</div><div class="kpi-note">desde Google Ads</div></div>
-    <div class="kpi green"><div class="kpi-lbl">SQLs totales</div><div class="kpi-val">${fmt(s.sqls)}</div><div class="kpi-note">Paid ${d.sqlsPaidMedia||0} · Org ${d.sqlsOrganicos||0} · Out ${d.sqlsOutbound||0}</div></div>
+    <div class="kpi muted"><div class="kpi-lbl">Impresiones</div><div class="kpi-val">${fmt(s.impr)}</div><div class="kpi-note">búsquedas alcanzadas</div></div>
+    <div class="kpi muted"><div class="kpi-lbl">CTR</div><div class="kpi-val">${fmtP(s.ctr)}</div><div class="kpi-note">clics / impresiones</div></div>
+    <div class="kpi muted"><div class="kpi-lbl">Conversiones (leads)</div><div class="kpi-val">${fmt(s.conversiones)}</div><div class="kpi-note">desde Google Ads</div></div>
+    <div class="kpi"><div class="kpi-lbl">SQLs totales</div><div class="kpi-val">${fmt(s.sqls)}</div><div class="kpi-note">Paid ${d.sqlsPaidMedia||0} · Org ${d.sqlsOrganicos||0} · Out ${d.sqlsOutbound||0}</div></div>
   </div>
   <div class="grid2">
     <div>
@@ -2855,13 +2880,16 @@ tr:nth-child(even) td{background:#f7f9ff}
 
 <!-- PÁG 2: TRÁFICO DIGITAL -->
 <div class="page">
-  <div class="page-hdr"><span class="page-tag">Google Analytics 4 · Tráfico &amp; Comportamiento web</span><span class="page-right">Detecta Security · ${per} · ${now}</span></div>
-  <div class="sec">Rendimiento digital · detectasecurity.io</div>
+  <div class="page-hdr">
+    <span class="page-tag">02 · Google Analytics 4 &amp; Search Console</span>
+    <span class="page-right">detectasecurity.io · ${per} · ${now}</span>
+  </div>
+  <div class="sec"><span class="sec-num">2.</span> Tráfico web · detectasecurity.io</div>
   <div class="grid4">
     <div class="kpi"><div class="kpi-lbl">Sesiones totales</div><div class="kpi-val">${fmt(g4s.sessions)}</div></div>
     <div class="kpi"><div class="kpi-lbl">Usuarios activos</div><div class="kpi-val">${fmt(g4s.users)}</div></div>
-    <div class="kpi"><div class="kpi-lbl">Nuevos usuarios</div><div class="kpi-val">${fmt(g4s.newUsers)}</div></div>
-    <div class="kpi ${(g4s.engagementRate||0)<40?'red':'green'}"><div class="kpi-lbl">Tasa de engagement</div><div class="kpi-val">${g4s.engagementRate!=null?g4s.engagementRate.toFixed(1)+'%':'–'}</div></div>
+    <div class="kpi muted"><div class="kpi-lbl">Nuevos usuarios</div><div class="kpi-val">${fmt(g4s.newUsers)}</div></div>
+    <div class="kpi ${(g4s.engagementRate||0)<40?'accent':''}"><div class="kpi-lbl">Tasa de engagement</div><div class="kpi-val">${g4s.engagementRate!=null?g4s.engagementRate.toFixed(1)+'%':'–'}</div></div>
   </div>
   <div class="grid2">
     <div>
@@ -2891,20 +2919,23 @@ tr:nth-child(even) td{background:#f7f9ff}
 
 <!-- PÁG 3: PIPELINE + RECOMENDACIONES -->
 <div class="page">
-  <div class="page-hdr"><span class="page-tag">Pipeline CRM · Atribución &amp; Plan de acción estratégico</span><span class="page-right">Detecta Security · ${per} · ${now}</span></div>
-  <div class="sec">Pipeline de adquisición · Embudo de conversión</div>
+  <div class="page-hdr">
+    <span class="page-tag">03 · Pipeline CRM &amp; Plan de acción</span>
+    <span class="page-right">detectasecurity.io · ${per} · ${now}</span>
+  </div>
+  <div class="sec"><span class="sec-num">3.</span> Pipeline Pipedrive · Embudo de conversión</div>
   <div class="grid2">
     <div>
       <div class="sub">Embudo de adquisición</div>
       ${funnel}
       <div style="margin-top:8px;display:grid;grid-template-columns:1fr 1fr;gap:6px">
-        <div style="background:#f2f6ff;border-radius:5px;padding:7px 9px;border:1px solid #cdd8f5">
-          <div style="font-size:7.5px;color:#777;text-transform:uppercase;letter-spacing:.05em;font-weight:700">Lead → SQL</div>
-          <div style="font-size:17px;font-weight:800;color:#0d2b5e">${s.conversiones&&s.sqls?Math.round(s.sqls/s.conversiones*100)+'%':'–'}</div>
+        <div style="background:#f5f5f5;border-left:3px solid #191919;padding:7px 9px">
+          <div style="font-size:7px;color:#999;text-transform:uppercase;letter-spacing:.07em;font-weight:700;margin-bottom:2px">Lead → SQL</div>
+          <div style="font-size:18px;font-weight:900;color:#191919">${s.conversiones&&s.sqls?Math.round(s.sqls/s.conversiones*100)+'%':'–'}</div>
         </div>
-        <div style="background:#f0fff5;border-radius:5px;padding:7px 9px;border:1px solid #bbf7d0">
-          <div style="font-size:7.5px;color:#777;text-transform:uppercase;letter-spacing:.05em;font-weight:700">SQL → Cliente</div>
-          <div style="font-size:17px;font-weight:800;color:#1a7a3c">${s.sqls&&s.clientesGanados?Math.round(s.clientesGanados/s.sqls*100)+'%':'–'}</div>
+        <div style="background:#f5f5f5;border-left:3px solid #eb0000;padding:7px 9px">
+          <div style="font-size:7px;color:#999;text-transform:uppercase;letter-spacing:.07em;font-weight:700;margin-bottom:2px">SQL → Cliente</div>
+          <div style="font-size:18px;font-weight:900;color:#191919">${s.sqls&&s.clientesGanados?Math.round(s.clientesGanados/s.sqls*100)+'%':'–'}</div>
         </div>
       </div>
     </div>
@@ -2919,20 +2950,17 @@ tr:nth-child(even) td{background:#f7f9ff}
           <div style="font-size:8.5px;color:#555;line-height:1.7"><b>Costo/SQL:</b> ${fmtM(d.costoSQL)}<br><b>Leads calificados:</b> ${fmt(s.leadsCalificados)}</div>
         </div>
       </div>
-      <div style="background:#fffbeb;border:1px solid #fde68a;border-left:3px solid #d97706;padding:8px 10px;border-radius:0 6px 6px 0;font-size:8.5px;line-height:1.6;color:#444">
-        <b>Advertencia de atribución:</b> Sin UTMs implementados en formularios no es posible confirmar qué proporción del revenue proviene de Google Ads vs prospección directa vs eventos. El ROAS es un estimado.
+      <div style="background:#f5f5f5;border-left:3px solid #191919;padding:8px 10px;font-size:8.5px;line-height:1.6;color:#333;margin-top:8px">
+        <b>Nota de atribución:</b> Sin UTMs en formularios no es posible confirmar qué proporción del revenue proviene de Google Ads vs prospección directa vs eventos. El ROAS reportado es estimado.
       </div>
     </div>
   </div>
   <hr class="sep">
-  <div class="sec" style="margin-top:4px">Recomendaciones estratégicas · Ordenadas por impacto</div>
-  <div style="background:#f0f5ff;border:1px solid #c8d8f5;border-radius:6px;padding:9px 13px;margin-bottom:11px;font-size:9px;line-height:1.65;color:#0d2b5e">
-    <b>Contexto:</b> El robo de carga en México creció +5.3% vs 2025 — 55 incidentes diarios, 82% con violencia. La demanda existe y es urgente. Overhaul, Skyangel y PTC dominan la narrativa de datos sin necesariamente tener mejor producto. La sinergia GSM + Detecta + Farmahome es el diferenciador más poderoso del grupo y el menos explotado.
-  </div>
+  <div class="sec" style="margin-top:4px"><span class="sec-num">4.</span> Plan de acción · Recomendaciones</div>
   ${recHTML}
-  <div style="margin-top:14px;padding:9px 13px;background:#f7f9ff;border-radius:6px;border:1px solid #dde5f8;font-size:8px;line-height:1.7;color:#666">
-    <b>Fuentes:</b> Google Ads (DETECTA-CUSTODIAS) · Google Analytics 4 (propiedad: 403957283) · Pipedrive CRM (detectasecurityio) · Google Search Console · ANERPV · Overhaul Cargo Theft Reports · detectasecurity.io<br>
-    <b>Elaborado:</b> Dirección de Marketing Detecta · <b>Fecha:</b> ${now} · <b>Clasificación:</b> Confidencial — Uso interno Detecta / GSM Seguridad
+  <div style="margin-top:14px;padding:9px 13px;background:#f5f5f5;border-top:2px solid #191919;font-size:7.5px;line-height:1.8;color:#555">
+    <b>Fuentes:</b> Google Ads (DETECTA-CUSTODIAS) · Google Analytics 4 · Pipedrive CRM · Google Search Console<br>
+    <b>Elaborado:</b> Dirección de Marketing · Detecta Security &nbsp;·&nbsp; <b>Fecha:</b> ${now} &nbsp;·&nbsp; <b>Clasificación:</b> Confidencial — Uso interno · www.detectasecurity.io
   </div>
 </div>
 
