@@ -630,50 +630,57 @@ async function fetchUpsellData(period) {
     scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
   });
   const sheets = google.sheets({ version: 'v4', auth });
-  const pc = parsePeriod(period);
-  const startMs = new Date(pc.startStr).getTime();
-  const endMs   = new Date(pc.endStr).getTime();
 
-  // Leer ambas hojas en paralelo (filas base en cada tablero)
-  // Q1: Up Sell en row 84 (índice 83), Contacto 81, NPS 82, Quejas 83
-  // Q2: Up Sell en row 91 (índice 90), Contacto 87, NPS 88, Quejas 89
+  // Siempre leer todas las semanas de ambas hojas (sin filtro de periodo)
   const [weeksQ1, weeksQ2] = await Promise.all([
     readCSSheet(sheets, 'Tablero Q1', 2026, 83, 80, 81, 82).catch(() => []),
     readCSSheet(sheets, 'Tablero Q2', 2026, 90, 87, 88, 89).catch(() => []),
   ]);
+  const allWeeks = [...weeksQ1, ...weeksQ2];
 
-  // Combinar y filtrar por periodo seleccionado
-  const allWeeks = [...weeksQ1, ...weeksQ2].filter(w => {
-    // Incluir semana si hay solapamiento con el periodo
-    return w.startDt.getTime() <= endMs && w.endDt.getTime() >= startMs;
-  });
-
-  if (!allWeeks.length) return { weeks: [], total: 0, totalContacto: 0, totalQuejas: 0, avgNps: null, lastWeek: null, prevWeek: null, periodLabel: pc.periodLabel };
-
-  const total         = allWeeks.reduce((a,w)=>a+w.upSell, 0);
-  const totalContacto = allWeeks.reduce((a,w)=>a+w.contacto, 0);
-  const totalQuejas   = allWeeks.reduce((a,w)=>a+w.quejas, 0);
-  const allNps        = allWeeks.map(w=>w.nps).filter(v=>v!==null);
-  const avgNps        = allNps.length ? Math.round(allNps.reduce((a,b)=>a+b,0)/allNps.length) : null;
-  const lastWeek      = allWeeks[allWeeks.length-1] || null;
-  const prevWeek      = allWeeks[allWeeks.length-2] || null;
-
-  // Agrupar por mes para vista mensual
+  // Agrupar por mes — siempre los 6 primeros meses del año (Ene–Jun)
+  const MONTHS_6 = ['2026-01','2026-02','2026-03','2026-04','2026-05','2026-06'];
   const byMonth = {};
+  MONTHS_6.forEach(k => { byMonth[k] = { month: k, upSell: 0, contacto: 0, quejas: 0, npsArr: [] }; });
+
   allWeeks.forEach(w => {
     const key = `${w.startDt.getFullYear()}-${String(w.startDt.getMonth()+1).padStart(2,'0')}`;
-    if (!byMonth[key]) byMonth[key] = { month: key, upSell: 0, contacto: 0, quejas: 0, npsArr: [] };
-    byMonth[key].upSell   += w.upSell;
-    byMonth[key].contacto += w.contacto;
-    byMonth[key].quejas   += w.quejas;
-    if (w.nps !== null) byMonth[key].npsArr.push(w.nps);
+    if (byMonth[key]) {
+      byMonth[key].upSell   += w.upSell;
+      byMonth[key].contacto += w.contacto;
+      byMonth[key].quejas   += w.quejas;
+      if (w.nps !== null) byMonth[key].npsArr.push(w.nps);
+    }
   });
-  const months = Object.values(byMonth).map(m => ({
-    ...m,
-    nps: m.npsArr.length ? Math.round(m.npsArr.reduce((a,b)=>a+b,0)/m.npsArr.length) : null,
+
+  const months6 = MONTHS_6.map(k => ({
+    month:    k,
+    upSell:   byMonth[k].upSell,
+    contacto: byMonth[k].contacto,
+    quejas:   byMonth[k].quejas,
+    nps:      byMonth[k].npsArr.length
+      ? Math.round(byMonth[k].npsArr.reduce((a,b)=>a+b,0)/byMonth[k].npsArr.length)
+      : null,
   }));
 
-  return { weeks: allWeeks, months, total, totalContacto, totalQuejas, avgNps, lastWeek, prevWeek, periodLabel: pc.periodLabel };
+  // Semanas del periodo seleccionado para la tabla de detalle
+  const pc = parsePeriod(period);
+  const startMs = new Date(pc.startStr).getTime();
+  const endMs   = new Date(pc.endStr).getTime();
+  const weeksFiltered = allWeeks.filter(w =>
+    w.startDt.getTime() <= endMs && w.endDt.getTime() >= startMs
+  );
+
+  // Totales del periodo seleccionado
+  const total         = weeksFiltered.reduce((a,w)=>a+w.upSell, 0);
+  const totalContacto = weeksFiltered.reduce((a,w)=>a+w.contacto, 0);
+  const totalQuejas   = weeksFiltered.reduce((a,w)=>a+w.quejas, 0);
+  const allNps        = weeksFiltered.map(w=>w.nps).filter(v=>v!==null);
+  const avgNps        = allNps.length ? Math.round(allNps.reduce((a,b)=>a+b,0)/allNps.length) : null;
+  const lastWeek      = weeksFiltered[weeksFiltered.length-1] || null;
+  const prevWeek      = weeksFiltered[weeksFiltered.length-2] || null;
+
+  return { months6, weeks: weeksFiltered, total, totalContacto, totalQuejas, avgNps, lastWeek, prevWeek };
 }
 
 // GOOGLE SHEETS — estadísticas de subasta (escritas por Google Ads Script)

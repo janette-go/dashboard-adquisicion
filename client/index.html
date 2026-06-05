@@ -1513,16 +1513,19 @@ function renderUpsell(d) {
     }
   }
 
-  // Gráfico — mensual si hay >1 mes, semanal si es 1 mes
-  const months = u.months || [];
-  const weeks  = u.weeks  || [];
-  const useMonthly = months.length > 1;
-  const MNAMES = {1:'Ene',2:'Feb',3:'Mar',4:'Abr',5:'May',6:'Jun',7:'Jul',8:'Ago',9:'Sep',10:'Oct',11:'Nov',12:'Dic'};
-  const labels = useMonthly
-    ? months.map(m => MNAMES[parseInt(m.month.split('-')[1])] || m.month)
-    : weeks.map((w, i) => w.startDate);
-  const data   = useMonthly ? months.map(m => m.upSell) : weeks.map(w => w.upSell);
-  const colors = data.map((_, i) => i === data.length-1 ? '#eb0000' : 'rgba(235,0,0,0.4)');
+  // Gráfico siempre muestra los 6 primeros meses (Ene–Jun), igual que las otras gráficas
+  const months6 = u.months6 || [];
+  const weeks   = u.weeks   || [];
+  const MNAMES  = ['Ene','Feb','Mar','Abr','May','Jun'];
+  const labels  = MNAMES;
+  const data    = months6.map(m => m.upSell || 0);
+  // Mes actual en rojo, anteriores en semitransparente, futuros sin datos en gris
+  const nowMonth = new Date().getMonth(); // 0-based
+  const colors = data.map((v, i) => {
+    if (i > nowMonth) return 'rgba(255,255,255,0.08)';
+    if (i === nowMonth) return '#eb0000';
+    return 'rgba(235,0,0,0.4)';
+  });
 
   const ctx = document.getElementById('upsellChart');
   if (ctx) {
@@ -1540,10 +1543,6 @@ function renderUpsell(d) {
           legend: { display: false },
           tooltip: {
             callbacks: {
-              title: (items) => {
-                const w = weeks[items[0].dataIndex];
-                return w ? `${w.startDate} – ${w.endDate}` : labels[items[0].dataIndex];
-              },
               label: (item) => ` ${item.raw} rutas nuevas`,
             },
           },
