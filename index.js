@@ -935,10 +935,10 @@ async function fetchFromGoogleAds(period = 'this_month') {
   `;
 
   // ── Query 5: historial de cambios (últimos 30 días, ventana fija) ─────────────
-  // change_event requiere BETWEEN con inicio y fin explícitos
-  const changeStart = new Date(Date.now() - 29 * 86_400_000)
-    .toISOString().replace('T', ' ').slice(0, 19);
-  const changeEnd = new Date().toISOString().replace('T', ' ').slice(0, 19);
+  // change_event requiere BETWEEN con timezone explícito (+00:00)
+  const fmtChangeTs = d => d.toISOString().replace('T',' ').slice(0,19) + '+00:00';
+  const changeStart = fmtChangeTs(new Date(Date.now() - 29 * 86_400_000));
+  const changeEnd   = fmtChangeTs(new Date());
   const changesQ = `
     SELECT
       change_event.change_date_time,
