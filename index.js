@@ -511,18 +511,33 @@ async function fetchGA4Data(period) {
     };
 
     // ── Canales categorizados y agregados
-    const chMap = {};
+    const chMap      = {};
+    const chBreakdown = {};
     for (const row of (sourceRes.data.rows || [])) {
-      const cat = categorize(row.dimensionValues[0].value, row.dimensionValues[1].value);
-      if (!chMap[cat]) chMap[cat] = { sessions: 0, conversions: 0, users: 0 };
-      chMap[cat].sessions    += Number(row.metricValues[0].value);
-      chMap[cat].conversions += Number(row.metricValues[1].value);
-      chMap[cat].users       += Number(row.metricValues[2].value);
+      const src = row.dimensionValues[0].value;
+      const med = row.dimensionValues[1].value;
+      const cat = categorize(src, med);
+      if (!chMap[cat]) { chMap[cat] = { sessions: 0, conversions: 0, users: 0 }; chBreakdown[cat] = []; }
+      const sess = Number(row.metricValues[0].value);
+      const conv = Number(row.metricValues[1].value);
+      const usr  = Number(row.metricValues[2].value);
+      chMap[cat].sessions    += sess;
+      chMap[cat].conversions += conv;
+      chMap[cat].users       += usr;
+      if (sess > 0) chBreakdown[cat].push({ source: src, medium: med, sessions: sess, conversions: conv, users: usr });
     }
+    // Ordena breakdown interno por sesiones desc
+    Object.keys(chBreakdown).forEach(k => chBreakdown[k].sort((a, b) => b.sessions - a.sessions));
+
     const totalSessions = Object.values(chMap).reduce((s, c) => s + c.sessions, 0) || 1;
     const channels = CHANNEL_ORDER
       .filter(k => chMap[k]?.sessions > 0)
-      .map(k => ({ channel: k, ...chMap[k], pct: parseFloat((chMap[k].sessions / totalSessions * 100).toFixed(1)) }));
+      .map(k => ({
+        channel:   k,
+        ...chMap[k],
+        pct:       parseFloat((chMap[k].sessions / totalSessions * 100).toFixed(1)),
+        breakdown: chBreakdown[k] || [],
+      }));
 
     // ── Top páginas
     const topPages = (pagesRes.data.rows || []).map(r => ({

@@ -794,6 +794,51 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
   </div>
 </div>
 
+<!-- ── GA4 CHANNEL MODAL ─────────────────────────────────────────────── -->
+<div id="ga4-ch-modal" onclick="if(event.target===this)closeGA4Modal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:9200;overflow:auto;padding:2rem 1rem;backdrop-filter:blur(6px)">
+  <div style="background:#141416;border:1px solid rgba(255,255,255,0.1);border-radius:10px;max-width:680px;margin:0 auto;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.95)">
+    <!-- Header -->
+    <div id="ga4-ch-hdr" style="display:flex;align-items:center;justify-content:space-between;padding:.7rem 1rem;border-bottom:1px solid var(--border);background:#0a0a0c">
+      <div style="display:flex;align-items:center;gap:8px">
+        <div id="ga4-ch-dot" style="width:10px;height:10px;border-radius:50%"></div>
+        <span id="ga4-ch-title" style="font-size:13px;font-weight:700;color:#fff"></span>
+      </div>
+      <button onclick="closeGA4Modal()" style="background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;line-height:1;padding:0 2px">✕</button>
+    </div>
+    <!-- Métricas del canal -->
+    <div id="ga4-ch-metrics" style="display:grid;grid-template-columns:repeat(3,1fr);border-bottom:1px solid var(--border)">
+      <div style="padding:.6rem 1rem;border-right:1px solid var(--border)">
+        <p style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">Sesiones</p>
+        <p id="ga4-ch-m-sess" style="font-size:22px;font-weight:700;color:#fff;margin-top:4px">–</p>
+      </div>
+      <div style="padding:.6rem 1rem;border-right:1px solid var(--border)">
+        <p style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">Usuarios</p>
+        <p id="ga4-ch-m-users" style="font-size:22px;font-weight:700;color:#fff;margin-top:4px">–</p>
+      </div>
+      <div style="padding:.6rem 1rem">
+        <p style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">Conversiones</p>
+        <p id="ga4-ch-m-conv" style="font-size:22px;font-weight:700;color:#fff;margin-top:4px">–</p>
+      </div>
+    </div>
+    <!-- Tabla de fuentes -->
+    <div style="overflow-x:auto;max-height:50vh;overflow-y:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:11px">
+        <thead style="position:sticky;top:0;background:#0a0a0c">
+          <tr>
+            <th style="padding:.4rem 1rem;text-align:left">Fuente</th>
+            <th style="padding:.4rem 1rem;text-align:left">Medio</th>
+            <th style="padding:.4rem 1rem;text-align:right">Sesiones</th>
+            <th style="padding:.4rem 1rem;text-align:right">Usuarios</th>
+            <th style="padding:.4rem 1rem;text-align:right">Conv.</th>
+            <th style="padding:.4rem 1rem;text-align:right">% canal</th>
+          </tr>
+        </thead>
+        <tbody id="ga4-ch-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
 <!-- Tooltip global — fuera de cualquier card con backdrop-filter -->
 <div id="global-tip"></div>
 
@@ -1317,6 +1362,59 @@ let _ga4Chart     = null;
 let _ga4Pages     = [];
 let _ga4SortCol   = 'views';
 let _ga4SortDir   = 'desc';
+let _ga4Channels  = [];
+
+function openGA4ChannelModal(channelName) {
+  const ch = _ga4Channels.find(c => c.channel === channelName);
+  if (!ch) return;
+  const color = GA4_COLORS[channelName] || '#999';
+  const modal = document.getElementById('ga4-ch-modal');
+
+  // Header
+  const dot = document.getElementById('ga4-ch-dot');
+  if (dot) dot.style.background = color;
+  setText('ga4-ch-title',  ch.channel);
+  setText('ga4-ch-m-sess', fmt(ch.sessions));
+  setText('ga4-ch-m-users',fmt(ch.users));
+  setText('ga4-ch-m-conv', fmt(ch.conversions));
+
+  // Borde superior del modal según color del canal
+  const card = modal.querySelector('div');
+  if (card) card.style.borderTop = `2px solid ${color}`;
+
+  // Tabla de fuentes
+  const tbody = document.getElementById('ga4-ch-tbody');
+  if (tbody) {
+    const totalCh = ch.sessions || 1;
+    tbody.innerHTML = (ch.breakdown || []).map(b => {
+      const pct = parseFloat((b.sessions / totalCh * 100).toFixed(1));
+      return `<tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:.35rem 1rem;color:#fff;font-weight:500">${b.source}</td>
+        <td style="padding:.35rem 1rem;color:var(--muted)">${b.medium}</td>
+        <td style="padding:.35rem 1rem;text-align:right;color:#fff;font-weight:600">${fmt(b.sessions)}</td>
+        <td style="padding:.35rem 1rem;text-align:right;color:var(--muted)">${fmt(b.users)}</td>
+        <td style="padding:.35rem 1rem;text-align:right;color:${b.conversions>0?'#22c55e':'var(--muted)'};font-weight:${b.conversions>0?'600':'400'}">${b.conversions||'–'}</td>
+        <td style="padding:.35rem 1rem;text-align:right">
+          <div style="display:flex;align-items:center;justify-content:flex-end;gap:6px">
+            <div style="width:40px;height:3px;background:rgba(255,255,255,0.07);border-radius:2px;overflow:hidden">
+              <div style="width:${pct}%;height:100%;background:${color};border-radius:2px"></div>
+            </div>
+            <span style="font-size:10px;color:var(--muted);width:32px;text-align:right">${pct}%</span>
+          </div>
+        </td>
+      </tr>`;
+    }).join('') || `<tr><td colspan="6" style="padding:1rem;text-align:center;color:var(--muted)">Sin detalle disponible</td></tr>`;
+  }
+
+  modal.style.display = 'block';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeGA4Modal() {
+  const modal = document.getElementById('ga4-ch-modal');
+  if (modal) modal.style.display = 'none';
+  document.body.style.overflow = '';
+}
 
 function sortGA4Pages(col) {
   if (_ga4SortCol === col) _ga4SortDir = _ga4SortDir === 'desc' ? 'asc' : 'desc';
@@ -1385,6 +1483,7 @@ function renderGA4(d) {
 
   // ── Donut
   const channels = ga4.channels || [];
+  _ga4Channels   = channels;
   const totalSess = channels.reduce((a, c) => a + c.sessions, 0);
   if (el('ga4-donut-val')) el('ga4-donut-val').textContent = fmt(totalSess);
 
@@ -1399,7 +1498,7 @@ function renderGA4(d) {
           backgroundColor: channels.map(c => GA4_COLORS[c.channel] || '#555'),
           borderColor:     '#141416',
           borderWidth:     2,
-          hoverOffset:     6,
+          hoverOffset:     8,
         }],
       },
       options: {
@@ -1412,20 +1511,28 @@ function renderGA4(d) {
             callbacks: {
               label: ctx => {
                 const c = channels[ctx.dataIndex];
-                return ` ${c.sessions.toLocaleString('es-MX')} sesiones (${c.pct}%)`;
+                return ` ${c.sessions.toLocaleString('es-MX')} sesiones (${c.pct}%) — clic para detalle`;
               },
             },
           },
         },
+        onClick: (evt, items) => {
+          if (items.length) openGA4ChannelModal(channels[items[0].index].channel);
+        },
+        onHover: (evt) => { evt.native.target.style.cursor = 'pointer'; },
       },
     });
   }
 
-  // ── Leyenda del donut
+  // ── Leyenda del donut — clicable
   const leg = el('ga4-legend');
   if (leg) {
     leg.innerHTML = channels.map(c => `
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:6px">
+      <div onclick="openGA4ChannelModal('${c.channel.replace(/'/g,"\\'")}')"
+           style="display:flex;align-items:center;justify-content:space-between;gap:6px;
+                  padding:4px 6px;border-radius:5px;cursor:pointer;transition:background .12s"
+           onmouseover="this.style.background='rgba(255,255,255,0.06)'"
+           onmouseout="this.style.background=''">
         <div style="display:flex;align-items:center;gap:5px;min-width:0">
           <div style="width:8px;height:8px;border-radius:50%;background:${GA4_COLORS[c.channel]||'#555'};flex-shrink:0"></div>
           <span style="font-size:10px;color:rgba(255,255,255,0.8);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.channel}</span>
