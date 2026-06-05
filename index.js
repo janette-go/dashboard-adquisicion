@@ -403,6 +403,146 @@ async function fetchSearchConsoleData(period) {
   }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// GOOGLE ANALYTICS 4
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function fetchGA4Data(period) {
+  const propertyId = process.env.GA4_PROPERTY_ID;
+  if (!propertyId) return null;
+
+  const { google } = require('googleapis');
+  const credJson = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
+  const keyFile  = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
+
+  const auth = new google.auth.GoogleAuth({
+    ...(credJson ? { credentials: JSON.parse(credJson) } : { keyFile }),
+    scopes: ['https://www.googleapis.com/auth/analytics.readonly'],
+  });
+
+  const ga4 = google.analyticsdata({ version: 'v1beta', auth });
+  const prop = `properties/${propertyId}`;
+  const pc   = parsePeriod(period);
+  const dateRange = { startDate: pc.startStr, endDate: pc.endStr };
+
+  // Periodo anterior para comparativo
+  const startMs  = new Date(pc.startStr).getTime();
+  const durMs    = new Date(pc.endStr).getTime() - startMs + 86_400_000;
+  const fmtD     = d => {
+    const dt = new Date(d);
+    return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
+  };
+  const prevDateRange = {
+    startDate: fmtD(startMs - durMs),
+    endDate:   fmtD(startMs - 86_400_000),
+  };
+
+  try {
+    const [summaryRes, channelRes, pagesRes, dailyRes] = await Promise.all([
+      // Totales del periodo + comparativo
+      ga4.properties.runReport({
+        property: prop,
+        requestBody: {
+          dateRanges: [dateRange, prevDateRange],
+          metrics: [
+            { name: 'sessions'     },
+            { name: 'activeUsers'  },
+            { name: 'newUsers'     },
+            { name: 'conversions'  },
+            { name: 'engagementRate' },
+          ],
+        },
+      }),
+
+      // Sesiones por canal (defaultChannelGroup)
+      ga4.properties.runReport({
+        property: prop,
+        requestBody: {
+          dateRanges: [dateRange],
+          dimensions: [{ name: 'sessionDefaultChannelGrouping' }],
+          metrics:    [{ name: 'sessions' }, { name: 'conversions' }],
+          orderBys:   [{ metric: { metricName: 'sessions' }, desc: true }],
+          limit: 10,
+        },
+      }),
+
+      // Top páginas por vistas
+      ga4.properties.runReport({
+        property: prop,
+        requestBody: {
+          dateRanges: [dateRange],
+          dimensions: [{ name: 'pagePath' }, { name: 'pageTitle' }],
+          metrics:    [{ name: 'screenPageViews' }, { name: 'sessions' }, { name: 'conversions' }],
+          orderBys:   [{ metric: { metricName: 'screenPageViews' }, desc: true }],
+          limit: 10,
+        },
+      }),
+
+      // Sesiones diarias para sparkline
+      ga4.properties.runReport({
+        property: prop,
+        requestBody: {
+          dateRanges: [dateRange],
+          dimensions: [{ name: 'date' }],
+          metrics:    [{ name: 'sessions' }, { name: 'activeUsers' }],
+          orderBys:   [{ dimension: { dimensionName: 'date' } }],
+          limit: 90,
+        },
+      }),
+    ]);
+
+    // ── Resumen
+    const curr = summaryRes.data.rows?.[0];
+    const prev = summaryRes.data.rows?.[1];
+    const mv   = (row, i) => row ? Number(row.metricValues[i].value) : 0;
+
+    const summary = {
+      sessions:       mv(curr, 0),
+      users:          mv(curr, 1),
+      newUsers:       mv(curr, 2),
+      conversions:    mv(curr, 3),
+      engagementRate: curr ? parseFloat((Number(curr.metricValues[4].value) * 100).toFixed(1)) : 0,
+      prev: {
+        sessions:    mv(prev, 0),
+        users:       mv(prev, 1),
+        newUsers:    mv(prev, 2),
+        conversions: mv(prev, 3),
+      },
+    };
+
+    // ── Canales
+    const channels = (channelRes.data.rows || []).map(r => ({
+      channel:     r.dimensionValues[0].value,
+      sessions:    Number(r.metricValues[0].value),
+      conversions: Number(r.metricValues[1].value),
+    }));
+
+    // ── Top páginas
+    const topPages = (pagesRes.data.rows || []).map(r => ({
+      path:        r.dimensionValues[0].value,
+      title:       r.dimensionValues[1].value,
+      views:       Number(r.metricValues[0].value),
+      sessions:    Number(r.metricValues[1].value),
+      conversions: Number(r.metricValues[2].value),
+    }));
+
+    // ── Serie diaria
+    const daily = (dailyRes.data.rows || []).map(r => {
+      const raw = r.dimensionValues[0].value; // YYYYMMDD
+      return {
+        date:     `${raw.slice(0,4)}-${raw.slice(4,6)}-${raw.slice(6,8)}`,
+        sessions: Number(r.metricValues[0].value),
+        users:    Number(r.metricValues[1].value),
+      };
+    });
+
+    return { summary, channels, topPages, daily, prevPeriod: `${prevDateRange.startDate} – ${prevDateRange.endDate}` };
+  } catch (e) {
+    console.warn('[GA4]', e.message);
+    return null;
+  }
+}
+
 // GOOGLE SHEETS — estadísticas de subasta (escritas por Google Ads Script)
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -1353,6 +1493,9 @@ async function fetchAllData(period) {
   // Google Search Console — rendimiento orgánico
   const gscData = await fetchSearchConsoleData(period).catch(() => null);
 
+  // Google Analytics 4
+  const ga4Data = await fetchGA4Data(period).catch(e => { console.warn('[GA4]', e.message); return null; });
+
   let adsData   = null;
   let pipeData  = null;
   let adsError  = null;
@@ -1437,6 +1580,7 @@ async function fetchAllData(period) {
     campaigns:       adsData?.campaigns    ?? mk.campaigns,
     auctionData:     _liveAuctionData || (adsData?.auctionData?.length ? adsData.auctionData : mk.auctionData),
     gsc:             gscData,
+    ga4:             ga4Data,
     dealLists:       pipeData?.dealLists    ?? { leads:[], sqls:[], ganados:[], sqlsPaid:[], sqlsOrg:[] },
     dealsByOrigin:   pipeData?.dealsByOrigin ?? {},
     periodLabel:     parsePeriod(period).periodLabel,

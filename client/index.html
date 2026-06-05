@@ -436,6 +436,11 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
       <span class="sb-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></span>
       Rendimiento orgánico
     </a>
+    <a class="sb-item" href="#analytics" onclick="sbClick(this)">
+      <!-- 📊 Analytics -->
+      <span class="sb-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg></span>
+      Analytics · Sitio web
+    </a>
     <a class="sb-item" href="#campanas" onclick="sbClick(this)">
       <!-- 🗺️ Mapa -->
       <span class="sb-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3,6 9,3 15,6 21,3 21,18 15,21 9,18 3,21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg></span>
@@ -624,6 +629,70 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
             </thead>
             <tbody id="gsc-tbody">
               <tr><td colspan="5" style="padding:1rem;text-align:center;color:var(--muted)">Cargando…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- GOOGLE ANALYTICS 4 -->
+  <section id="analytics">
+    <div class="card">
+      <div class="card-hdr">
+        <span class="card-title">Comportamiento del sitio · detectasecurity.io</span>
+        <span class="card-src"><span class="src-dot" style="background:#E37400"></span>Google Analytics 4</span>
+      </div>
+
+      <!-- Métricas resumen -->
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);border-bottom:1px solid var(--border)">
+        <div style="padding:.6rem .85rem;border-right:1px solid var(--border)">
+          <p style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">Sesiones</p>
+          <p class="ec-val" id="ga4-sessions" style="font-size:24px;margin-top:4px">–</p>
+          <p id="ga4-cmp-sessions" style="font-size:10px;margin-top:3px;color:var(--muted)"></p>
+        </div>
+        <div style="padding:.6rem .85rem;border-right:1px solid var(--border)">
+          <p style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">Usuarios activos</p>
+          <p class="ec-val" id="ga4-users" style="font-size:24px;margin-top:4px">–</p>
+          <p id="ga4-cmp-users" style="font-size:10px;margin-top:3px;color:var(--muted)"></p>
+        </div>
+        <div style="padding:.6rem .85rem;border-right:1px solid var(--border)">
+          <p style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">Nuevos usuarios</p>
+          <p class="ec-val" id="ga4-new-users" style="font-size:24px;margin-top:4px">–</p>
+          <p id="ga4-cmp-new-users" style="font-size:10px;margin-top:3px;color:var(--muted)"></p>
+        </div>
+        <div style="padding:.6rem .85rem;border-right:1px solid var(--border)">
+          <p style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">Conversiones GA4</p>
+          <p class="ec-val" id="ga4-conv" style="font-size:24px;margin-top:4px">–</p>
+          <p id="ga4-cmp-conv" style="font-size:10px;margin-top:3px;color:var(--muted)"></p>
+        </div>
+        <div style="padding:.6rem .85rem">
+          <p style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">Tasa de engagement</p>
+          <p class="ec-val" id="ga4-eng" style="font-size:24px;margin-top:4px">–</p>
+        </div>
+      </div>
+
+      <!-- Canales + Top páginas -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0">
+        <!-- Canales -->
+        <div style="padding:.75rem .85rem;border-right:1px solid var(--border)">
+          <p style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.5rem">Sesiones por canal</p>
+          <div id="ga4-channels" style="display:flex;flex-direction:column;gap:6px"></div>
+        </div>
+
+        <!-- Top páginas -->
+        <div style="overflow:auto;max-height:280px">
+          <table style="width:100%;border-collapse:collapse;font-size:11px">
+            <thead style="position:sticky;top:0">
+              <tr>
+                <th>Página</th>
+                <th style="text-align:right">Vistas</th>
+                <th style="text-align:right">Sesiones</th>
+                <th style="text-align:right">Conv.</th>
+              </tr>
+            </thead>
+            <tbody id="ga4-pages-tbody">
+              <tr><td colspan="4" style="padding:1rem;text-align:center;color:var(--muted)">Cargando…</td></tr>
             </tbody>
           </table>
         </div>
@@ -878,6 +947,7 @@ async function loadData() {
   if (typeof renderInsights === 'function') renderInsights(data);
   renderCharts(data);
   renderGSC(data);
+  renderGA4(data);
   renderTree(data);
   renderChanges(data);
 }
@@ -1214,6 +1284,87 @@ function renderGSC(d) {
   const initEl = document.getElementById('gsc-sort-'+_gscSortCol);
   if (initEl) initEl.textContent = _gscSortDir === 'desc' ? '▼' : '▲';
   renderGSCTable();
+}
+
+// ── GOOGLE ANALYTICS 4 ────────────────────────────────────────────────────────
+const GA4_CH_COLORS = {
+  'Paid Search':   '#eb0000',
+  'Organic Search':'#4CAF50',
+  'Direct':        '#999999',
+  'Referral':      '#2196F3',
+  'Organic Social':'#9C27B0',
+  'Email':         '#FF9800',
+  'Unassigned':    '#555',
+};
+
+function renderGA4(d) {
+  const ga4 = d.ga4;
+  const section = document.getElementById('analytics');
+  if (!section) return;
+
+  if (!ga4) {
+    section.style.display = 'none';
+    return;
+  }
+  section.style.display = '';
+
+  const s = ga4.summary || {};
+  const p = s.prev || {};
+
+  const cmp = (cur, prev, higherIsBetter = true, suffix = '') => {
+    if (!prev) return '';
+    const diff = cur - prev;
+    const pct  = Math.round(diff / prev * 100);
+    const better = higherIsBetter ? diff > 0 : diff < 0;
+    const sign = diff > 0 ? '+' : '';
+    const color = better ? '#4CAF50' : '#eb0000';
+    return `<span style="color:${color}">${sign}${pct}%</span> vs periodo anterior`;
+  };
+
+  setText('ga4-sessions',  fmt(s.sessions));
+  setText('ga4-users',     fmt(s.users));
+  setText('ga4-new-users', fmt(s.newUsers));
+  setText('ga4-conv',      fmt(s.conversions));
+  setText('ga4-eng',       s.engagementRate != null ? s.engagementRate.toFixed(1) + '%' : '–');
+
+  const el = id => document.getElementById(id);
+  if (el('ga4-cmp-sessions'))  el('ga4-cmp-sessions').innerHTML  = cmp(s.sessions,  p.sessions);
+  if (el('ga4-cmp-users'))     el('ga4-cmp-users').innerHTML     = cmp(s.users,     p.users);
+  if (el('ga4-cmp-new-users')) el('ga4-cmp-new-users').innerHTML = cmp(s.newUsers,  p.newUsers);
+  if (el('ga4-cmp-conv'))      el('ga4-cmp-conv').innerHTML      = cmp(s.conversions, p.conversions);
+
+  // Canales
+  const chEl = document.getElementById('ga4-channels');
+  if (chEl && ga4.channels) {
+    const maxSessions = Math.max(...ga4.channels.map(c => c.sessions), 1);
+    chEl.innerHTML = ga4.channels.map(c => {
+      const pct = Math.round(c.sessions / maxSessions * 100);
+      const color = GA4_CH_COLORS[c.channel] || '#999';
+      return `<div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
+          <span style="font-size:10px;color:rgba(255,255,255,0.75)">${c.channel}</span>
+          <span style="font-size:10px;color:var(--muted)">${fmt(c.sessions)}</span>
+        </div>
+        <div style="height:4px;background:rgba(255,255,255,0.07);border-radius:2px">
+          <div style="width:${pct}%;height:100%;background:${color};border-radius:2px"></div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // Top páginas
+  const tbody = document.getElementById('ga4-pages-tbody');
+  if (tbody && ga4.topPages) {
+    tbody.innerHTML = ga4.topPages.map(p => {
+      const shortPath = p.path.length > 35 ? p.path.slice(0, 34) + '…' : p.path;
+      return `<tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:.35rem .65rem;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${p.path}">${shortPath}</td>
+        <td style="padding:.35rem .65rem;text-align:right;color:rgba(255,255,255,0.8)">${fmt(p.views)}</td>
+        <td style="padding:.35rem .65rem;text-align:right;color:var(--muted)">${fmt(p.sessions)}</td>
+        <td style="padding:.35rem .65rem;text-align:right;color:${p.conversions>0?'#4CAF50':'var(--muted)'}">${p.conversions || '–'}</td>
+      </tr>`;
+    }).join('');
+  }
 }
 
 // ── MAPA DE CAMPAÑAS ──────────────────────────────────────────────────────────
