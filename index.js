@@ -885,6 +885,8 @@ async function fetchPipedriveDeals() {
     start += 500;
     if (!json.additional_data?.pagination?.more_items_in_collection) break;
   }
+  const recent = all.slice(0,3).map(d=>`${d.id}:${(d.add_time||'').slice(0,10)}`).join(', ');
+  console.log(`[fetchPipedriveDeals] total=${all.length} recientes=[${recent}]`);
   return all;
 }
 
@@ -976,6 +978,7 @@ async function processPipedrive(deals, period, origenMap, stageMap = {}) {
 
   const startStr = localDateStr(start);
   const endStr   = localDateStr(end);
+  console.log(`[processPipedrive] period=${period} startStr=${startStr} endStr=${endStr} totalDeals=${deals.length}`);
 
   // Leads y SQLs: deals CREADOS en el periodo (add_time) que tienen el campo
   // calificado lleno. Así, calificar un deal de enero hoy lo cuenta en enero.
