@@ -407,6 +407,18 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
     <button class="period-btn" onclick="setPeriod(this,'q4')">Q4</button>
     <div class="psep"></div>
     <button class="period-btn" onclick="setPeriod(this,'this_year')">Este año</button>
+    <div class="psep"></div>
+    <button onclick="generateReport()"
+            style="display:flex;align-items:center;gap:5px;background:rgba(235,0,0,0.12);
+                   border:1px solid rgba(235,0,0,0.35);border-radius:6px;padding:.3rem .7rem;
+                   color:#fff;font-size:10px;font-weight:600;cursor:pointer;font-family:inherit;
+                   transition:background .15s;white-space:nowrap"
+            onmouseover="this.style.background='rgba(235,0,0,0.25)'"
+            onmouseout="this.style.background='rgba(235,0,0,0.12)'"
+            title="Generar informe PDF con datos reales">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Informe PDF
+    </button>
   </div>
 </div>
 
@@ -2453,6 +2465,362 @@ function closeAllTips() {
 }
 document.addEventListener('click',  closeAllTips);
 document.addEventListener('scroll', closeAllTips, true);
+
+// ── GENERADOR DE INFORME PDF ──────────────────────────────────────────────────
+function generateReport() {
+  const d = _lastData;
+  if (!d) { alert('Carga los datos primero.'); return; }
+
+  const s    = d.summary    || {};
+  const ga4  = d.ga4        || {};
+  const g4s  = ga4.summary  || {};
+  const gsc  = d.gsc        || {};
+  const gs   = gsc.summary  || {};
+  const pl   = d.pipeline   || {};
+  const per  = d.periodLabel || 'Periodo seleccionado';
+  const now  = new Date().toLocaleDateString('es-MX', { day:'numeric', month:'long', year:'numeric' });
+  const fmtM = n => n != null ? '$' + Number(n).toLocaleString('es-MX') : '–';
+  const fmt  = n => n != null ? Number(n).toLocaleString('es-MX') : '–';
+  const fmtP = n => n != null ? Number(n).toFixed(1) + '%' : '–';
+  const pct  = (a,b) => b && b>0 ? Math.round((a-b)/b*100) : null;
+  const arr  = v => v != null ? (v>0?'▲ +'+v+'%':'▼ '+v+'%') : '';
+
+  // Canales GA4 top 3
+  const chs = (ga4.channels||[]).slice(0,5);
+  const chRows = chs.map(c =>
+    `<tr><td>${c.channel}</td><td class="num">${fmt(c.sessions)}</td><td class="num">${c.pct}%</td><td class="num">${fmt(c.conversions)||'–'}</td></tr>`
+  ).join('') || '<tr><td colspan="4" class="muted">Sin datos de canales</td></tr>';
+
+  // Top páginas
+  const pgRows = (ga4.topPages||[]).slice(0,6).map(p => {
+    const short = p.path.length > 38 ? p.path.slice(0,37)+'…' : p.path;
+    return `<tr><td>${short}</td><td class="num">${fmt(p.views)}</td><td class="num">${fmt(p.sessions)}</td><td class="num">${p.conversions||'–'}</td></tr>`;
+  }).join('') || '<tr><td colspan="4" class="muted">Sin datos</td></tr>';
+
+  // GSC queries
+  const qRows = (gsc.queries||[]).slice(0,6).map(q =>
+    `<tr><td>${q.query}</td><td class="num">${fmt(q.clicks)}</td><td class="num">${fmt(q.impressions)}</td><td class="num">${fmtP(q.ctr)}</td><td class="num">${q.position?.toFixed(1)||'–'}</td></tr>`
+  ).join('') || '<tr><td colspan="5" class="muted">Sin datos</td></tr>';
+
+  const ROAS = s.gasto && pl.valorGanado ? (pl.valorGanado / s.gasto).toFixed(1) : null;
+
+  const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
+<title>Informe de Marketing · Detecta Security · ${per}</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',Arial,sans-serif;font-size:11px;color:#1a1a2e;background:#fff;line-height:1.5}
+  @page{size:A4;margin:0}
+
+  /* ── PORTADA ── */
+  .cover{width:100%;height:100vh;min-height:297mm;background:linear-gradient(160deg,#0d2b5e 0%,#1a4a9c 55%,#0a1f45 100%);
+    display:flex;flex-direction:column;justify-content:space-between;padding:14mm 16mm;page-break-after:always;color:#fff}
+  .cover-logo{font-size:22px;font-weight:800;letter-spacing:.02em;margin-bottom:4px}
+  .cover-sub{font-size:11px;color:rgba(255,255,255,0.65);letter-spacing:.08em;text-transform:uppercase}
+  .cover-body{flex:1;display:flex;flex-direction:column;justify-content:center}
+  .cover-tag{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,0.5);margin-bottom:12px}
+  .cover-period{font-size:52px;font-weight:800;line-height:1;margin-bottom:8px}
+  .cover-period-sub{font-size:22px;font-weight:600;color:rgba(255,255,255,0.85);margin-bottom:24px}
+  .cover-pills{display:flex;gap:8px;flex-wrap:wrap}
+  .cover-pill{background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);
+    border-radius:20px;padding:4px 12px;font-size:9px;letter-spacing:.04em}
+  .cover-footer{font-size:9px;color:rgba(255,255,255,0.4);border-top:1px solid rgba(255,255,255,0.15);padding-top:8px;
+    display:flex;justify-content:space-between}
+
+  /* ── PÁGINAS ── */
+  .page{padding:12mm 14mm;page-break-after:always;min-height:297mm}
+  .page:last-child{page-break-after:auto}
+  .page-hdr{border-bottom:2px solid #0d2b5e;padding-bottom:5px;margin-bottom:14px;
+    display:flex;justify-content:space-between;align-items:flex-end}
+  .page-hdr-tag{font-size:8px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#0d2b5e}
+  .page-hdr-right{font-size:8px;color:#999}
+  .sec-title{font-size:15px;font-weight:700;color:#0d2b5e;margin-bottom:12px}
+  .sec-sub{font-size:10px;font-weight:700;color:#1a4a9c;margin:12px 0 6px}
+
+  /* ── KPI GRID ── */
+  .kpi-grid{display:grid;gap:8px;margin-bottom:14px}
+  .kpi-grid-4{grid-template-columns:repeat(4,1fr)}
+  .kpi-grid-3{grid-template-columns:repeat(3,1fr)}
+  .kpi-grid-2{grid-template-columns:repeat(2,1fr)}
+  .kpi{background:#f0f4ff;border:1px solid #c8d8f5;border-top:3px solid #1a4a9c;
+    border-radius:6px;padding:10px 12px}
+  .kpi-label{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#666;margin-bottom:4px}
+  .kpi-val{font-size:22px;font-weight:800;color:#0d2b5e;line-height:1}
+  .kpi-note{font-size:8px;color:#888;margin-top:3px}
+  .kpi-delta{font-size:9px;font-weight:600;margin-top:3px}
+  .up{color:#1a7a3c}.down{color:#c0392b}
+
+  /* ── TABLAS ── */
+  table{width:100%;border-collapse:collapse;font-size:10px;margin-bottom:12px}
+  thead tr{background:#0d2b5e;color:#fff}
+  th{padding:6px 8px;text-align:left;font-size:8px;font-weight:700;letter-spacing:.05em;text-transform:uppercase}
+  td{padding:5px 8px;border-bottom:1px solid #e8eef8;color:#1a1a2e}
+  tr:nth-child(even) td{background:#f5f8ff}
+  .num{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+  .muted{color:#999;text-align:center;padding:12px}
+
+  /* ── CALLOUTS ── */
+  .callout{border-left:3px solid #1a4a9c;background:#f0f5ff;padding:8px 12px;
+    border-radius:0 6px 6px 0;margin-bottom:8px;font-size:10px;line-height:1.55}
+  .callout.red{border-color:#c0392b;background:#fff5f5}
+  .callout.green{border-color:#1a7a3c;background:#f0fff5}
+  .callout.yellow{border-color:#d4a017;background:#fffcf0}
+  .callout b{font-weight:700}
+
+  /* ── ACCIONABLES ── */
+  .acc-item{display:flex;gap:10px;margin-bottom:10px;padding:10px;
+    border:1px solid #e0e8f8;border-radius:6px;background:#fafcff;align-items:flex-start}
+  .acc-num{background:#0d2b5e;color:#fff;font-size:11px;font-weight:800;
+    min-width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .acc-body .acc-title{font-weight:700;font-size:10.5px;color:#0d2b5e;margin-bottom:3px}
+  .acc-body .acc-desc{font-size:9.5px;color:#444;line-height:1.5}
+  .badge{display:inline-block;padding:2px 7px;border-radius:10px;font-size:8px;font-weight:700;
+    letter-spacing:.05em;text-transform:uppercase;margin-top:4px}
+  .badge-alta{background:#fee2e2;color:#c0392b}
+  .badge-media{background:#fef3c7;color:#b45309}
+  .badge-est{background:#dbeafe;color:#1e40af}
+
+  /* ── SEPARADOR ── */
+  .divider{border:none;border-top:1px solid #e0e8f8;margin:12px 0}
+</style>
+</head><body>
+
+<!-- ══ PORTADA ══════════════════════════════════════════════════════════ -->
+<div class="cover">
+  <div>
+    <div class="cover-logo">DETECTA</div>
+    <div class="cover-sub">Seguridad Logística · detectasecurity.io</div>
+  </div>
+  <div class="cover-body">
+    <div class="cover-tag">Informe de Marketing</div>
+    <div class="cover-period">${per.toUpperCase()}</div>
+    <div class="cover-period-sub">Dashboard de Adquisición SEM</div>
+    <div class="cover-pills">
+      <span class="cover-pill">Google Ads</span>
+      <span class="cover-pill">Google Analytics 4</span>
+      <span class="cover-pill">Pipedrive CRM</span>
+      <span class="cover-pill">Search Console</span>
+    </div>
+  </div>
+  <div class="cover-footer">
+    <span>Elaborado por: Dirección de Marketing Detecta</span>
+    <span>Confidencial — Uso Interno · Datos extraídos: ${now}</span>
+  </div>
+</div>
+
+<!-- ══ PÁG 1: GOOGLE ADS ════════════════════════════════════════════════ -->
+<div class="page">
+  <div class="page-hdr">
+    <span class="page-hdr-tag">Google Ads · Cuenta DETECTA-CUSTODIAS</span>
+    <span class="page-hdr-right">Detecta Security · detectasecurity.io · ${now}</span>
+  </div>
+  <div class="sec-title">Resumen de inversión y rendimiento · ${per}</div>
+
+  <div class="kpi-grid kpi-grid-4">
+    <div class="kpi">
+      <div class="kpi-label">Inversión total</div>
+      <div class="kpi-val">${fmtM(s.gasto)}</div>
+      <div class="kpi-note">MXN · periodo</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Impresiones</div>
+      <div class="kpi-val">${fmt(s.impr)}</div>
+      <div class="kpi-note">búsquedas alcanzadas</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Conversiones (leads)</div>
+      <div class="kpi-val">${fmt(s.conversiones)}</div>
+      <div class="kpi-note">formularios registrados</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">CTR medio</div>
+      <div class="kpi-val">${fmtP(s.ctr)}</div>
+      <div class="kpi-note">clics / impresiones</div>
+    </div>
+  </div>
+  <div class="kpi-grid kpi-grid-3">
+    <div class="kpi">
+      <div class="kpi-label">CPL (costo por lead)</div>
+      <div class="kpi-val">${fmtM(s.cpl)}</div>
+      <div class="kpi-note">MXN por conversión</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Costo por SQL</div>
+      <div class="kpi-val">${fmtM(d.costoSQL)}</div>
+      <div class="kpi-note">paid + orgánico</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">CPC promedio</div>
+      <div class="kpi-val">${s.gasto && s.conversiones ? fmtM(Math.round(s.gasto/(s.impr||1)*1000)/10) : '–'}</div>
+      <div class="kpi-note">costo por clic estimado</div>
+    </div>
+  </div>
+
+  <div class="callout yellow">
+    <b>Contexto de mercado:</b> El robo de carga en México creció +5.3% respecto a 2025, con un promedio de 55 incidentes diarios.
+    El 82% con violencia, concentrado en regiones Centro y Bajío. La demanda de servicios de custodia es alta y urgente.
+    Detecta opera en el momento de mayor tensión del mercado logístico nacional.
+  </div>
+
+  <hr class="divider">
+  <div class="sec-sub">Rendimiento orgánico · Search Console (consultas relacionadas a custodia)</div>
+  <div class="kpi-grid kpi-grid-4">
+    <div class="kpi"><div class="kpi-label">Clics orgánicos</div><div class="kpi-val">${fmt(gs.clicks)}</div></div>
+    <div class="kpi"><div class="kpi-label">Impresiones</div><div class="kpi-val">${fmt(gs.impressions)}</div></div>
+    <div class="kpi"><div class="kpi-label">CTR orgánico</div><div class="kpi-val">${fmtP(gs.ctr)}</div></div>
+    <div class="kpi"><div class="kpi-label">Posición media</div><div class="kpi-val">${gs.position?.toFixed(1)||'–'}</div></div>
+  </div>
+
+  <div class="sec-sub">Top consultas orgánicas</div>
+  <table>
+    <thead><tr><th>Consulta</th><th>Clics</th><th>Impresiones</th><th>CTR</th><th>Posición</th></tr></thead>
+    <tbody>${qRows}</tbody>
+  </table>
+</div>
+
+<!-- ══ PÁG 2: GA4 + PIPELINE ════════════════════════════════════════════ -->
+<div class="page">
+  <div class="page-hdr">
+    <span class="page-hdr-tag">Google Analytics 4 · Tráfico del sitio</span>
+    <span class="page-hdr-right">Detecta Security · detectasecurity.io · ${now}</span>
+  </div>
+  <div class="sec-title">Comportamiento del sitio web · ${per}</div>
+
+  <div class="kpi-grid kpi-grid-4">
+    <div class="kpi">
+      <div class="kpi-label">Sesiones</div>
+      <div class="kpi-val">${fmt(g4s.sessions)}</div>
+      ${g4s.prev?.sessions ? `<div class="kpi-delta ${g4s.sessions>g4s.prev.sessions?'up':'down'}">${arr(pct(g4s.sessions,g4s.prev.sessions))} vs periodo ant.</div>` : ''}
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Usuarios activos</div>
+      <div class="kpi-val">${fmt(g4s.users)}</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Nuevos usuarios</div>
+      <div class="kpi-val">${fmt(g4s.newUsers)}</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Engagement</div>
+      <div class="kpi-val">${g4s.engagementRate!=null?g4s.engagementRate.toFixed(1)+'%':'–'}</div>
+    </div>
+  </div>
+
+  <div class="sec-sub">Sesiones por fuente de tráfico</div>
+  <table>
+    <thead><tr><th>Canal / Fuente</th><th>Sesiones</th><th>% del total</th><th>Conversiones</th></tr></thead>
+    <tbody>${chRows}</tbody>
+  </table>
+
+  <div class="sec-sub">Top páginas visitadas</div>
+  <table>
+    <thead><tr><th>Página</th><th>Vistas</th><th>Sesiones</th><th>Conv.</th></tr></thead>
+    <tbody>${pgRows}</tbody>
+  </table>
+
+  ${g4s.conversions === 0 ? `<div class="callout red"><b>CRÍTICO — Sin conversiones configuradas en GA4:</b> Los formularios de cotización no disparan eventos. Es imposible medir el funnel digital. Acción inmediata Q2: configurar eventos GA4 + UTMs en todos los puntos de contacto.</div>` : ''}
+
+  <hr class="divider">
+  <div class="page-hdr" style="border-color:#1a4a9c;margin-top:14px">
+    <span class="page-hdr-tag">Pipedrive CRM · Pipeline de adquisición</span>
+  </div>
+  <div class="kpi-grid kpi-grid-4">
+    <div class="kpi">
+      <div class="kpi-label">Leads calificados</div>
+      <div class="kpi-val">${fmt(s.leadsCalificados)}</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">SQLs totales</div>
+      <div class="kpi-val">${fmt(s.sqls)}</div>
+      <div class="kpi-note">Paid ${d.sqlsPaidMedia||0} · Org ${d.sqlsOrganicos||0} · Out ${d.sqlsOutbound||0}</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Clientes ganados</div>
+      <div class="kpi-val">${fmt(s.clientesGanados)}</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Costo por SQL</div>
+      <div class="kpi-val">${fmtM(d.costoSQL)}</div>
+      <div class="kpi-note">MXN</div>
+    </div>
+  </div>
+  ${ROAS ? `<div class="callout green"><b>ROAS estimado: ${ROAS}x</b> — Inversión Ads vs ingresos CRM del periodo. Nota: estimado de orden de magnitud; requiere UTM tracking completo para confirmar atribución real.</div>` : ''}
+</div>
+
+<!-- ══ PÁG 3: ACCIONABLES ════════════════════════════════════════════════ -->
+<div class="page">
+  <div class="page-hdr">
+    <span class="page-hdr-tag">Accionables estratégicos · Ordenados por impacto en generación de pipeline</span>
+    <span class="page-hdr-right">Detecta Security · detectasecurity.io · ${now}</span>
+  </div>
+  <div class="sec-title">Plan de acción · Próximo periodo</div>
+
+  <div class="acc-item">
+    <div class="acc-num">01</div>
+    <div class="acc-body">
+      <div class="acc-title">Implementar tracking completo: GA4 + UTMs + Pipedrive</div>
+      <div class="acc-desc">Primer accionable antes de cualquier campaña nueva. Configurar eventos de conversión en GA4. Agregar UTMs en todos los puntos de contacto (formulario web, WhatsApp Business, correo de cotización). Conectar conversiones offline con Google Ads. Definir un responsable único entre Marketing, Ventas y equipo técnico.</div>
+      <span class="badge badge-alta">Alta prioridad</span>
+    </div>
+  </div>
+  <div class="acc-item">
+    <div class="acc-num">02</div>
+    <div class="acc-body">
+      <div class="acc-title">Activar Informe de Riesgo Logístico como máquina de leads</div>
+      <div class="acc-desc">El reporte existe pero no se explota. Crear landing page con formulario de descarga, secuencia de nurturing de 4 correos y distribución activa en LinkedIn hacia directores de logística, supply chain y seguridad corporativa. Meta: 200 leads calificados en el próximo trimestre.</div>
+      <span class="badge badge-alta">Alta prioridad</span>
+    </div>
+  </div>
+  <div class="acc-item">
+    <div class="acc-num">03</div>
+    <div class="acc-body">
+      <div class="acc-title">Campaña vertical farmacéutica · "Protege tu cadena de frío"</div>
+      <div class="acc-desc">Con Farmahome como sinergia natural, lanzar campaña B2B para distribuidoras y transportistas de medicamentos. El sector farmacéutico es el 2do producto más robado en LATAM. LinkedIn + email marketing a directorios CANIFARMA y ANAFAM.</div>
+      <span class="badge badge-alta">Alta prioridad</span>
+    </div>
+  </div>
+  <div class="acc-item">
+    <div class="acc-num">04</div>
+    <div class="acc-body">
+      <div class="acc-title">Publicar primer caso de éxito con métricas reales</div>
+      <div class="acc-desc">DHL, AstraZeneca o Traxion son logos poderosos. Un caso con datos concretos (% incidentes reducidos, tiempo de respuesta, ROI) vale más que 10 posts genéricos. El comprador B2B de seguridad compra por prueba social, no por promesa.</div>
+      <span class="badge badge-alta">Alta prioridad</span>
+    </div>
+  </div>
+  <div class="acc-item">
+    <div class="acc-num">05</div>
+    <div class="acc-body">
+      <div class="acc-title">LinkedIn como canal de generación de demanda</div>
+      <div class="acc-desc">Estrategia semanal: 2 posts de datos de robo de carga, 1 de producto, 1 de historia de cliente. Meta: +163% de seguidores al cierre del trimestre y 15 cotizaciones atribuidas a LinkedIn orgánico.</div>
+      <span class="badge badge-media">Prioridad media</span>
+    </div>
+  </div>
+  <div class="acc-item">
+    <div class="acc-num">06</div>
+    <div class="acc-body">
+      <div class="acc-title">Comunicar ecosistema integrado GSM + Detecta + Farmahome</div>
+      <div class="acc-desc">Ningún competidor puede ofrecer seguridad privada + logística + farmacéutica desde el mismo grupo. Comunicar esto como ventaja de grupo es un diferenciador sostenible y sin costo adicional. Overhaul, Skyangel y PTC dominan la narrativa de datos — Detecta puede dominar la narrativa de ecosistema.</div>
+      <span class="badge badge-est">Estratégico</span>
+    </div>
+  </div>
+
+  <div class="callout" style="margin-top:16px">
+    <b>Nota del Líder de Marketing:</b> El mercado le está regalando viento de cola a Detecta. Con el robo de carga creciendo 5.3% y el 82% de los incidentes con violencia, la demanda existe y es urgente. El problema no es el producto — es la visibilidad en la conversación pública del sector. La sinergia GSM + Detecta + Farmahome es el activo de diferenciación más poderoso del grupo y el menos explotado en marketing.
+  </div>
+
+  <div class="cover-footer" style="margin-top:20px;padding-top:8px;border-top:1px solid #e0e8f8;color:#999;font-size:8px;display:flex;justify-content:space-between">
+    <span>Fuentes: Google Ads · Google Analytics 4 · Pipedrive CRM · Google Search Console</span>
+    <span>Confidencial — Uso interno Detecta / GSM Seguridad · ${now}</span>
+  </div>
+</div>
+
+</body></html>`;
+
+  const win = window.open('', '_blank');
+  if (!win) { alert('Permite ventanas emergentes para generar el informe.'); return; }
+  win.document.write(html);
+  win.document.close();
+  setTimeout(() => win.print(), 800);
+}
 
 // ── CHAT ──────────────────────────────────────────────────────────────────────
 let _chatOpen    = false;
