@@ -1784,17 +1784,14 @@ function renderChanges(d) {
   };
 
   list.innerHTML = changes.map((c,i) => {
-    const parsedFields = parseFields(c.fields);
-    const hasDetail = parsedFields.length > 0;
+    const color = typeColors[c.type] || '#999999';
     return `
-    <div class="change-item" style="border-left-color:${typeColors[c.type]||'#999999'};cursor:${hasDetail?'pointer':'default'}"
-         onclick="${hasDetail ? `toggleChangeDetail(${i})` : ''}">
-      <p class="ci-date">${c.date}${hasDetail ? ' <span style="color:var(--muted);font-size:8px">▼ ver detalle</span>' : ''}</p>
-      <p class="ci-desc">${c.desc}</p>
-      ${hasDetail ? `<div id="change-detail-${i}" style="display:none;margin-top:5px;padding-top:4px;border-top:1px solid rgba(255,255,255,0.08)">
-        <p style="font-size:9px;color:var(--muted);margin-bottom:3px">Campos modificados:</p>
-        ${parsedFields.map(f=>`<span style="display:inline-block;font-size:9px;background:rgba(255,255,255,0.06);border-radius:3px;padding:1px 5px;margin:1px;color:var(--text)">${f}</span>`).join('')}
-      </div>` : ''}
+    <div class="change-item" style="border-left-color:${color}">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:4px;margin-bottom:3px">
+        <span style="font-size:8px;font-weight:700;color:${color};text-transform:uppercase;letter-spacing:.04em">${c.type}</span>
+        <span class="ci-date" style="font-size:9px;color:var(--muted);white-space:nowrap">${c.date}</span>
+      </div>
+      <p class="ci-desc" style="font-size:10px;color:var(--text);line-height:1.4;margin:0">${c.desc}</p>
     </div>`;
   }).join('');
 
