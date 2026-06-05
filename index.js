@@ -1777,8 +1777,9 @@ app.post('/api/chat', async (req, res) => {
   const { message, context, history } = req.body;
   if (!message) return res.status(400).json({ error: 'message requerido' });
 
-  const Anthropic = require('@anthropic-ai/sdk');
-  const client    = new Anthropic.default({ apiKey });
+  const AnthropicMod = require('@anthropic-ai/sdk');
+  const AnthropicCls = AnthropicMod.Anthropic || AnthropicMod.default || AnthropicMod;
+  const client       = new AnthropicCls({ apiKey });
 
   // System prompt con los datos actuales del dashboard
   const ctx     = context || {};
