@@ -403,6 +403,159 @@ async function fetchSearchConsoleData(period) {
   }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// GOOGLE ANALYTICS 4
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function fetchGA4Data(period) {
+  const propertyId = process.env.GA4_PROPERTY_ID;
+  if (!propertyId) return null;
+
+  const { google } = require('googleapis');
+  const credJson = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
+  const keyFile  = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
+
+  const auth = new google.auth.GoogleAuth({
+    ...(credJson ? { credentials: JSON.parse(credJson) } : { keyFile }),
+    scopes: ['https://www.googleapis.com/auth/analytics.readonly'],
+  });
+
+  const ga4 = google.analyticsdata({ version: 'v1beta', auth });
+  const prop = `properties/${propertyId}`;
+  const pc   = parsePeriod(period);
+  const dateRange = { startDate: pc.startStr, endDate: pc.endStr };
+
+  // Periodo anterior (misma duración, justo antes)
+  const startMs = new Date(pc.startStr).getTime();
+  const durMs   = new Date(pc.endStr).getTime() - startMs + 86_400_000;
+  const fmtD    = ms => {
+    const dt = new Date(ms);
+    return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
+  };
+  const prevDateRange = { startDate: fmtD(startMs - durMs), endDate: fmtD(startMs - 86_400_000) };
+
+  // Categoriza fuente+medio en canales significativos para Detecta
+  const AI_KEYS = ['perplexity','chatgpt','claude','gemini','copilot','phind','openai','anthropic','bard','you.com','bing chat'];
+  function categorize(src, med) {
+    const s = (src || '').toLowerCase();
+    const m = (med || '').toLowerCase();
+    if (AI_KEYS.some(k => s.includes(k)))                                   return 'IA';
+    if (s.includes('linkedin') && (m.includes('cpc') || m.includes('paid'))) return 'LinkedIn · Paid';
+    if (s.includes('linkedin'))                                              return 'LinkedIn · Orgánico';
+    if (['cpc','ppc','paid'].includes(m) || m === 'paid search')             return 'Paid Search';
+    if (['email','newsletter','mailing','correo'].some(e => m.includes(e))) return 'Mailing';
+    if (m === 'organic' || m === 'organic search')                          return 'Orgánico';
+    if (s === '(direct)' || (s === '' && (m === '(none)' || m === '')))     return 'Directo';
+    if (m === 'display' || m === 'banner')                                  return 'Display';
+    if (m === 'referral' || m === 'social' || m === 'organic social')       return 'Referral / Social';
+    return 'Otro';
+  }
+
+  const CHANNEL_ORDER = ['IA','Paid Search','LinkedIn · Paid','LinkedIn · Orgánico','Orgánico','Mailing','Directo','Display','Referral / Social','Otro'];
+
+  try {
+    const [summaryRes, sourceRes, pagesRes] = await Promise.all([
+      // Totales periodo actual + anterior
+      ga4.properties.runReport({
+        property: prop,
+        requestBody: {
+          dateRanges: [dateRange, prevDateRange],
+          metrics: [
+            { name: 'sessions'      },
+            { name: 'activeUsers'   },
+            { name: 'newUsers'      },
+            { name: 'conversions'   },
+            { name: 'engagementRate'},
+            { name: 'bounceRate'    },
+          ],
+        },
+      }),
+
+      // Sesiones por source+medium para categorización precisa
+      ga4.properties.runReport({
+        property: prop,
+        requestBody: {
+          dateRanges: [dateRange],
+          dimensions: [{ name: 'sessionSource' }, { name: 'sessionMedium' }],
+          metrics:    [{ name: 'sessions' }, { name: 'conversions' }, { name: 'activeUsers' }],
+          orderBys:   [{ metric: { metricName: 'sessions' }, desc: true }],
+          limit: 100,
+        },
+      }),
+
+      // Top páginas
+      ga4.properties.runReport({
+        property: prop,
+        requestBody: {
+          dateRanges: [dateRange],
+          dimensions: [{ name: 'pagePath' }, { name: 'pageTitle' }],
+          metrics:    [{ name: 'screenPageViews' }, { name: 'sessions' }, { name: 'conversions' }, { name: 'activeUsers' }],
+          orderBys:   [{ metric: { metricName: 'screenPageViews' }, desc: true }],
+          limit: 15,
+        },
+      }),
+    ]);
+
+    // ── Resumen
+    const curr = summaryRes.data.rows?.[0];
+    const prev = summaryRes.data.rows?.[1];
+    const mv   = (row, i) => row ? Number(row.metricValues[i].value) : 0;
+    const summary = {
+      sessions:       mv(curr, 0),
+      users:          mv(curr, 1),
+      newUsers:       mv(curr, 2),
+      conversions:    mv(curr, 3),
+      engagementRate: curr ? parseFloat((mv(curr, 4) * 100).toFixed(1)) : 0,
+      bounceRate:     curr ? parseFloat((mv(curr, 5) * 100).toFixed(1)) : 0,
+      prev: { sessions: mv(prev, 0), users: mv(prev, 1), newUsers: mv(prev, 2), conversions: mv(prev, 3) },
+    };
+
+    // ── Canales categorizados y agregados
+    const chMap      = {};
+    const chBreakdown = {};
+    for (const row of (sourceRes.data.rows || [])) {
+      const src = row.dimensionValues[0].value;
+      const med = row.dimensionValues[1].value;
+      const cat = categorize(src, med);
+      if (!chMap[cat]) { chMap[cat] = { sessions: 0, conversions: 0, users: 0 }; chBreakdown[cat] = []; }
+      const sess = Number(row.metricValues[0].value);
+      const conv = Number(row.metricValues[1].value);
+      const usr  = Number(row.metricValues[2].value);
+      chMap[cat].sessions    += sess;
+      chMap[cat].conversions += conv;
+      chMap[cat].users       += usr;
+      if (sess > 0) chBreakdown[cat].push({ source: src, medium: med, sessions: sess, conversions: conv, users: usr });
+    }
+    // Ordena breakdown interno por sesiones desc
+    Object.keys(chBreakdown).forEach(k => chBreakdown[k].sort((a, b) => b.sessions - a.sessions));
+
+    const totalSessions = Object.values(chMap).reduce((s, c) => s + c.sessions, 0) || 1;
+    const channels = CHANNEL_ORDER
+      .filter(k => chMap[k]?.sessions > 0)
+      .map(k => ({
+        channel:   k,
+        ...chMap[k],
+        pct:       parseFloat((chMap[k].sessions / totalSessions * 100).toFixed(1)),
+        breakdown: chBreakdown[k] || [],
+      }));
+
+    // ── Top páginas
+    const topPages = (pagesRes.data.rows || []).map(r => ({
+      path:        r.dimensionValues[0].value,
+      title:       r.dimensionValues[1].value,
+      views:       Number(r.metricValues[0].value),
+      sessions:    Number(r.metricValues[1].value),
+      conversions: Number(r.metricValues[2].value),
+      users:       Number(r.metricValues[3].value),
+    }));
+
+    return { summary, channels, topPages, prevPeriod: `${prevDateRange.startDate} – ${prevDateRange.endDate}` };
+  } catch (e) {
+    console.warn('[GA4]', e.message);
+    return null;
+  }
+}
+
 // GOOGLE SHEETS — estadísticas de subasta (escritas por Google Ads Script)
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -1353,6 +1506,9 @@ async function fetchAllData(period) {
   // Google Search Console — rendimiento orgánico
   const gscData = await fetchSearchConsoleData(period).catch(() => null);
 
+  // Google Analytics 4
+  const ga4Data = await fetchGA4Data(period).catch(e => { console.warn('[GA4]', e.message); return null; });
+
   let adsData   = null;
   let pipeData  = null;
   let adsError  = null;
@@ -1437,6 +1593,7 @@ async function fetchAllData(period) {
     campaigns:       adsData?.campaigns    ?? mk.campaigns,
     auctionData:     _liveAuctionData || (adsData?.auctionData?.length ? adsData.auctionData : mk.auctionData),
     gsc:             gscData,
+    ga4:             ga4Data,
     dealLists:       pipeData?.dealLists    ?? { leads:[], sqls:[], ganados:[], sqlsPaid:[], sqlsOrg:[] },
     dealsByOrigin:   pipeData?.dealsByOrigin ?? {},
     periodLabel:     parsePeriod(period).periodLabel,
@@ -1596,6 +1753,85 @@ app.put('/api/qualify-deal', async (req, res) => {
     if (!json.success) return res.status(400).json({ error: json.error || 'Error de Pipedrive' });
     res.json({ success: true });
   } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CHAT — consultas sobre el dashboard vía Claude
+// ─────────────────────────────────────────────────────────────────────────────
+
+app.post('/api/chat', async (req, res) => {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) return res.status(503).json({ error: 'API key no configurada' });
+
+  const { message, context, history } = req.body;
+  if (!message) return res.status(400).json({ error: 'message requerido' });
+
+  const Anthropic = require('@anthropic-ai/sdk');
+  const client    = new Anthropic.default({ apiKey });
+
+  // System prompt con los datos actuales del dashboard
+  const ctx     = context || {};
+  const s       = ctx.summary || {};
+  const ga4     = ctx.ga4    || {};
+  const gsc     = ctx.gsc    || {};
+  const pipe    = ctx.pipeline || {};
+  const period  = ctx.periodLabel || 'este periodo';
+
+  const systemPrompt = `Eres un asistente de marketing especializado en el dashboard de adquisición SEM de Detecta Security, empresa mexicana de seguridad privada (custodias de transporte). Respondes en español, de forma concisa y estratégica. No saludas en cada respuesta.
+
+DATOS ACTUALES DEL DASHBOARD — Periodo: ${period}
+
+## Google Ads
+- Gasto: $${(s.gasto||0).toLocaleString('es-MX')}
+- Impresiones: ${(s.impr||0).toLocaleString('es-MX')}
+- CTR: ${s.ctr??'–'}%
+- Conversiones (leads): ${s.conversiones??'–'}
+- CPL (costo por lead): $${(s.cpl||0).toLocaleString('es-MX')}
+
+## Pipeline (Pipedrive)
+- Leads calificados: ${s.leadsCalificados??'–'}
+- SQLs totales: ${s.sqls??'–'}
+- Clientes ganados: ${s.clientesGanados??'–'}
+- Costo por SQL: $${(ctx.costoSQL||0).toLocaleString('es-MX')}
+- SQLs Paid Media: ${ctx.sqlsPaidMedia??'–'}
+- SQLs Orgánicos: ${ctx.sqlsOrganicos??'–'}
+- SQLs Outbound: ${ctx.sqlsOutbound??'–'}
+
+## Google Analytics 4
+- Sesiones: ${(ga4.summary?.sessions||0).toLocaleString('es-MX')}
+- Usuarios activos: ${(ga4.summary?.users||0).toLocaleString('es-MX')}
+- Nuevos usuarios: ${(ga4.summary?.newUsers||0).toLocaleString('es-MX')}
+- Conversiones GA4: ${ga4.summary?.conversions??'–'}
+- Tasa de engagement: ${ga4.summary?.engagementRate??'–'}%
+- Tasa de rebote: ${ga4.summary?.bounceRate??'–'}%
+${ga4.channels?.length ? '- Canales:\n' + ga4.channels.map(c => `  · ${c.channel}: ${c.sessions} sesiones (${c.pct}%)`).join('\n') : ''}
+
+## Search Console (búsquedas relacionadas a "custodia")
+- Clics orgánicos: ${gsc.summary?.clicks??'–'}
+- Impresiones: ${gsc.summary?.impressions??'–'}
+- CTR: ${gsc.summary?.ctr??'–'}%
+- Posición media: ${gsc.summary?.position??'–'}
+
+Cuando no tengas datos suficientes para responder algo, dilo claramente. Cuando identifiques oportunidades o problemas en los datos, señálalos proactivamente.`;
+
+  try {
+    const messages = [
+      ...(history || []).slice(-8).map(m => ({ role: m.role, content: m.content })),
+      { role: 'user', content: message },
+    ];
+
+    const response = await client.messages.create({
+      model:      'claude-haiku-4-5-20251001',
+      max_tokens: 600,
+      system:     systemPrompt,
+      messages,
+    });
+
+    res.json({ reply: response.content[0].text });
+  } catch (e) {
+    console.error('[Chat]', e.message);
     res.status(500).json({ error: e.message });
   }
 });
