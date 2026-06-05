@@ -193,25 +193,28 @@ function mostCommon(arr) {
 // `during` → cláusula GAQL top-level (ej. "DURING THIS_MONTH")
 // `where`  → fragmento para añadir en WHERE con AND (ej. "segments.date BETWEEN '...' AND '...'")
 function parsePeriod(period = 'this_month') {
-  const now   = new Date();
-  const year  = now.getFullYear();
-  const month = now.getMonth();
+  // Railway corre en UTC; México es UTC-6. Usamos hora local mexicana para
+  // que "hoy" y "ayer" coincidan con las fechas que Pipedrive guarda.
+  const MX_OFFSET_MS = -6 * 60 * 60 * 1000;
+  const now   = new Date(Date.now() + MX_OFFSET_MS - new Date().getTimezoneOffset() * 60000);
+  const year  = now.getUTCFullYear();
+  const month = now.getUTCMonth();
+  const day   = now.getUTCDate();
   let start, end;
 
   switch (period) {
     case 'today':
-      start = new Date(year, month, now.getDate(), 0, 0, 0);
+      start = new Date(year, month, day, 0, 0, 0);
       end   = now;
       break;
     case 'yesterday':
-      start = new Date(year, month, now.getDate() - 1, 0,  0,  0);
-      end   = new Date(year, month, now.getDate() - 1, 23, 59, 59);
+      start = new Date(year, month, day - 1, 0,  0,  0);
+      end   = new Date(year, month, day - 1, 23, 59, 59);
       break;
     case '7d': {
-      // Esta semana: lunes → domingo (semana completa de lun a dom)
-      const dow = now.getDay(); // 0=dom, 1=lun, ..., 6=sáb
+      const dow = now.getUTCDay();
       const daysToMon = dow === 0 ? 6 : dow - 1;
-      start = new Date(year, month, now.getDate() - daysToMon, 0, 0, 0);
+      start = new Date(year, month, day - daysToMon, 0, 0, 0);
       end   = now;
       break;
     }
@@ -229,12 +232,10 @@ function parsePeriod(period = 'this_month') {
       break;
     default:
       if (period.startsWith('month-')) {
-        // month-1 … month-12
         const m = parseInt(period.split('-')[1], 10) - 1;
         start = new Date(year, m, 1, 0, 0, 0);
         end   = (m === month) ? now : new Date(year, m + 1, 0, 23, 59, 59);
       } else {
-        // this_month
         start = new Date(year, month, 1, 0, 0, 0);
         end   = now;
       }
