@@ -1463,6 +1463,53 @@ app.get('/api/campaigns', async (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
+// KEYWORD PLANNER — métricas históricas de volumen de búsqueda
+// ─────────────────────────────────────────────────────────────────────────────
+
+app.post('/api/keyword-planner', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  const { keywords } = req.body || {};
+  if (!keywords?.length) return res.json({ results: [] });
+
+  try {
+    const { GoogleAdsApi } = require('google-ads-api');
+    const client = new GoogleAdsApi({
+      client_id:       ADS_CREDS.clientId,
+      client_secret:   ADS_CREDS.clientSecret,
+      developer_token: ADS_CREDS.developerToken,
+    });
+    const loginId  = process.env.GOOGLE_ADS_LOGIN_CUSTOMER_ID;
+    const customer = client.Customer({
+      customer_id:   ADS_CREDS.customerId,
+      refresh_token: ADS_CREDS.refreshToken,
+      ...(loginId?.trim() ? { login_customer_id: loginId.trim() } : {}),
+    });
+
+    const response = await customer.keywordPlanIdeas.generateKeywordHistoricalMetrics({
+      keywords,
+      geo_target_constants: ['geoTargetConstants/2484'], // México
+      keyword_plan_network: 2, // GOOGLE_SEARCH
+      language: 'languageConstants/1003', // Español
+    });
+
+    const COMP = { 0: '–', 1: 'Baja', 2: 'Media', 3: 'Alta' };
+    const results = (response.metrics || []).map((m, i) => ({
+      keyword:    keywords[i],
+      avgMonthly: m.avg_monthly_searches ?? null,
+      competition:COMP[m.competition] ?? '–',
+      compIndex:  m.competition_index ?? null,
+      bidLow:     m.low_top_of_page_bid_micros ? parseFloat((m.low_top_of_page_bid_micros / 1e6).toFixed(2)) : null,
+      bidHigh:    m.high_top_of_page_bid_micros ? parseFloat((m.high_top_of_page_bid_micros / 1e6).toFixed(2)) : null,
+    }));
+
+    res.json({ results });
+  } catch (err) {
+    console.error('[keyword-planner]', err.message || err);
+    res.status(500).json({ error: err.message, results: [] });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 // ENDPOINTS DE CALIFICACIÓN DE DEALS
 // ─────────────────────────────────────────────────────────────────────────────
 
