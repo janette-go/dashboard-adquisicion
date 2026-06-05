@@ -783,7 +783,7 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
     <div class="card">
       <div class="card-hdr" style="display:flex;align-items:center;justify-content:space-between;gap:10px">
         <span class="card-title">Planificador · Volumen de Búsqueda</span>
-        <span id="kw-planner-ctx" style="font-size:10px;color:var(--muted)">Selecciona un grupo de anuncios para ver el volumen de búsqueda</span>
+        <span id="kw-planner-ctx" style="font-size:10px;color:var(--muted)">Todas las keywords activas de la cuenta</span>
         <span id="kw-planner-status" style="font-size:9px;color:var(--muted)"></span>
       </div>
       <div style="overflow-x:auto">
@@ -1098,6 +1098,9 @@ async function loadData() {
   renderGA4(data);
   renderTree(data);
   renderChanges(data);
+  // Planificador: siempre todas las keywords de la cuenta, independiente de selección
+  const allAccountKws = (data.campaigns||[]).flatMap(c => (c.groups||[]).flatMap(g => g.keywords||[]));
+  loadKwPlanner(allAccountKws, 'Todas las campañas · cuenta completa');
 }
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
@@ -1708,10 +1711,6 @@ function renderTree(d) {
   // Default: seleccionar la primera campaña (Custodia) al cargar
   const firstCamp = sorted[0];
   if (firstCamp) setTimeout(() => selectCampaign(firstCamp.id), 0);
-
-  // Cargar planificador con todas las keywords de la cuenta
-  const allKwsAccount = camps.flatMap(c => (c.groups||[]).flatMap(g => g.keywords||[]));
-  setTimeout(() => loadKwPlanner(allKwsAccount, 'Todas las campañas · cuenta completa'), 100);
 }
 
 function selectCampaign(cid) {
@@ -1733,7 +1732,6 @@ function selectCampaign(cid) {
   const btn = document.getElementById('btn-kw-hist');
   if (btn) btn.style.display = _kwData.some(k => k.monthly?.length) ? '' : 'none';
   renderKwBody();
-  loadKwPlanner(_kwData, `${camp.name} — todas las keywords`);
   // Clear metric cards
   const pb = document.getElementById('perf-card-body');
   if (pb) pb.innerHTML = '<div class="perf-cell" style="grid-column:1/-1;text-align:center;padding:.75rem"><span style="font-size:10px;color:var(--muted)">Selecciona un grupo</span></div>';
@@ -1833,7 +1831,6 @@ function renderKwCard(g) {
   const btn = document.getElementById('btn-kw-hist');
   if (btn) btn.style.display = _kwData.some(k => k.monthly?.length) ? '' : 'none';
   renderKwBody();
-  loadKwPlanner(_kwData, g.name);
 }
 
 function renderKwBody() {
