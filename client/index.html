@@ -2147,9 +2147,10 @@ function renderTree_OLD(d) {
     const gcol = div.querySelector(`#gcol-${camp.id}`);
     (camp.groups || []).forEach(g => {
       const qsCls = g.qsStatus === 'green' ? 'qs-green' : g.qsStatus === 'red' ? 'qs-red' : 'qs-yellow';
-      const lp    = g.landingPage || '';
+      const lp     = g.landingPage || '';
       const lpMiss = g.landingPageMissing;
-      const lpStyle = lpMiss ? 'style="color:var(--red)"' : g.id === 'gbrand' ? 'style="color:var(--green)"' : '';
+      const lpFull = lp ? 'https://www.detectasecurity.io' + lp : '';
+      const lpColor = lpMiss ? 'var(--red)' : g.id === 'gbrand' ? 'var(--green)' : 'var(--muted)';
       const tagStyle = g.id === 'gbrand' ? 'style="color:var(--green)"' : lpMiss ? 'style="color:var(--red)"' : '';
       const im  = g.metrics || {};
       const row = document.createElement('div');
@@ -2162,7 +2163,15 @@ function renderTree_OLD(d) {
             <div class="gh-body">
               <p class="gh-tag" ${tagStyle}>${g.tag || ''}</p>
               <p class="gh-name">${g.name}</p>
-              <p class="gh-lp" ${lpStyle}>${lp}</p>
+              <p class="gh-lp">${lpFull
+                ? `<a href="${lpFull}" target="_blank" rel="noopener"
+                      onclick="event.stopPropagation()"
+                      style="color:${lpColor};text-decoration:none;font-size:inherit"
+                      onmouseover="this.style.textDecoration='underline'"
+                      onmouseout="this.style.textDecoration='none'"
+                   >${lp}</a>`
+                : `<span style="color:var(--muted)">–</span>`
+              }${lpMiss ? ' <span style="color:var(--red)">⚠</span>' : ''}</p>
             </div>
             <div class="gh-metrics">
               <div class="ghm"><p class="ghm-val">${(im.impressions||0).toLocaleString('es-MX')}</p><p class="ghm-lbl">Impr.</p></div>
