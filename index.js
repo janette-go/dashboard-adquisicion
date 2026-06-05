@@ -1710,6 +1710,85 @@ app.put('/api/qualify-deal', async (req, res) => {
   }
 });
 
+// ─────────────────────────────────────────────────────────────────────────────
+// CHAT — consultas sobre el dashboard vía Claude
+// ─────────────────────────────────────────────────────────────────────────────
+
+app.post('/api/chat', async (req, res) => {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) return res.status(503).json({ error: 'API key no configurada' });
+
+  const { message, context, history } = req.body;
+  if (!message) return res.status(400).json({ error: 'message requerido' });
+
+  const Anthropic = require('@anthropic-ai/sdk');
+  const client    = new Anthropic.default({ apiKey });
+
+  // System prompt con los datos actuales del dashboard
+  const ctx     = context || {};
+  const s       = ctx.summary || {};
+  const ga4     = ctx.ga4    || {};
+  const gsc     = ctx.gsc    || {};
+  const pipe    = ctx.pipeline || {};
+  const period  = ctx.periodLabel || 'este periodo';
+
+  const systemPrompt = `Eres un asistente de marketing especializado en el dashboard de adquisición SEM de Detecta Security, empresa mexicana de seguridad privada (custodias de transporte). Respondes en español, de forma concisa y estratégica. No saludas en cada respuesta.
+
+DATOS ACTUALES DEL DASHBOARD — Periodo: ${period}
+
+## Google Ads
+- Gasto: $${(s.gasto||0).toLocaleString('es-MX')}
+- Impresiones: ${(s.impr||0).toLocaleString('es-MX')}
+- CTR: ${s.ctr??'–'}%
+- Conversiones (leads): ${s.conversiones??'–'}
+- CPL (costo por lead): $${(s.cpl||0).toLocaleString('es-MX')}
+
+## Pipeline (Pipedrive)
+- Leads calificados: ${s.leadsCalificados??'–'}
+- SQLs totales: ${s.sqls??'–'}
+- Clientes ganados: ${s.clientesGanados??'–'}
+- Costo por SQL: $${(ctx.costoSQL||0).toLocaleString('es-MX')}
+- SQLs Paid Media: ${ctx.sqlsPaidMedia??'–'}
+- SQLs Orgánicos: ${ctx.sqlsOrganicos??'–'}
+- SQLs Outbound: ${ctx.sqlsOutbound??'–'}
+
+## Google Analytics 4
+- Sesiones: ${(ga4.summary?.sessions||0).toLocaleString('es-MX')}
+- Usuarios activos: ${(ga4.summary?.users||0).toLocaleString('es-MX')}
+- Nuevos usuarios: ${(ga4.summary?.newUsers||0).toLocaleString('es-MX')}
+- Conversiones GA4: ${ga4.summary?.conversions??'–'}
+- Tasa de engagement: ${ga4.summary?.engagementRate??'–'}%
+- Tasa de rebote: ${ga4.summary?.bounceRate??'–'}%
+${ga4.channels?.length ? '- Canales:\n' + ga4.channels.map(c => `  · ${c.channel}: ${c.sessions} sesiones (${c.pct}%)`).join('\n') : ''}
+
+## Search Console (búsquedas relacionadas a "custodia")
+- Clics orgánicos: ${gsc.summary?.clicks??'–'}
+- Impresiones: ${gsc.summary?.impressions??'–'}
+- CTR: ${gsc.summary?.ctr??'–'}%
+- Posición media: ${gsc.summary?.position??'–'}
+
+Cuando no tengas datos suficientes para responder algo, dilo claramente. Cuando identifiques oportunidades o problemas en los datos, señálalos proactivamente.`;
+
+  try {
+    const messages = [
+      ...(history || []).slice(-8).map(m => ({ role: m.role, content: m.content })),
+      { role: 'user', content: message },
+    ];
+
+    const response = await client.messages.create({
+      model:      'claude-haiku-4-5-20251001',
+      max_tokens: 600,
+      system:     systemPrompt,
+      messages,
+    });
+
+    res.json({ reply: response.content[0].text });
+  } catch (e) {
+    console.error('[Chat]', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`);
 });

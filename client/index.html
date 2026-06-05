@@ -840,6 +840,62 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
   </div>
 </div>
 
+<!-- ── CHAT WIDGET ────────────────────────────────────────────────────── -->
+<div id="chat-btn" onclick="toggleChat()"
+     style="position:fixed;bottom:24px;right:24px;z-index:9500;
+            width:48px;height:48px;border-radius:50%;background:#eb0000;
+            display:flex;align-items:center;justify-content:center;
+            cursor:pointer;box-shadow:0 4px 20px rgba(235,0,0,0.5);
+            transition:transform .15s,box-shadow .15s"
+     onmouseover="this.style.transform='scale(1.08)';this.style.boxShadow='0 6px 28px rgba(235,0,0,0.65)'"
+     onmouseout="this.style.transform='scale(1)';this.style.boxShadow='0 4px 20px rgba(235,0,0,0.5)'">
+  <svg id="chat-btn-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+  </svg>
+</div>
+
+<div id="chat-panel"
+     style="display:none;position:fixed;bottom:82px;right:24px;z-index:9490;
+            width:380px;height:520px;background:#141416;
+            border:1px solid rgba(255,255,255,0.1);border-radius:14px;
+            box-shadow:0 20px 60px rgba(0,0,0,.9);
+            display:none;flex-direction:column;overflow:hidden">
+  <!-- Header -->
+  <div style="display:flex;align-items:center;justify-content:space-between;
+              padding:.65rem 1rem;background:#0a0a0c;border-bottom:1px solid var(--border);flex-shrink:0">
+    <div style="display:flex;align-items:center;gap:8px">
+      <div style="width:8px;height:8px;border-radius:50%;background:#22c55e"></div>
+      <span style="font-size:12px;font-weight:700;color:#fff">Asistente del dashboard</span>
+    </div>
+    <button onclick="toggleChat()" style="background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;line-height:1">✕</button>
+  </div>
+
+  <!-- Mensajes -->
+  <div id="chat-messages" style="flex:1;overflow-y:auto;padding:.75rem;display:flex;flex-direction:column;gap:10px">
+    <div style="background:rgba(255,255,255,0.05);border-radius:10px;padding:.6rem .8rem;font-size:11px;color:rgba(255,255,255,0.7);line-height:1.5;max-width:90%">
+      Hola 👋 Puedo responder preguntas sobre los datos del dashboard: métricas de ads, SQLs, tráfico web, campañas… ¿qué quieres saber?
+    </div>
+  </div>
+
+  <!-- Input -->
+  <div style="padding:.6rem;border-top:1px solid var(--border);flex-shrink:0;display:flex;gap:6px">
+    <input id="chat-input" type="text" placeholder="Pregunta algo sobre el dashboard…"
+           onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChatMessage()}"
+           style="flex:1;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);
+                  border-radius:8px;padding:.45rem .7rem;font-size:11px;color:#fff;
+                  font-family:inherit;outline:none;transition:border-color .15s"
+           onfocus="this.style.borderColor='rgba(235,0,0,0.6)'"
+           onblur="this.style.borderColor='rgba(255,255,255,0.1)'">
+    <button onclick="sendChatMessage()"
+            style="background:#eb0000;border:none;border-radius:8px;padding:.45rem .75rem;
+                   cursor:pointer;color:#fff;font-size:13px;flex-shrink:0;transition:background .15s"
+            onmouseover="this.style.background='#c50000'"
+            onmouseout="this.style.background='#eb0000'">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+    </button>
+  </div>
+</div>
+
 <!-- Tooltip global — fuera de cualquier card con backdrop-filter -->
 <div id="global-tip"></div>
 
@@ -965,6 +1021,7 @@ async function loadData() {
   } catch(e) { data = null; }
 
   if (!data) return;
+  _lastData = data;
 
   // Badge de fuente
   const badge  = document.getElementById('source-badge');
@@ -2184,6 +2241,7 @@ function renderAuction(d) {
 
 // ── DEAL POPUP & MODAL ────────────────────────────────────────────────────────
 let _dealLists    = {};   // se actualiza en cada loadData()
+let _lastData     = null; // snapshot del último response — usado por el chat
 let _dealsByOrigin = {};  // deals agrupados por origen SQL
 let _activeList  = [];    // deals del popup actual
 let _activeLabel = '';
@@ -2389,6 +2447,93 @@ function closeAllTips() {
 }
 document.addEventListener('click',  closeAllTips);
 document.addEventListener('scroll', closeAllTips, true);
+
+// ── CHAT ──────────────────────────────────────────────────────────────────────
+let _chatOpen    = false;
+let _chatHistory = [];
+
+function toggleChat() {
+  _chatOpen = !_chatOpen;
+  const panel = document.getElementById('chat-panel');
+  if (panel) {
+    panel.style.display = _chatOpen ? 'flex' : 'none';
+    if (_chatOpen) {
+      setTimeout(() => {
+        const inp = document.getElementById('chat-input');
+        if (inp) inp.focus();
+      }, 80);
+    }
+  }
+}
+
+function chatAppendMsg(role, text) {
+  const box = document.getElementById('chat-messages');
+  if (!box) return;
+  const isUser = role === 'user';
+  const div = document.createElement('div');
+  div.style.cssText = `
+    background:${isUser ? 'rgba(235,0,0,0.15)' : 'rgba(255,255,255,0.05)'};
+    border:1px solid ${isUser ? 'rgba(235,0,0,0.25)' : 'rgba(255,255,255,0.08)'};
+    border-radius:10px;padding:.55rem .8rem;font-size:11px;
+    color:${isUser ? '#fff' : 'rgba(255,255,255,0.82)'};
+    line-height:1.55;max-width:92%;
+    align-self:${isUser ? 'flex-end' : 'flex-start'};
+    white-space:pre-wrap;word-break:break-word
+  `;
+  div.textContent = text;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+  return div;
+}
+
+function chatBuildContext() {
+  if (!_lastData) return {};
+  const d = _lastData;
+  return {
+    periodLabel:   d.periodLabel,
+    summary:       d.summary,
+    costoSQL:      d.costoSQL,
+    sqlsPaidMedia: d.sqlsPaidMedia,
+    sqlsOrganicos: d.sqlsOrganicos,
+    sqlsOutbound:  d.sqlsOutbound,
+    pipeline:      d.pipeline,
+    ga4:           d.ga4 ? { summary: d.ga4.summary, channels: d.ga4.channels } : null,
+    gsc:           d.gsc ? { summary: d.gsc.summary } : null,
+  };
+}
+
+async function sendChatMessage() {
+  const inp = document.getElementById('chat-input');
+  if (!inp) return;
+  const msg = inp.value.trim();
+  if (!msg) return;
+
+  inp.value = '';
+  inp.disabled = true;
+  chatAppendMsg('user', msg);
+
+  const loadingEl = chatAppendMsg('assistant', '…');
+
+  try {
+    const res  = await fetch('/api/chat', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ message: msg, context: chatBuildContext(), history: _chatHistory }),
+    });
+    const data = await res.json();
+    const reply = data.reply || data.error || 'Sin respuesta';
+
+    if (loadingEl) loadingEl.textContent = reply;
+    _chatHistory.push({ role: 'user', content: msg });
+    _chatHistory.push({ role: 'assistant', content: reply });
+    if (_chatHistory.length > 20) _chatHistory = _chatHistory.slice(-20);
+  } catch (e) {
+    if (loadingEl) loadingEl.textContent = 'Error al conectar con el asistente.';
+  } finally {
+    inp.disabled = false;
+    inp.focus();
+  }
+}
 
 loadData();
 </script>
