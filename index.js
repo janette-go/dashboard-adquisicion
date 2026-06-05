@@ -579,7 +579,7 @@ function parseEsDate(str, contextYear) {
 async function readCSSheet(sheets, sheetName, contextYear, upSellRow, contactRow, npsRow, quejasRow) {
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId: CS_SHEET_ID,
-    range: `${sheetName}!A1:BZ95`,
+    range: `${sheetName}!A1:EZ95`,
   });
   const rows    = res.data.values || [];
   const dateRow = rows[1] || [];
