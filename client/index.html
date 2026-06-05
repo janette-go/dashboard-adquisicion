@@ -49,12 +49,12 @@ body{
 /* ── HEADER ── */
 .hdr{
   position:fixed;top:0;left:0;right:0;height:var(--header);
-  background:rgba(13,13,15,0.80);
+  background:#000;
   border-bottom:1px solid var(--border);
   backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
   display:flex;align-items:center;padding:0 1rem;gap:10px;z-index:200;
 }
-.hdr-title{font-size:14px;font-weight:700;white-space:nowrap;color:var(--text)}
+.hdr-title{font-size:14px;font-weight:700;white-space:nowrap;color:#fff}
 .hdr-sep{width:1px;height:20px;background:var(--border);margin:0 4px;flex-shrink:0}
 .source-badge{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600;flex-shrink:0}
 .source-real{background:rgba(74,222,128,0.15);color:var(--green);border:1px solid rgba(74,222,128,0.25)}
@@ -104,7 +104,7 @@ body{
 .sb-icon{width:17px;height:17px;flex-shrink:0;opacity:.55;display:flex;align-items:center;justify-content:center;transition:all .2s;transform-origin:center}
 .sb-item:hover .sb-icon{opacity:1;transform:scale(1.15);color:#CC1010}
 .sb-item.active .sb-icon{opacity:1;transform:scale(1.1);color:#CC1010}
-.sb-footer{padding:.75rem .9rem;border-top:1px solid var(--border);font-size:10px;color:var(--muted)}
+.sb-footer{padding:.75rem .9rem;border-top:1px solid var(--border);font-size:10px;color:#fff;background:#000}
 
 /* ── MAIN ── */
 .main{
@@ -128,8 +128,8 @@ body{
 .src-dot.gsc{background:var(--yellow)}
 .src-dot.live{animation:pulse 1.8s ease-in-out infinite}
 .sb-footer-inner{display:flex;flex-direction:column;gap:4px}
-.sb-src-row{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--muted)}
-.sb-updated{font-size:9px;color:var(--muted);margin-top:4px;padding-top:4px;border-top:1px solid var(--border)}
+.sb-src-row{display:flex;align-items:center;gap:5px;font-size:10px;color:rgba(255,255,255,0.7)}
+.sb-updated{font-size:9px;color:rgba(255,255,255,0.5);margin-top:4px;padding-top:4px;border-top:1px solid rgba(255,255,255,0.15)}
 
 /* ── EXEC SUMMARY ── */
 .exec-rows{display:flex;flex-direction:column}
