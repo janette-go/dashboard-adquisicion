@@ -798,6 +798,59 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
     <tbody id="auction-tbody" style="display:none"></tbody>
   </section>
 
+  <!-- CUSTOMER SUCCESS — Customer Success -->
+  <section id="atencion">
+    <div class="card">
+      <div class="card-hdr">
+        <span class="card-title">Customer Success · Up sell &amp; Servicio</span>
+        <span class="card-src"><span class="src-dot" style="background:#22c55e"></span>Customer Success Q1 &amp; Q2</span>
+      </div>
+      <!-- KPIs -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--border)">
+        <div style="padding:.6rem .85rem;border-right:1px solid var(--border)">
+          <p style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">Rutas nuevas (Up Sell)</p>
+          <p class="ec-val" id="us-total" style="font-size:28px;margin-top:4px">–</p>
+          <p id="us-vsant" style="font-size:10px;margin-top:3px;color:var(--muted)"></p>
+        </div>
+        <div style="padding:.6rem .85rem;border-right:1px solid var(--border)">
+          <p style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">Última semana</p>
+          <p class="ec-val" id="us-lastweek" style="font-size:28px;margin-top:4px">–</p>
+          <p id="us-lastweek-dates" style="font-size:10px;margin-top:3px;color:var(--muted)"></p>
+        </div>
+        <div style="padding:.6rem .85rem;border-right:1px solid var(--border)">
+          <p style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">Quejas / No conformidades</p>
+          <p class="ec-val" id="us-quejas" style="font-size:28px;margin-top:4px">–</p>
+        </div>
+        <div style="padding:.6rem .85rem">
+          <p style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">NPS Servicio (prom.)</p>
+          <p class="ec-val" id="us-nps" style="font-size:28px;margin-top:4px">–</p>
+        </div>
+      </div>
+      <!-- Gráfico semanal -->
+      <div style="padding:.75rem .85rem;border-bottom:1px solid var(--border)">
+        <p style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.6rem">Rutas nuevas por semana</p>
+        <div style="height:160px"><canvas id="upsellChart"></canvas></div>
+      </div>
+      <!-- Tabla full width -->
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:11px">
+          <thead>
+            <tr>
+              <th style="position:sticky;top:0;background:#000;padding:.3rem .75rem;text-align:left;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap">Semana</th>
+              <th style="position:sticky;top:0;background:#000;padding:.3rem .6rem;text-align:right;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap">Up Sell</th>
+              <th style="position:sticky;top:0;background:#000;padding:.3rem .6rem;text-align:right;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap">Contacto</th>
+              <th style="position:sticky;top:0;background:#000;padding:.3rem .6rem;text-align:right;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap">Quejas</th>
+              <th style="position:sticky;top:0;background:#000;padding:.3rem .6rem;text-align:right;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap">NPS</th>
+            </tr>
+          </thead>
+          <tbody id="upsell-tbody">
+            <tr><td colspan="5" style="padding:1rem;text-align:center;color:var(--muted)">Cargando…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
 </div><!-- /main -->
 
 <!-- ── MODAL HISTÓRICO ANUAL DE KEYWORDS ────────────────────────────────── -->
@@ -858,62 +911,6 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
   </div>
 </div>
 
-  <!-- CUSTOMER SUCCESS — Customer Success -->
-  <section id="atencion">
-    <div class="card">
-      <div class="card-hdr">
-        <span class="card-title">Customer Success · Up sell &amp; Servicio</span>
-        <span class="card-src"><span class="src-dot" style="background:#22c55e"></span>Customer Success Q1 &amp; Q2</span>
-      </div>
-
-      <!-- KPIs -->
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--border)">
-        <div style="padding:.6rem .85rem;border-right:1px solid var(--border)">
-          <p style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">Rutas nuevas (Up Sell)</p>
-          <p class="ec-val" id="us-total" style="font-size:28px;margin-top:4px">–</p>
-          <p id="us-vsant" style="font-size:10px;margin-top:3px;color:var(--muted)"></p>
-        </div>
-        <div style="padding:.6rem .85rem;border-right:1px solid var(--border)">
-          <p style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">Última semana</p>
-          <p class="ec-val" id="us-lastweek" style="font-size:28px;margin-top:4px">–</p>
-          <p id="us-lastweek-dates" style="font-size:10px;margin-top:3px;color:var(--muted)"></p>
-        </div>
-        <div style="padding:.6rem .85rem;border-right:1px solid var(--border)">
-          <p style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">Quejas / No conformidades</p>
-          <p class="ec-val" id="us-quejas" style="font-size:28px;margin-top:4px">–</p>
-        </div>
-        <div style="padding:.6rem .85rem">
-          <p style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">NPS Servicio (prom.)</p>
-          <p class="ec-val" id="us-nps" style="font-size:28px;margin-top:4px">–</p>
-        </div>
-      </div>
-
-      <!-- Gráfico semanal -->
-      <div style="padding:.75rem .85rem;border-bottom:1px solid var(--border)">
-        <p style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.6rem">Rutas nuevas por semana</p>
-        <div style="height:160px"><canvas id="upsellChart"></canvas></div>
-      </div>
-      <!-- Tabla full width -->
-      <div style="overflow-x:auto">
-        <table style="width:100%;border-collapse:collapse;font-size:11px">
-          <thead>
-            <tr>
-              <th style="position:sticky;top:0;background:#000;padding:.3rem .75rem;text-align:left;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap">Semana</th>
-              <th style="position:sticky;top:0;background:#000;padding:.3rem .6rem;text-align:right;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap">Up Sell</th>
-              <th style="position:sticky;top:0;background:#000;padding:.3rem .6rem;text-align:right;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap">Contacto</th>
-              <th style="position:sticky;top:0;background:#000;padding:.3rem .6rem;text-align:right;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap">Quejas</th>
-              <th style="position:sticky;top:0;background:#000;padding:.3rem .6rem;text-align:right;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap">NPS</th>
-            </tr>
-          </thead>
-          <tbody id="upsell-tbody">
-            <tr><td colspan="5" style="padding:1rem;text-align:center;color:var(--muted)">Cargando…</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </section>
-
-</div>
 
 <!-- ── CHAT WIDGET (desactivado temporalmente) ──────────────────────── -->
 <div id="chat-btn" onclick="toggleChat()"
