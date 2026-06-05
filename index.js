@@ -808,10 +808,24 @@ async function processPipedrive(deals, period, origenMap, stageMap = {}) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 const CHANGE_TYPE_ES = {
+  // String keys (proto names)
   AD: 'Anuncio', AD_GROUP_AD: 'Anuncio', AD_GROUP: 'Grupo',
   AD_GROUP_CRITERION: 'Keyword', AD_GROUP_BID_MODIFIER: 'Puja',
   CAMPAIGN: 'Campaña', CAMPAIGN_BUDGET: 'Presupuesto',
   CAMPAIGN_CRITERION: 'Segmentación', FEED: 'Feed', FEED_ITEM: 'Feed item',
+  AD_GROUP_FEED: 'Feed grupo', CAMPAIGN_FEED: 'Feed campaña',
+  ASSET: 'Asset', CUSTOMER: 'Cuenta',
+  // Numeric enum values (google-ads-api may return integers)
+  1: 'Anuncio',        // AD
+  2: 'Anuncio',        // AD_GROUP_AD
+  3: 'Grupo',          // AD_GROUP
+  4: 'Keyword',        // AD_GROUP_CRITERION
+  5: 'Puja',           // AD_GROUP_BID_MODIFIER
+  6: 'Campaña',        // CAMPAIGN
+  7: 'Presupuesto',    // CAMPAIGN_BUDGET
+  8: 'Segmentación',   // CAMPAIGN_CRITERION
+  9: 'Feed',           // FEED
+  10: 'Feed item',     // FEED_ITEM
 };
 
 async function fetchFromGoogleAds(period = 'this_month') {
@@ -1194,10 +1208,19 @@ async function fetchFromGoogleAds(period = 'this_month') {
   }));
 
   // ── Cambios recientes ──────────────────────────────────────────────────────
+  if (changesRows.length) {
+    console.log('[change_event sample]', JSON.stringify(changesRows[0], null, 2));
+  }
   const changes = changesRows.map(row => {
     const dt      = new Date(row.change_event.change_date_time);
     const dateStr = dt.toLocaleString('es-MX', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
-    const typeKey = row.change_event.change_resource_type;
+    const typeRaw = row.change_event.change_resource_type;
+    // La API puede devolver int o string — normalizamos a string
+    const TYPE_NUM = {1:'AD',2:'AD_GROUP_AD',3:'AD_GROUP',4:'AD_GROUP_CRITERION',
+      5:'AD_GROUP_BID_MODIFIER',6:'CAMPAIGN',7:'CAMPAIGN_BUDGET',8:'CAMPAIGN_CRITERION',
+      9:'FEED',10:'FEED_ITEM',11:'AD_GROUP_FEED',12:'CAMPAIGN_FEED',13:'ASSET',14:'CUSTOMER'};
+    const typeKey = typeof typeRaw === 'number' ? (TYPE_NUM[typeRaw] || String(typeRaw))
+                  : String(typeRaw || '');
     // changed_fields puede ser string o FieldMask {paths:[...]}
     const cfRaw   = row.change_event.changed_fields;
     const fields  = (typeof cfRaw === 'string' ? cfRaw
