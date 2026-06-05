@@ -448,10 +448,6 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
       <span class="sb-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></span>
       Rendimiento orgánico
     </a>
-    <a class="sb-item" href="#atencion" onclick="sbClick(this)">
-      <span class="sb-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
-      Tablero juntas diarias
-    </a>
     <a class="sb-item" href="#analytics" onclick="sbClick(this)">
       <!-- 📊 Analytics -->
       <span class="sb-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg></span>
@@ -462,6 +458,10 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
       <span class="sb-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3,6 9,3 15,6 21,3 21,18 15,21 9,18 3,21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg></span>
       Mapa de campañas
     </a>
+    <a class="sb-item" href="#atencion" onclick="sbClick(this)">
+      <span class="sb-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+      Customer Success
+    </a>
     <!-- <a class="sb-item" href="#subasta"><span class="sb-icon">⚖️</span>Subasta · Competidores</a> -->
   </nav>
   <div class="sb-footer">
@@ -470,7 +470,7 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
       <div class="sb-src-row"><span class="src-dot pipe live" id="dot-pipe"></span> Pipedrive   <span id="status-pipe" style="margin-left:auto">–</span></div>
       <div class="sb-src-row"><span class="src-dot gsc live" id="dot-gsc"></span> Search Console <span id="status-gsc" style="margin-left:auto">–</span></div>
       <div class="sb-src-row"><span class="src-dot" id="dot-ga4" style="background:#E37400"></span> Google Analytics 4 <span id="status-ga4" style="margin-left:auto">–</span></div>
-      <div class="sb-src-row"><span class="src-dot" id="dot-upsell" style="background:#555"></span> Tablero juntas diarias <span id="status-upsell" style="margin-left:auto">–</span></div>
+      <div class="sb-src-row"><span class="src-dot" id="dot-upsell" style="background:#555"></span> Customer Success <span id="status-upsell" style="margin-left:auto">–</span></div>
       <div class="sb-updated" id="last-updated">Última actualización: –</div>
     </div>
   </div>
@@ -646,62 +646,6 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
               </tr>
             </thead>
             <tbody id="gsc-tbody">
-              <tr><td colspan="5" style="padding:1rem;text-align:center;color:var(--muted)">Cargando…</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- CUSTOMER SUCCESS — Tablero juntas diarias -->
-  <section id="atencion">
-    <div class="card">
-      <div class="card-hdr">
-        <span class="card-title">Tablero juntas diarias · Up sell &amp; Servicio</span>
-        <span class="card-src"><span class="src-dot" style="background:#22c55e"></span>Tablero juntas diarias Q1 &amp; Q2</span>
-      </div>
-
-      <!-- KPIs -->
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--border)">
-        <div style="padding:.6rem .85rem;border-right:1px solid var(--border)">
-          <p style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">Rutas nuevas (Up Sell)</p>
-          <p class="ec-val" id="us-total" style="font-size:28px;margin-top:4px">–</p>
-          <p id="us-vsant" style="font-size:10px;margin-top:3px;color:var(--muted)"></p>
-        </div>
-        <div style="padding:.6rem .85rem;border-right:1px solid var(--border)">
-          <p style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">Última semana</p>
-          <p class="ec-val" id="us-lastweek" style="font-size:28px;margin-top:4px">–</p>
-          <p id="us-lastweek-dates" style="font-size:10px;margin-top:3px;color:var(--muted)"></p>
-        </div>
-        <div style="padding:.6rem .85rem;border-right:1px solid var(--border)">
-          <p style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">Quejas / No conformidades</p>
-          <p class="ec-val" id="us-quejas" style="font-size:28px;margin-top:4px">–</p>
-        </div>
-        <div style="padding:.6rem .85rem">
-          <p style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">NPS Servicio (prom.)</p>
-          <p class="ec-val" id="us-nps" style="font-size:28px;margin-top:4px">–</p>
-        </div>
-      </div>
-
-      <!-- Gráfico semanal + tabla -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0">
-        <div style="padding:.75rem .85rem;border-right:1px solid var(--border)">
-          <p style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.6rem">Rutas nuevas por semana</p>
-          <div style="height:160px"><canvas id="upsellChart"></canvas></div>
-        </div>
-        <div style="overflow:auto;max-height:240px">
-          <table style="width:100%;border-collapse:collapse;font-size:11px">
-            <thead style="position:sticky;top:0">
-              <tr>
-                <th>Semana</th>
-                <th style="text-align:right">Up Sell</th>
-                <th style="text-align:right">Contacto</th>
-                <th style="text-align:right">Quejas</th>
-                <th style="text-align:right">NPS</th>
-              </tr>
-            </thead>
-            <tbody id="upsell-tbody">
               <tr><td colspan="5" style="padding:1rem;text-align:center;color:var(--muted)">Cargando…</td></tr>
             </tbody>
           </table>
@@ -978,6 +922,62 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
 <!-- Tooltip global — fuera de cualquier card con backdrop-filter -->
 <div id="global-tip"></div>
 
+  <!-- CUSTOMER SUCCESS — Customer Success -->
+  <section id="atencion">
+    <div class="card">
+      <div class="card-hdr">
+        <span class="card-title">Customer Success · Up sell &amp; Servicio</span>
+        <span class="card-src"><span class="src-dot" style="background:#22c55e"></span>Customer Success Q1 &amp; Q2</span>
+      </div>
+
+      <!-- KPIs -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--border)">
+        <div style="padding:.6rem .85rem;border-right:1px solid var(--border)">
+          <p style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">Rutas nuevas (Up Sell)</p>
+          <p class="ec-val" id="us-total" style="font-size:28px;margin-top:4px">–</p>
+          <p id="us-vsant" style="font-size:10px;margin-top:3px;color:var(--muted)"></p>
+        </div>
+        <div style="padding:.6rem .85rem;border-right:1px solid var(--border)">
+          <p style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">Última semana</p>
+          <p class="ec-val" id="us-lastweek" style="font-size:28px;margin-top:4px">–</p>
+          <p id="us-lastweek-dates" style="font-size:10px;margin-top:3px;color:var(--muted)"></p>
+        </div>
+        <div style="padding:.6rem .85rem;border-right:1px solid var(--border)">
+          <p style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">Quejas / No conformidades</p>
+          <p class="ec-val" id="us-quejas" style="font-size:28px;margin-top:4px">–</p>
+        </div>
+        <div style="padding:.6rem .85rem">
+          <p style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">NPS Servicio (prom.)</p>
+          <p class="ec-val" id="us-nps" style="font-size:28px;margin-top:4px">–</p>
+        </div>
+      </div>
+
+      <!-- Gráfico semanal + tabla -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0">
+        <div style="padding:.75rem .85rem;border-right:1px solid var(--border)">
+          <p style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.6rem">Rutas nuevas por semana</p>
+          <div style="height:160px"><canvas id="upsellChart"></canvas></div>
+        </div>
+        <div style="overflow:auto;max-height:240px">
+          <table style="width:100%;border-collapse:collapse;font-size:11px">
+            <thead style="position:sticky;top:0">
+              <tr>
+                <th>Semana</th>
+                <th style="text-align:right">Up Sell</th>
+                <th style="text-align:right">Contacto</th>
+                <th style="text-align:right">Quejas</th>
+                <th style="text-align:right">NPS</th>
+              </tr>
+            </thead>
+            <tbody id="upsell-tbody">
+              <tr><td colspan="5" style="padding:1rem;text-align:center;color:var(--muted)">Cargando…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
 <!-- ── DEAL POPUP (hover sobre número) ─────────────────────────── -->
 <div id="deal-popup" style="display:none;position:fixed;z-index:8500;width:340px;background:#191919;border:1px solid rgba(153,153,153,0.25);border-top:2px solid #eb0000;border-radius:8px;box-shadow:0 8px 32px rgba(0,0,0,.85);overflow:hidden">
   <div style="display:flex;align-items:center;justify-content:space-between;padding:.45rem .75rem;background:#000;border-bottom:1px solid rgba(255,255,255,0.12)">
@@ -1081,7 +1081,7 @@ function sbClick(el) {
   el.classList.add('active');
 }
 window.addEventListener('scroll', () => {
-  const ids = ['resumen','sqls-mes','gasto-sqls','origen','gsc','campanas'];
+  const ids = ['resumen','sqls-mes','gasto-sqls','origen','gsc','campanas','atencion'];
   let current = 'resumen';
   ids.forEach(id => {
     const el = document.getElementById(id);
