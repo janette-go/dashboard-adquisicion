@@ -945,14 +945,15 @@ async function fetchFromGoogleAds(period = 'this_month') {
       change_event.change_resource_type,
       change_event.changed_fields,
       change_event.user_email,
-      change_event.resource_name,
       campaign.name,
       ad_group.name
     FROM change_event
-    WHERE change_event.change_date_time BETWEEN '${changeStart}' AND '${changeEnd}'
+    WHERE change_event.change_date_time >= '${changeStart}'
+      AND change_event.change_date_time <= '${changeEnd}'
     ORDER BY change_event.change_date_time DESC
     LIMIT 25
   `;
+  console.log('[changesQ]', changesQ.trim());
 
   // Ejecuta en paralelo; kwAllRows = lista completa, keywordRows = métricas del periodo
   const [summaryRows, adGroupRows, kwAllRows, keywordRows, monthlyRows, kwMonthlyRows] = await Promise.all([
