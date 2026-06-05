@@ -665,7 +665,7 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
             <span id="kw-group-name" style="font-size:10px;color:var(--muted);word-break:break-word;line-height:1.3;flex:1"></span>
             <button id="btn-kw-hist" onclick="openKwHistModal()" style="display:none;font-size:9px;font-weight:700;padding:2px 8px;border-radius:4px;border:1px solid rgba(204,16,16,0.5);background:rgba(204,16,16,0.15);color:#fff;cursor:pointer;white-space:nowrap;font-family:inherit">⭐ Nivel de Calidad Histórico</button>
           </div>
-          <div id="kw-card-body" style="overflow-y:auto;max-height:360px;flex:1">
+          <div id="kw-card-body" style="overflow-y:auto;flex:1;min-height:0">
             <div style="padding:1rem;font-size:11px;color:var(--muted)">Selecciona un grupo o campaña.</div>
           </div>
         </div>
@@ -1443,14 +1443,14 @@ function renderKwBody() {
     <table class="kw-tbl" style="min-width:720px">
       <thead>
         <tr>
-          <th onclick="sortKw('text')" style="${thS('text')};text-align:left">Palabra clave ${sortArrow('text')}</th>
-          <th onclick="sortKw('conversions')" style="${thS('conversions')}">Conv. ${sortArrow('conversions')}</th>
-          <th onclick="sortKw('impressions')" style="${thS('impressions')}">Impr. ${sortArrow('impressions')}</th>
-          <th style="${thN}">CTR</th>
-          <th onclick="sortKw('qs')" style="${thS('qs')}">QS ${sortArrow('qs')}</th>
-          <th style="${thN}">Rel. anuncio</th>
-          <th style="${thN}">Exp. LP</th>
-          <th onclick="sortKw('cost')" style="${thS('cost')}">Costo ${sortArrow('cost')}</th>
+          <th onclick="sortKw('text')" style="${thS('text')};text-align:left;vertical-align:middle">Palabra clave ${sortArrow('text')}</th>
+          <th onclick="sortKw('conversions')" style="${thS('conversions')};vertical-align:middle">Conv. ${sortArrow('conversions')}</th>
+          <th onclick="sortKw('impressions')" style="${thS('impressions')};vertical-align:middle">Impr. ${sortArrow('impressions')}</th>
+          <th style="${thN};vertical-align:middle">CTR</th>
+          <th onclick="sortKw('qs')" style="${thS('qs')};vertical-align:middle;text-align:center">Nivel de calidad (QS) ${sortArrow('qs')}</th>
+          <th style="${thN};vertical-align:middle;text-align:center">Rel. anuncio</th>
+          <th style="${thN};vertical-align:middle;text-align:center">Exp. LP</th>
+          <th onclick="sortKw('cost')" style="${thS('cost')};vertical-align:middle">Costo ${sortArrow('cost')}</th>
         </tr>
       </thead>
       <tbody>
