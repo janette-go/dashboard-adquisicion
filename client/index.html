@@ -450,7 +450,7 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
     </a>
     <a class="sb-item" href="#atencion" onclick="sbClick(this)">
       <span class="sb-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
-      Atención a Clientes
+      Customer Success
     </a>
     <a class="sb-item" href="#analytics" onclick="sbClick(this)">
       <!-- 📊 Analytics -->
@@ -654,12 +654,12 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
     </div>
   </section>
 
-  <!-- ATENCIÓN A CLIENTES — Tablero Operativo Q2 -->
+  <!-- CUSTOMER SUCCESS — Tablero Operativo -->
   <section id="atencion">
     <div class="card">
       <div class="card-hdr">
-        <span class="card-title">Atención a Clientes · Up sell &amp; Servicio</span>
-        <span class="card-src"><span class="src-dot" style="background:#22c55e"></span>Tablero Operativo Q2</span>
+        <span class="card-title">Customer Success · Up sell &amp; Servicio</span>
+        <span class="card-src"><span class="src-dot" style="background:#22c55e"></span>Tablero Operativo Q1 &amp; Q2</span>
       </div>
 
       <!-- KPIs -->
@@ -1513,11 +1513,16 @@ function renderUpsell(d) {
     }
   }
 
-  // Gráfico barras semanales
-  const weeks  = u.weeks || [];
-  const labels = weeks.map((w, i) => `Sem ${i+1}`);
-  const data   = weeks.map(w => w.upSell);
-  const colors = weeks.map((w, i) => i === weeks.length-1 ? '#eb0000' : 'rgba(235,0,0,0.4)');
+  // Gráfico — mensual si hay >1 mes, semanal si es 1 mes
+  const months = u.months || [];
+  const weeks  = u.weeks  || [];
+  const useMonthly = months.length > 1;
+  const MNAMES = {1:'Ene',2:'Feb',3:'Mar',4:'Abr',5:'May',6:'Jun',7:'Jul',8:'Ago',9:'Sep',10:'Oct',11:'Nov',12:'Dic'};
+  const labels = useMonthly
+    ? months.map(m => MNAMES[parseInt(m.month.split('-')[1])] || m.month)
+    : weeks.map((w, i) => w.startDate);
+  const data   = useMonthly ? months.map(m => m.upSell) : weeks.map(w => w.upSell);
+  const colors = data.map((_, i) => i === data.length-1 ? '#eb0000' : 'rgba(235,0,0,0.4)');
 
   const ctx = document.getElementById('upsellChart');
   if (ctx) {

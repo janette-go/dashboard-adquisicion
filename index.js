@@ -557,12 +557,70 @@ async function fetchGA4Data(period) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// TABLERO OPERATIVO — Atención a Clientes (Google Sheets)
+// CUSTOMER SUCCESS — Tablero Operativo (Google Sheets Q1 + Q2)
 // ─────────────────────────────────────────────────────────────────────────────
 
-const UPSELL_SHEET_ID = '18khMdZ-ZFprS8n5Toc1MAHeTkP940u2GRSLk9imvE9E';
+const CS_SHEET_ID = '18khMdZ-ZFprS8n5Toc1MAHeTkP940u2GRSLk9imvE9E';
 
-async function fetchUpsellData() {
+// Convierte "DD-MMM" → Date, infiriendo el año por contexto
+const ES_MONTHS = {ene:1,feb:2,mar:3,abr:4,may:5,jun:6,jul:7,ago:8,sep:9,oct:10,nov:11,dic:12};
+function parseEsDate(str, contextYear) {
+  if (!str || !str.includes('-')) return null;
+  const [dayStr, monStr] = str.split('-');
+  const m = ES_MONTHS[monStr?.toLowerCase()];
+  const day = parseInt(dayStr);
+  if (!m || !day) return null;
+  // dic → año anterior al contextYear (Tablero Q1 empieza en dic del año previo)
+  const y = m === 12 ? contextYear - 1 : contextYear;
+  return new Date(y, m - 1, day);
+}
+
+// Lee una hoja del tablero y extrae semanas con métricas de Customer Success
+async function readCSSheet(sheets, sheetName, contextYear, upSellRow, contactRow, npsRow, quejasRow) {
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId: CS_SHEET_ID,
+    range: `${sheetName}!A1:BZ95`,
+  });
+  const rows    = res.data.values || [];
+  const dateRow = rows[1] || [];
+  const uRow    = rows[upSellRow]  || [];
+  const cRow    = rows[contactRow] || [];
+  const nRow    = rows[npsRow]     || [];
+  const qRow    = rows[quejasRow]  || [];
+
+  const parseNum = v => { const n = parseInt(String(v||'').replace('%','')); return isNaN(n) ? 0 : n; };
+
+  const weeks = [];
+  for (let start = 3; start < dateRow.length; start += 11) {
+    const rawDates = dateRow.slice(start, start + 7).filter(Boolean);
+    if (!rawDates.length) break;
+
+    const startDt = parseEsDate(rawDates[0], contextYear);
+    const endDt   = parseEsDate(rawDates[rawDates.length - 1], contextYear);
+    if (!startDt) break;
+
+    const upSellVals  = uRow.slice(start, start+7).map(parseNum);
+    const contactVals = cRow.slice(start, start+7).map(parseNum);
+    const quejaVals   = qRow.slice(start, start+7).map(parseNum);
+    const npsVals     = nRow.slice(start, start+7)
+      .map(v => { const n = parseFloat(String(v||'').replace('%','')); return isNaN(n) ? null : n; })
+      .filter(v => v !== null);
+
+    weeks.push({
+      startDate:  rawDates[0],
+      endDate:    rawDates[rawDates.length-1] || rawDates[0],
+      startDt,
+      endDt:      endDt || startDt,
+      upSell:     upSellVals.reduce((a,b)=>a+b,0),
+      contacto:   contactVals.reduce((a,b)=>a+b,0),
+      quejas:     quejaVals.reduce((a,b)=>a+b,0),
+      nps:        npsVals.length ? Math.round(npsVals.reduce((a,b)=>a+b,0)/npsVals.length) : null,
+    });
+  }
+  return weeks;
+}
+
+async function fetchUpsellData(period) {
   const { google } = require('googleapis');
   const credJson = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
   const keyFile  = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
@@ -571,63 +629,51 @@ async function fetchUpsellData() {
     ...(credJson ? { credentials: JSON.parse(credJson) } : { keyFile }),
     scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
   });
-
   const sheets = google.sheets({ version: 'v4', auth });
-  const res = await sheets.spreadsheets.values.get({
-    spreadsheetId: UPSELL_SHEET_ID,
-    range: 'Tablero Q2!A1:BZ95',
+  const pc = parsePeriod(period);
+  const startMs = new Date(pc.startStr).getTime();
+  const endMs   = new Date(pc.endStr).getTime();
+
+  // Leer ambas hojas en paralelo (filas base en cada tablero)
+  // Q1: Up Sell en row 84 (índice 83), Contacto 81, NPS 82, Quejas 83
+  // Q2: Up Sell en row 91 (índice 90), Contacto 87, NPS 88, Quejas 89
+  const [weeksQ1, weeksQ2] = await Promise.all([
+    readCSSheet(sheets, 'Tablero Q1', 2026, 83, 80, 81, 82).catch(() => []),
+    readCSSheet(sheets, 'Tablero Q2', 2026, 90, 87, 88, 89).catch(() => []),
+  ]);
+
+  // Combinar y filtrar por periodo seleccionado
+  const allWeeks = [...weeksQ1, ...weeksQ2].filter(w => {
+    // Incluir semana si hay solapamiento con el periodo
+    return w.startDt.getTime() <= endMs && w.endDt.getTime() >= startMs;
   });
 
-  const rows = res.data.values || [];
-  const dateRow    = rows[1]  || [];
-  const upSellRow  = rows[90] || [];  // Up Sell (Rutas nuevas)
-  const contactRow = rows[87] || [];  // Contacto de seguimiento
-  const npsRow     = rows[88] || [];  // NPS Servicio
-  const quejasRow  = rows[89] || [];  // Quejas y no conformidades
+  if (!allWeeks.length) return { weeks: [], total: 0, totalContacto: 0, totalQuejas: 0, avgNps: null, lastWeek: null, prevWeek: null, periodLabel: pc.periodLabel };
 
-  const parseNum = v => { const n = parseInt(String(v).replace('%','')); return isNaN(n) ? 0 : n; };
-
-  const weeks = [];
-  for (let start = 3; start < dateRow.length; start += 11) {
-    const dates = dateRow.slice(start, start + 7).filter(Boolean);
-    if (!dates.length) break;
-
-    const upSellVals  = upSellRow.slice(start, start+7).map(parseNum);
-    const contactVals = contactRow.slice(start, start+7).map(parseNum);
-    const quejaVals   = quejasRow.slice(start, start+7).map(parseNum);
-    const npsVals     = npsRow.slice(start, start+7).map(v => {
-      const s = String(v||'').replace('%','');
-      const n = parseFloat(s);
-      return isNaN(n) ? null : n;
-    }).filter(v => v !== null);
-
-    const totalUpsell  = upSellVals.reduce((a,b)=>a+b,0);
-    const totalContacto= contactVals.reduce((a,b)=>a+b,0);
-    const totalQuejas  = quejaVals.reduce((a,b)=>a+b,0);
-    const avgNps       = npsVals.length ? Math.round(npsVals.reduce((a,b)=>a+b,0)/npsVals.length) : null;
-
-    if (dates[0]) {
-      weeks.push({
-        startDate:  dates[0],
-        endDate:    dates[dates.length-1] || dates[0],
-        label:      `${dates[0]}`,
-        upSell:     totalUpsell,
-        contacto:   totalContacto,
-        quejas:     totalQuejas,
-        nps:        avgNps,
-      });
-    }
-  }
-
-  const total         = weeks.reduce((a,w)=>a+w.upSell, 0);
-  const totalContacto = weeks.reduce((a,w)=>a+w.contacto, 0);
-  const totalQuejas   = weeks.reduce((a,w)=>a+w.quejas, 0);
-  const allNps        = weeks.map(w=>w.nps).filter(v=>v!==null);
+  const total         = allWeeks.reduce((a,w)=>a+w.upSell, 0);
+  const totalContacto = allWeeks.reduce((a,w)=>a+w.contacto, 0);
+  const totalQuejas   = allWeeks.reduce((a,w)=>a+w.quejas, 0);
+  const allNps        = allWeeks.map(w=>w.nps).filter(v=>v!==null);
   const avgNps        = allNps.length ? Math.round(allNps.reduce((a,b)=>a+b,0)/allNps.length) : null;
-  const lastWeek      = weeks[weeks.length-1] || null;
-  const prevWeek      = weeks[weeks.length-2] || null;
+  const lastWeek      = allWeeks[allWeeks.length-1] || null;
+  const prevWeek      = allWeeks[allWeeks.length-2] || null;
 
-  return { weeks, total, totalContacto, totalQuejas, avgNps, lastWeek, prevWeek };
+  // Agrupar por mes para vista mensual
+  const byMonth = {};
+  allWeeks.forEach(w => {
+    const key = `${w.startDt.getFullYear()}-${String(w.startDt.getMonth()+1).padStart(2,'0')}`;
+    if (!byMonth[key]) byMonth[key] = { month: key, upSell: 0, contacto: 0, quejas: 0, npsArr: [] };
+    byMonth[key].upSell   += w.upSell;
+    byMonth[key].contacto += w.contacto;
+    byMonth[key].quejas   += w.quejas;
+    if (w.nps !== null) byMonth[key].npsArr.push(w.nps);
+  });
+  const months = Object.values(byMonth).map(m => ({
+    ...m,
+    nps: m.npsArr.length ? Math.round(m.npsArr.reduce((a,b)=>a+b,0)/m.npsArr.length) : null,
+  }));
+
+  return { weeks: allWeeks, months, total, totalContacto, totalQuejas, avgNps, lastWeek, prevWeek, periodLabel: pc.periodLabel };
 }
 
 // GOOGLE SHEETS — estadísticas de subasta (escritas por Google Ads Script)
@@ -1583,8 +1629,8 @@ async function fetchAllData(period) {
   // Google Analytics 4
   const ga4Data = await fetchGA4Data(period).catch(e => { console.warn('[GA4]', e.message); return null; });
 
-  // Tablero operativo — Atención a Clientes
-  const upsellData = await fetchUpsellData().catch(e => { console.warn('[Upsell]', e.message); return null; });
+  // Customer Success — Tablero Operativo
+  const upsellData = await fetchUpsellData(period).catch(e => { console.warn('[CustomerSuccess]', e.message); return null; });
 
   let adsData   = null;
   let pipeData  = null;
