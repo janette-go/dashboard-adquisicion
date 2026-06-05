@@ -717,7 +717,7 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
 
 <!-- ── DEAL POPUP (hover sobre número) ─────────────────────────── -->
 <div id="deal-popup" style="display:none;position:fixed;z-index:8500;width:340px;background:#191919;border:1px solid rgba(153,153,153,0.25);border-top:2px solid #eb0000;border-radius:8px;box-shadow:0 8px 32px rgba(0,0,0,.85);overflow:hidden">
-  <div style="display:flex;align-items:center;justify-content:space-between;padding:.45rem .75rem;background:rgba(255,255,255,0.06);border-bottom:1px solid rgba(255,255,255,0.12)">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:.45rem .75rem;background:#000;border-bottom:1px solid rgba(255,255,255,0.12)">
     <span id="dp-label" style="font-size:11px;font-weight:700;color:#f0f0f0"></span>
     <span id="dp-count" style="font-size:10px;color:rgba(255,255,255,0.5)"></span>
   </div>
@@ -730,13 +730,13 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
 <!-- ── DEAL MODAL (clic cuando hay muchos deals) ─────────────────── -->
 <div id="deal-modal" onclick="if(event.target===this)closeDealModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9000;overflow:auto;padding:2rem 1rem;backdrop-filter:blur(4px)">
   <div style="background:#191919;border:1px solid rgba(153,153,153,0.25);border-top:2px solid #eb0000;border-radius:10px;max-width:800px;margin:0 auto;overflow:hidden;box-shadow:0 16px 48px rgba(0,0,0,.9)">
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:.65rem 1rem;border-bottom:1px solid var(--border);background:var(--gray-lt)">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:.65rem 1rem;border-bottom:1px solid var(--border);background:#000">
       <span id="dm-label" style="font-size:13px;font-weight:700"></span>
       <button onclick="closeDealModal()" style="background:none;border:none;font-size:16px;cursor:pointer;color:var(--muted);line-height:1">✕</button>
     </div>
     <div style="overflow-x:auto">
       <table id="dm-table" style="width:100%;border-collapse:collapse;font-size:11px">
-        <thead style="position:sticky;top:0;background:var(--gray-lt)">
+        <thead style="position:sticky;top:0;background:#000">
           <tr>
             <th style="padding:.4rem .75rem;text-align:left;font-size:9px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap">Deal</th>
             <th style="padding:.4rem .75rem;text-align:left;font-size:9px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border)">Etapa</th>
