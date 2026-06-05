@@ -1708,6 +1708,10 @@ function renderTree(d) {
   // Default: seleccionar la primera campaña (Custodia) al cargar
   const firstCamp = sorted[0];
   if (firstCamp) setTimeout(() => selectCampaign(firstCamp.id), 0);
+
+  // Cargar planificador con todas las keywords de la cuenta
+  const allKwsAccount = camps.flatMap(c => (c.groups||[]).flatMap(g => g.keywords||[]));
+  setTimeout(() => loadKwPlanner(allKwsAccount, 'Todas las campañas · cuenta completa'), 100);
 }
 
 function selectCampaign(cid) {
