@@ -1626,6 +1626,7 @@ app.get('/api/campaigns', async (req, res) => {
 app.post('/api/keyword-planner', async (req, res) => {
   res.set('Cache-Control', 'no-store');
   const { keywords } = req.body || {};
+  console.log('[kw-planner] keywords recibidas:', keywords?.length, keywords?.slice(0,3));
   if (!keywords?.length) return res.json({ results: [] });
 
   try {
@@ -1642,15 +1643,21 @@ app.post('/api/keyword-planner', async (req, res) => {
       ...(loginId?.trim() ? { login_customer_id: loginId.trim() } : {}),
     });
 
+    console.log('[kw-planner] llamando generateKeywordHistoricalMetrics...');
     const response = await customer.keywordPlanIdeas.generateKeywordHistoricalMetrics({
       keywords,
-      geo_target_constants: ['geoTargetConstants/2484'], // México
-      keyword_plan_network: 2, // GOOGLE_SEARCH
-      language: 'languageConstants/1003', // Español
+      geo_target_constants: ['geoTargetConstants/2484'],
+      keyword_plan_network: 2,
+      language: 'languageConstants/1003',
     });
 
+    console.log('[kw-planner] response keys:', Object.keys(response || {}));
+    console.log('[kw-planner] metrics count:', response?.metrics?.length);
+    console.log('[kw-planner] sample metric:', JSON.stringify(response?.metrics?.[0]));
+
     const COMP = { 0: '–', 1: 'Baja', 2: 'Media', 3: 'Alta' };
-    const results = (response.metrics || []).map((m, i) => ({
+    const metrics = response?.metrics || response?.keyword_metrics || [];
+    const results = metrics.map((m, i) => ({
       keyword:    keywords[i],
       avgMonthly: m.avg_monthly_searches ?? null,
       competition:COMP[m.competition] ?? '–',
@@ -1659,9 +1666,11 @@ app.post('/api/keyword-planner', async (req, res) => {
       bidHigh:    m.high_top_of_page_bid_micros ? parseFloat((m.high_top_of_page_bid_micros / 1e6).toFixed(2)) : null,
     }));
 
+    console.log('[kw-planner] results:', results.length);
     res.json({ results });
   } catch (err) {
-    console.error('[keyword-planner]', err.message || err);
+    console.error('[keyword-planner] ERROR:', err.message || err);
+    console.error('[keyword-planner] STACK:', err.stack?.slice(0,300));
     res.status(500).json({ error: err.message, results: [] });
   }
 });
