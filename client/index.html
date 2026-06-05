@@ -2540,79 +2540,151 @@ function svgFunnel(steps, w, h) {
 }
 
 function analyzeData(d) {
-  const s=d.summary||{}, g4s=(d.ga4||{}).summary||{}, gs=(d.gsc||{}).summary||{};
-  const insights=[], recs=[];
-  const fmtM = n => n!=null ? '$'+Number(n).toLocaleString('es-MX')+' MXN' : '–';
+  const s   = d.summary      || {};
+  const g4s = (d.ga4||{}).summary || {};
+  const gs  = (d.gsc||{}).summary || {};
+  const chs = d.ga4?.channels || [];
+  const insights = [], recs = [];
 
-  if (s.cpl != null) {
-    if (s.cpl > 4000) insights.push({t:'warning', text:`CPL de <b>${fmtM(s.cpl)}</b> elevado para el sector. Revisar concordancia de keywords y calidad de landing pages — el costo por lead está presionando el margen de adquisición.`});
-    else if (s.cpl < 800) insights.push({t:'success', text:`CPL de <b>${fmtM(s.cpl)}</b> muy eficiente para B2B de seguridad. Oportunidad de escalar presupuesto manteniendo rentabilidad.`});
-    else insights.push({t:'ok', text:`CPL de <b>${fmtM(s.cpl)}</b> en rango competitivo para el sector de custodia B2B en México.`});
-  }
+  const M  = n => '$' + Number(n).toLocaleString('es-MX');
+  const P  = n => Number(n).toFixed(1) + '%';
+  const N  = n => Number(n).toLocaleString('es-MX');
 
+  // ── Google Ads ─────────────────────────────────────────────────────────────
+
+  // CTR
   if (s.ctr != null) {
-    if (s.ctr < 3) {
-      insights.push({t:'warning', text:`CTR del <b>${s.ctr}%</b> por debajo del promedio B2B (4–6%). Los anuncios o el match type de keywords no están alineados con la intención de búsqueda.`});
-      recs.push({p:'alta', title:'Revisar copies de anuncios y estructura de keywords', desc:'CTR bajo indica desalineación entre anuncio e intención de búsqueda. Probar variantes con verbos de acción y propuesta de valor específica de custodia de transporte. Revisar terms report para eliminar búsquedas irrelevantes.'});
-    } else if (s.ctr > 8) {
-      insights.push({t:'success', text:`CTR del <b>${s.ctr}%</b> muy superior al benchmark B2B — los anuncios están capturando con alta precisión a usuarios con intención de compra real.`});
+    if (s.ctr < 2) {
+      insights.push({t:'warning', text:`CTR de <b>${P(s.ctr)}</b> — crítico. De cada 100 veces que aparece el anuncio, menos de 2 personas hacen clic. Indica que los títulos o las keywords no coinciden con lo que busca el usuario.`});
+      recs.push({p:'alta', title:`Optimizar anuncios: CTR actual ${P(s.ctr)} (benchmark >4%)`, desc:`Con ${N(s.impr)} impresiones y solo ${N(s.conversiones)} conversiones, el anuncio no está generando interés. Revisar títulos, descripciones y extensiones. Pausar keywords con más de 200 impresiones y 0 clics.`});
+    } else if (s.ctr < 4) {
+      insights.push({t:'ok', text:`CTR de <b>${P(s.ctr)}</b> — por debajo del benchmark B2B (4–6%). Hay margen de mejora en el copy de anuncios o en el match type de keywords.`});
+    } else if (s.ctr >= 4 && s.ctr <= 8) {
+      insights.push({t:'success', text:`CTR de <b>${P(s.ctr)}</b> — dentro del rango sólido para búsqueda B2B. Los anuncios son relevantes para el perfil de búsqueda.`});
     } else {
-      insights.push({t:'ok', text:`CTR del <b>${s.ctr}%</b> dentro del rango aceptable para búsqueda B2B especializada en seguridad logística.`});
+      insights.push({t:'success', text:`CTR de <b>${P(s.ctr)}</b> — excelente. Muy por encima del promedio B2B. Los anuncios capturan con alta precisión la intención de búsqueda.`});
     }
   }
 
-  if (s.conversiones && s.sqls) {
-    const r = Math.round(s.sqls/s.conversiones*100);
-    if (r < 10) {
-      insights.push({t:'warning', text:`Solo el <b>${r}%</b> de los leads se convierten en SQL. Alta fricción en calificación o leads de baja calidad entrando al pipeline.`});
-      recs.push({p:'alta', title:'Mejorar proceso de calificación de leads', desc:`Con ${s.conversiones} leads y solo ${s.sqls} SQLs (${r}% de conversión), hay fuga de oportunidades. Implementar scoring automático, formularios con preguntas calificadoras y definir criterios de SQL con el equipo de ventas.`});
-    } else if (r > 30) {
-      insights.push({t:'success', text:`Tasa de calificación lead→SQL del <b>${r}%</b> — excelente. Señal de calidad del tráfico y alineación entre Marketing y Ventas.`});
+  // CPL
+  if (s.cpl != null && s.gasto != null) {
+    if (s.cpl > 5000) {
+      insights.push({t:'warning', text:`CPL de <b>${M(s.cpl)}</b> con una inversión de ${M(s.gasto)} y ${N(s.conversiones)} conversiones. Cada lead cuesta más de $5K — revisar calidad de keywords y relevancia de landing pages.`});
+      recs.push({p:'alta', title:`Reducir CPL: actualmente ${M(s.cpl)} por lead`, desc:`La inversión de ${M(s.gasto)} generó ${N(s.conversiones)} leads. Auditar keywords de bajo rendimiento (alto costo, 0 conversiones), mejorar Quality Score de grupos de anuncios y revisar coincidencia entre anuncio y landing page.`});
+    } else if (s.cpl < 1200) {
+      insights.push({t:'success', text:`CPL de <b>${M(s.cpl)}</b> — eficiente. Con ${N(s.conversiones)} leads a este costo, hay rentabilidad para escalar presupuesto si el pipeline lo absorbe.`});
+    } else {
+      insights.push({t:'ok', text:`CPL de <b>${M(s.cpl)}</b> — razonable para el periodo. ${N(s.conversiones)} leads generados con una inversión de ${M(s.gasto)}.`});
     }
   }
 
-  if (d.costoSQL) {
-    if (d.costoSQL > 15000) insights.push({t:'warning', text:`Costo por SQL de <b>${fmtM(d.costoSQL)}</b>. Monitorear mensualmente — si el ticket promedio de contrato supera los $120K MXN el ratio es sostenible, pero debe optimizarse.`});
-    else insights.push({t:'success', text:`Costo por SQL de <b>${fmtM(d.costoSQL)}</b> — eficiente para custodia B2B donde los contratos son recurrentes y de alto valor anual.`});
+  // Costo/SQL
+  if (d.costoSQL != null && s.sqls != null) {
+    if (d.costoSQL > 20000) {
+      insights.push({t:'warning', text:`Costo por SQL de <b>${M(d.costoSQL)}</b> (${N(s.sqls)} SQLs en el periodo). Cada oportunidad calificada está costando más de $20K — validar si el ticket promedio de contrato justifica esta inversión.`});
+      recs.push({p:'alta', title:`Reducir costo por SQL: ${M(d.costoSQL)} actual`, desc:`El costo por SQL es resultado de ${M(s.gasto)} de inversión dividido entre ${N(s.sqls)} SQLs (paid + orgánico). Para reducirlo: mejorar la tasa de calificación lead→SQL y reducir el CPL.`});
+    } else if (d.costoSQL < 5000) {
+      insights.push({t:'success', text:`Costo por SQL de <b>${M(d.costoSQL)}</b> — muy competitivo. Con ${N(s.sqls)} SQLs en el periodo, la inversión está generando oportunidades reales a un costo justificado.`});
+    } else {
+      insights.push({t:'ok', text:`Costo por SQL de <b>${M(d.costoSQL)}</b> — aceptable para el periodo. ${N(s.sqls)} SQLs generados en total.`});
+    }
+  }
+
+  // ── Funnel de conversión ───────────────────────────────────────────────────
+
+  if (s.conversiones > 0 && s.sqls != null) {
+    const rLeadSQL = Math.round(s.sqls / s.conversiones * 100);
+    if (rLeadSQL < 8) {
+      insights.push({t:'warning', text:`Solo <b>${rLeadSQL}%</b> de los leads se convierten en SQL (${N(s.sqls)} de ${N(s.conversiones)}). De cada 100 leads, ${rLeadSQL} llegan a calificación. Alta fuga en el proceso de seguimiento.`});
+      recs.push({p:'alta', title:`Tasa lead→SQL: ${rLeadSQL}% — mejorar seguimiento`, desc:`${N(s.conversiones)} leads generados pero solo ${N(s.sqls)} calificaron como SQL. Revisar tiempos de respuesta, guión de primer contacto y criterios de calificación. Si los leads son de baja calidad, revisar las keywords que los generan.`});
+    } else if (rLeadSQL > 25) {
+      insights.push({t:'success', text:`Tasa de calificación lead→SQL del <b>${rLeadSQL}%</b> — alta. De ${N(s.conversiones)} leads, ${N(s.sqls)} llegaron a SQL. Buena alineación entre el perfil que entra y el que el equipo comercial puede cerrar.`});
+    } else {
+      insights.push({t:'ok', text:`Tasa lead→SQL del <b>${rLeadSQL}%</b> — ${N(s.sqls)} SQLs de ${N(s.conversiones)} leads. Margen de mejora en seguimiento y calificación.`});
+    }
+  }
+
+  if (s.sqls > 0 && s.clientesGanados != null) {
+    const rSQLCliente = Math.round(s.clientesGanados / s.sqls * 100);
+    if (rSQLCliente < 10) {
+      insights.push({t:'warning', text:`Tasa de cierre SQL→Cliente del <b>${rSQLCliente}%</b> (${N(s.clientesGanados)} ganados de ${N(s.sqls)} SQLs). El pipeline tiene SQLs pero el equipo comercial está cerrando menos del 10%.`});
+      recs.push({p:'alta', title:`Tasa de cierre SQL→Cliente: ${rSQLCliente}%`, desc:`${N(s.sqls)} SQLs generados pero solo ${N(s.clientesGanados)} convertidos en clientes. Analizar en qué etapa del pipeline se están perdiendo: propuesta, precio, timing o competencia. Considerar win/loss analysis con los deals perdidos.`});
+    } else if (rSQLCliente > 30) {
+      insights.push({t:'success', text:`Tasa de cierre del <b>${rSQLCliente}%</b> (${N(s.clientesGanados)} clientes de ${N(s.sqls)} SQLs) — por encima del promedio B2B. El equipo comercial está convirtiendo bien los SQLs que entran.`});
+    }
+  }
+
+  // ── Origen de SQLs ─────────────────────────────────────────────────────────
+
+  const sqlsPaid = d.sqlsPaidMedia || 0;
+  const sqlsOrg  = d.sqlsOrganicos || 0;
+  const sqlsOut  = d.sqlsOutbound  || 0;
+  const sqlsTotal = sqlsPaid + sqlsOrg + sqlsOut;
+
+  if (sqlsTotal > 0) {
+    if (sqlsPaid > 0 && sqlsOrg === 0 && sqlsOut === 0) {
+      insights.push({t:'warning', text:`El <b>100% de los SQLs proviene de Paid Media</b> (${N(sqlsPaid)} SQLs). No hay SQLs orgánicos ni outbound registrados — el pipeline depende completamente del presupuesto publicitario.`});
+      recs.push({p:'alta', title:'Canal único de SQLs: 100% dependencia de Paid Media', desc:`Sin canal orgánico ni outbound, una pausa o recorte de presupuesto detiene el pipeline. Activar al menos un canal alternativo de generación de SQLs en paralelo a las campañas actuales.`});
+    } else if (sqlsOrg > sqlsPaid) {
+      insights.push({t:'success', text:`El canal orgánico genera <b>más SQLs que paid media</b> (${N(sqlsOrg)} vs ${N(sqlsPaid)}). Los ${N(sqlsOrg)} SQLs orgánicos reducen el costo de adquisición y representan demanda no capturada por la competencia.`});
+    }
+    if (sqlsOut > 0) {
+      const pctOut = Math.round(sqlsOut / sqlsTotal * 100);
+      insights.push({t:'info', text:`Outbound genera <b>${N(sqlsOut)} SQLs</b> (${pctOut}% del total). Canal complementario activo — validar si el costo por SQL outbound es comparable al de paid media.`});
+    }
+  }
+
+  // ── GA4 ────────────────────────────────────────────────────────────────────
+
+  if (g4s.conversions === 0 || g4s.conversions == null) {
+    insights.push({t:'warning', text:`<b>GA4 reporta 0 conversiones</b> en el periodo. Los formularios del sitio no están disparando eventos de conversión — el funnel digital está desconectado del CRM.`});
+    recs.push({p:'critica', title:'0 conversiones en GA4: funnel digital sin medir', desc:`GA4 muestra ${N(g4s.sessions)} sesiones pero 0 conversiones. Los formularios de cotización no tienen eventos configurados. Sin esto no es posible saber qué páginas generan leads ni optimizar campañas por conversión real.`});
   }
 
   if (g4s.engagementRate != null) {
-    if (g4s.engagementRate < 40) {
-      insights.push({t:'warning', text:`Engagement del <b>${g4s.engagementRate}%</b> — los visitantes no están interactuando con el contenido. Las landing pages no convierten el tráfico en intención real.`});
-      recs.push({p:'alta', title:'Optimizar landing pages de custodia', desc:'Engagement bajo indica que los usuarios llegan, no encuentran lo que buscan y rebotan. Revisar velocidad de carga, propuesta de valor en el above-the-fold, testimonios y CTA principal. A/B test entre página genérica y landing específica por tipo de custodia.'});
-    } else {
-      insights.push({t:'ok', text:`Engagement del <b>${g4s.engagementRate}%</b> — los visitantes interactúan con el contenido del sitio.`});
+    if (g4s.engagementRate < 35) {
+      insights.push({t:'warning', text:`Tasa de engagement de <b>${P(g4s.engagementRate)}</b> — menos de 1 de cada 3 visitantes interactúa con el sitio. Alto volumen de sesiones (${N(g4s.sessions)}) que no se traducen en interacción.`});
+      recs.push({p:'alta', title:`Engagement ${P(g4s.engagementRate)}: revisar experiencia en landing pages`, desc:`${N(g4s.sessions)} sesiones con solo ${P(g4s.engagementRate)} de engagement. Analizar las páginas con mayor tráfico y menor tiempo en sitio. Priorizar la página de custodia principal y verificar que el CTA sea visible sin scroll.`});
+    } else if (g4s.engagementRate > 60) {
+      insights.push({t:'success', text:`Engagement de <b>${P(g4s.engagementRate)}</b> — más de la mitad de los visitantes interactúa con el contenido del sitio. Señal positiva de relevancia del tráfico que está llegando.`});
     }
   }
 
-  const aiCh = (d.ga4?.channels||[]).find(c => c.channel==='IA');
-  if (aiCh?.sessions > 15) {
-    insights.push({t:'info', text:`<b>${aiCh.sessions} sesiones desde plataformas de IA</b> (ChatGPT, Perplexity, Claude…) — canal emergente con alta intención comercial. Detecta ya aparece en respuestas de IA de búsqueda.`});
-    recs.push({p:'media', title:'Optimizar presencia en plataformas de IA', desc:'El tráfico referido desde IA crece mes a mes y tiene alta intención. Publicar FAQs estructuradas, definiciones técnicas (custodia armada, blanca, de transporte) y casos de uso que los modelos de IA puedan citar directamente.'});
+  if (g4s.bounceRate != null && g4s.bounceRate > 65) {
+    insights.push({t:'warning', text:`Tasa de rebote de <b>${P(g4s.bounceRate)}</b> — ${P(g4s.bounceRate)} de los visitantes abandona el sitio sin interactuar. Problema de alineación entre el anuncio/fuente y la página de destino.`});
+    recs.push({p:'alta', title:`Rebote del ${P(g4s.bounceRate)}: corregir alineación anuncio-landing`, desc:`Una tasa de rebote mayor al 65% indica que los usuarios llegan y no encuentran lo que esperaban. Revisar que la landing page de cada campaña coincida exactamente con la intención del anuncio (custodia de transporte → página de custodia, no home).`});
   }
 
-  if (g4s.conversions === 0 || g4s.conversions == null) {
-    recs.push({p:'critica', title:'CRÍTICO: Activar eventos de conversión en GA4', desc:'Sin conversiones configuradas es imposible medir el funnel digital ni optimizar campañas. Los formularios de cotización no disparan eventos. Implementar GA4 event tracking + UTMs en todos los puntos de contacto como prioridad absoluta de Q2.'});
+  // Canal IA
+  const aiCh = chs.find(c => c.channel === 'IA');
+  if (aiCh?.sessions > 10) {
+    insights.push({t:'info', text:`<b>${N(aiCh.sessions)} sesiones desde plataformas de IA</b> (${P(aiCh.pct)} del tráfico total). ChatGPT, Perplexity u otras plataformas están refiriendo tráfico al sitio de Detecta — canal emergente de alta intención.`});
   }
 
-  const sqlsOrg = d.sqlsOrganicos||0, sqlsPaid = d.sqlsPaidMedia||0;
-  if (sqlsPaid > 0 && sqlsOrg === 0) {
-    recs.push({p:'alta', title:'Diversificar canales de generación de SQLs', desc:'El 100% de los SQLs proviene de Paid Media, creando dependencia del presupuesto publicitario. Invertir en contenido SEO, LinkedIn orgánico y nurturing para reducir el costo de adquisición estructuralmente.'});
-  } else if (sqlsOrg > sqlsPaid) {
-    insights.push({t:'success', text:`El canal orgánico genera más SQLs que paid media (${sqlsOrg} vs ${sqlsPaid}). El posicionamiento SEO y la reputación de marca están funcionando — reforzar esta ventaja.`});
+  // Canal con mayor tráfico pero sin conversiones
+  const topCh = chs[0];
+  if (topCh && topCh.conversions === 0 && topCh.sessions > 50) {
+    insights.push({t:'warning', text:`El canal con más tráfico (<b>${topCh.channel}: ${N(topCh.sessions)} sesiones</b>) registra <b>0 conversiones</b>. Alto volumen de visitas sin conversión desde esta fuente.`});
   }
 
-  if (!recs.find(r => r.title?.includes('tracking'))) {
-    recs.push({p:'alta', title:'Implementar UTM tracking + conversiones offline en Pipedrive', desc:'Sin UTMs en todos los puntos de contacto (formularios, WhatsApp, correo de cotización) no es posible confirmar el ROAS real ni atribuir correctamente los deals cerrados a su canal de origen.'});
-  }
-  recs.push({p:'alta', title:'Informe de Riesgo Logístico como imán de leads', desc:'El reporte existe pero no se distribuye activamente. Crear landing page + secuencia de nurturing de 4 correos + distribución en LinkedIn hacia directores de logística, supply chain y seguridad corporativa. Meta: 200 leads calificados en el trimestre.'});
-  recs.push({p:'alta', title:'Publicar primer caso de éxito con métricas reales', desc:'Clientes como AstraZeneca, DHL o Traxion son logos de alta credibilidad. Un caso con datos concretos (% de incidentes reducidos, tiempo de respuesta, ROI del contrato) vale más que 10 posts genéricos en un mercado B2B que compra por prueba social.'});
-  if (!recs.find(r => r.title?.includes('farmac'))) {
-    recs.push({p:'media', title:'Campaña vertical farmacéutica "Protege tu cadena de frío"', desc:'Con Farmahome como sinergia natural del grupo GSM, el sector farmacéutico es el 2do producto más robado en LATAM. LinkedIn + email marketing a directorios CANIFARMA y ANAFAM con oferta específica.'});
-  }
-  recs.push({p:'estrategico', title:'Comunicar ecosistema integrado GSM + Detecta + Farmahome', desc:'Ningún competidor puede ofrecer seguridad privada + logística + farmacéutica desde el mismo grupo empresarial. Este diferenciador no tiene costo adicional y es estructuralmente insustituible. Crear narrativa de ecosistema para ventas enterprise.'});
+  // ── Search Console ─────────────────────────────────────────────────────────
 
-  return { insights, recs: recs.slice(0,7) };
+  if (gs.position != null && gs.position > 12) {
+    insights.push({t:'warning', text:`Posición media orgánica de <b>${gs.position.toFixed(1)}</b> para términos relacionados a custodia — fuera de la primera página en Google. Solo ${N(gs.clicks)} clics de ${N(gs.impressions)} impresiones.`});
+    recs.push({p:'media', title:`Posición orgánica ${gs.position?.toFixed(1)}: mejorar SEO en términos de custodia`, desc:`Con posición promedio ${gs.position?.toFixed(1)} y CTR orgánico de ${gs.ctr?.toFixed(1)}%, el sitio aparece en búsquedas pero no en posiciones que generan clics. Optimizar las páginas de servicio con contenido más profundo sobre los tipos de custodia.`});
+  } else if (gs.position != null && gs.position <= 5) {
+    insights.push({t:'success', text:`Posición orgánica media de <b>${gs.position.toFixed(1)}</b> para búsquedas de custodia — en el top 5 de Google. ${N(gs.clicks)} clics orgánicos en el periodo.`});
+  }
+
+  if (gs.ctr != null && gs.ctr < 1.5 && gs.impressions > 500) {
+    insights.push({t:'warning', text:`CTR orgánico de <b>${P(gs.ctr)}</b> con ${N(gs.impressions)} impresiones — el sitio aparece en búsquedas pero los títulos o descripciones no generan clics. Revisar meta titles y descriptions de las páginas de custodia.`});
+  }
+
+  if (!insights.length && !recs.length) {
+    insights.push({t:'ok', text:'Sin datos suficientes para generar conclusiones automáticas. Selecciona un periodo con actividad en Google Ads, GA4 y Pipedrive.'});
+  }
+
+  return { insights, recs };
 }
 
 function generateReport() {
