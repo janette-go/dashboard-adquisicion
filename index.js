@@ -935,11 +935,18 @@ async function fetchFromGoogleAds(period = 'this_month') {
   `;
 
   // ── Query 5: historial de cambios (últimos 30 días, ventana fija) ─────────────
-  // change_event requiere BETWEEN con timezone explícito (+00:00)
-  const fmtChangeTs = d => d.toISOString().replace('T',' ').slice(0,19) + '+00:00';
-  const changeStart = fmtChangeTs(new Date(Date.now() - 29 * 86_400_000));
-  const changeEnd   = fmtChangeTs(new Date());
-  const changesQ = `
+  // change_event: probar formatos de fecha hasta encontrar el que acepta la API
+  const now   = new Date();
+  const start = new Date(Date.now() - 29 * 86_400_000);
+  // Intento 1: ISO con T y offset  →  '2026-05-07T12:34:56+00:00'
+  const fmt1 = d => d.toISOString().slice(0,19) + '+00:00';
+  // Intento 2: solo fecha           →  '2026-05-07'
+  const fmt2 = d => d.toISOString().slice(0,10);
+  // Intento 3: espacio + offset     →  '2026-05-07 12:34:56+00:00'  (era el anterior)
+  // Intento 4: ISO puro con Z       →  '2026-05-07T12:34:56Z'
+  const fmt4 = d => d.toISOString().slice(0,19) + 'Z';
+
+  const makeChangesQ = (s, e) => `
     SELECT
       change_event.change_date_time,
       change_event.change_resource_type,
@@ -948,12 +955,29 @@ async function fetchFromGoogleAds(period = 'this_month') {
       campaign.name,
       ad_group.name
     FROM change_event
-    WHERE change_event.change_date_time >= '${changeStart}'
-      AND change_event.change_date_time <= '${changeEnd}'
+    WHERE change_event.change_date_time >= '${s}'
+      AND change_event.change_date_time <= '${e}'
     ORDER BY change_event.change_date_time DESC
     LIMIT 25
   `;
-  console.log('[changesQ]', changesQ.trim());
+
+  let changesRows = [];
+  const changeAttempts = [
+    [fmt1(start), fmt1(now)],
+    [fmt4(start), fmt4(now)],
+    [fmt2(start), fmt2(now)],
+  ];
+  for (const [s, e] of changeAttempts) {
+    try {
+      console.log('[changesQ attempt]', s, '→', e);
+      changesRows = await customer.query(makeChangesQ(s, e));
+      console.log('[change_event ok] rows:', changesRows.length, 'format:', s);
+      break;
+    } catch(err) {
+      const msg = err?.message || String(err);
+      console.warn('[change_event fail]', s.slice(0,4)==='2026'?s:'?', msg.slice(0,120));
+    }
+  }
 
   // Ejecuta en paralelo; kwAllRows = lista completa, keywordRows = métricas del periodo
   const [summaryRows, adGroupRows, kwAllRows, keywordRows, monthlyRows, kwMonthlyRows] = await Promise.all([
@@ -964,13 +988,6 @@ async function fetchFromGoogleAds(period = 'this_month') {
     customer.query(monthlyQ),
     customer.query(keywordMonthlyQ),
   ]);
-
-  let changesRows = [];
-  try { changesRows = await customer.query(changesQ); }
-  catch (e) {
-    const msg = e?.message || e?.errors?.[0]?.message || JSON.stringify(e?.failure||e).slice(0,200);
-    console.warn('[change_event]', msg);
-  }
 
   // ── Query 5: estadísticas de subasta via REST API directa ────────────────────
   // La librería npm no expone auction_insight.domain; la REST API sí lo permite.
