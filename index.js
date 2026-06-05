@@ -425,68 +425,73 @@ async function fetchGA4Data(period) {
   const pc   = parsePeriod(period);
   const dateRange = { startDate: pc.startStr, endDate: pc.endStr };
 
-  // Periodo anterior para comparativo
-  const startMs  = new Date(pc.startStr).getTime();
-  const durMs    = new Date(pc.endStr).getTime() - startMs + 86_400_000;
-  const fmtD     = d => {
-    const dt = new Date(d);
+  // Periodo anterior (misma duración, justo antes)
+  const startMs = new Date(pc.startStr).getTime();
+  const durMs   = new Date(pc.endStr).getTime() - startMs + 86_400_000;
+  const fmtD    = ms => {
+    const dt = new Date(ms);
     return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
   };
-  const prevDateRange = {
-    startDate: fmtD(startMs - durMs),
-    endDate:   fmtD(startMs - 86_400_000),
-  };
+  const prevDateRange = { startDate: fmtD(startMs - durMs), endDate: fmtD(startMs - 86_400_000) };
+
+  // Categoriza fuente+medio en canales significativos para Detecta
+  const AI_KEYS = ['perplexity','chatgpt','claude','gemini','copilot','phind','openai','anthropic','bard','you.com','bing chat'];
+  function categorize(src, med) {
+    const s = (src || '').toLowerCase();
+    const m = (med || '').toLowerCase();
+    if (AI_KEYS.some(k => s.includes(k)))                                   return 'IA';
+    if (s.includes('linkedin') && (m.includes('cpc') || m.includes('paid'))) return 'LinkedIn · Paid';
+    if (s.includes('linkedin'))                                              return 'LinkedIn · Orgánico';
+    if (['cpc','ppc','paid'].includes(m) || m === 'paid search')             return 'Paid Search';
+    if (['email','newsletter','mailing','correo'].some(e => m.includes(e))) return 'Mailing';
+    if (m === 'organic' || m === 'organic search')                          return 'Orgánico';
+    if (s === '(direct)' || (s === '' && (m === '(none)' || m === '')))     return 'Directo';
+    if (m === 'display' || m === 'banner')                                  return 'Display';
+    if (m === 'referral' || m === 'social' || m === 'organic social')       return 'Referral / Social';
+    return 'Otro';
+  }
+
+  const CHANNEL_ORDER = ['IA','Paid Search','LinkedIn · Paid','LinkedIn · Orgánico','Orgánico','Mailing','Directo','Display','Referral / Social','Otro'];
 
   try {
-    const [summaryRes, channelRes, pagesRes, dailyRes] = await Promise.all([
-      // Totales del periodo + comparativo
+    const [summaryRes, sourceRes, pagesRes] = await Promise.all([
+      // Totales periodo actual + anterior
       ga4.properties.runReport({
         property: prop,
         requestBody: {
           dateRanges: [dateRange, prevDateRange],
           metrics: [
-            { name: 'sessions'     },
-            { name: 'activeUsers'  },
-            { name: 'newUsers'     },
-            { name: 'conversions'  },
-            { name: 'engagementRate' },
+            { name: 'sessions'      },
+            { name: 'activeUsers'   },
+            { name: 'newUsers'      },
+            { name: 'conversions'   },
+            { name: 'engagementRate'},
+            { name: 'bounceRate'    },
           ],
         },
       }),
 
-      // Sesiones por canal (defaultChannelGroup)
+      // Sesiones por source+medium para categorización precisa
       ga4.properties.runReport({
         property: prop,
         requestBody: {
           dateRanges: [dateRange],
-          dimensions: [{ name: 'sessionDefaultChannelGrouping' }],
-          metrics:    [{ name: 'sessions' }, { name: 'conversions' }],
+          dimensions: [{ name: 'sessionSource' }, { name: 'sessionMedium' }],
+          metrics:    [{ name: 'sessions' }, { name: 'conversions' }, { name: 'activeUsers' }],
           orderBys:   [{ metric: { metricName: 'sessions' }, desc: true }],
-          limit: 10,
+          limit: 100,
         },
       }),
 
-      // Top páginas por vistas
+      // Top páginas
       ga4.properties.runReport({
         property: prop,
         requestBody: {
           dateRanges: [dateRange],
           dimensions: [{ name: 'pagePath' }, { name: 'pageTitle' }],
-          metrics:    [{ name: 'screenPageViews' }, { name: 'sessions' }, { name: 'conversions' }],
+          metrics:    [{ name: 'screenPageViews' }, { name: 'sessions' }, { name: 'conversions' }, { name: 'activeUsers' }],
           orderBys:   [{ metric: { metricName: 'screenPageViews' }, desc: true }],
-          limit: 10,
-        },
-      }),
-
-      // Sesiones diarias para sparkline
-      ga4.properties.runReport({
-        property: prop,
-        requestBody: {
-          dateRanges: [dateRange],
-          dimensions: [{ name: 'date' }],
-          metrics:    [{ name: 'sessions' }, { name: 'activeUsers' }],
-          orderBys:   [{ dimension: { dimensionName: 'date' } }],
-          limit: 90,
+          limit: 15,
         },
       }),
     ]);
@@ -495,27 +500,29 @@ async function fetchGA4Data(period) {
     const curr = summaryRes.data.rows?.[0];
     const prev = summaryRes.data.rows?.[1];
     const mv   = (row, i) => row ? Number(row.metricValues[i].value) : 0;
-
     const summary = {
       sessions:       mv(curr, 0),
       users:          mv(curr, 1),
       newUsers:       mv(curr, 2),
       conversions:    mv(curr, 3),
-      engagementRate: curr ? parseFloat((Number(curr.metricValues[4].value) * 100).toFixed(1)) : 0,
-      prev: {
-        sessions:    mv(prev, 0),
-        users:       mv(prev, 1),
-        newUsers:    mv(prev, 2),
-        conversions: mv(prev, 3),
-      },
+      engagementRate: curr ? parseFloat((mv(curr, 4) * 100).toFixed(1)) : 0,
+      bounceRate:     curr ? parseFloat((mv(curr, 5) * 100).toFixed(1)) : 0,
+      prev: { sessions: mv(prev, 0), users: mv(prev, 1), newUsers: mv(prev, 2), conversions: mv(prev, 3) },
     };
 
-    // ── Canales
-    const channels = (channelRes.data.rows || []).map(r => ({
-      channel:     r.dimensionValues[0].value,
-      sessions:    Number(r.metricValues[0].value),
-      conversions: Number(r.metricValues[1].value),
-    }));
+    // ── Canales categorizados y agregados
+    const chMap = {};
+    for (const row of (sourceRes.data.rows || [])) {
+      const cat = categorize(row.dimensionValues[0].value, row.dimensionValues[1].value);
+      if (!chMap[cat]) chMap[cat] = { sessions: 0, conversions: 0, users: 0 };
+      chMap[cat].sessions    += Number(row.metricValues[0].value);
+      chMap[cat].conversions += Number(row.metricValues[1].value);
+      chMap[cat].users       += Number(row.metricValues[2].value);
+    }
+    const totalSessions = Object.values(chMap).reduce((s, c) => s + c.sessions, 0) || 1;
+    const channels = CHANNEL_ORDER
+      .filter(k => chMap[k]?.sessions > 0)
+      .map(k => ({ channel: k, ...chMap[k], pct: parseFloat((chMap[k].sessions / totalSessions * 100).toFixed(1)) }));
 
     // ── Top páginas
     const topPages = (pagesRes.data.rows || []).map(r => ({
@@ -524,19 +531,10 @@ async function fetchGA4Data(period) {
       views:       Number(r.metricValues[0].value),
       sessions:    Number(r.metricValues[1].value),
       conversions: Number(r.metricValues[2].value),
+      users:       Number(r.metricValues[3].value),
     }));
 
-    // ── Serie diaria
-    const daily = (dailyRes.data.rows || []).map(r => {
-      const raw = r.dimensionValues[0].value; // YYYYMMDD
-      return {
-        date:     `${raw.slice(0,4)}-${raw.slice(4,6)}-${raw.slice(6,8)}`,
-        sessions: Number(r.metricValues[0].value),
-        users:    Number(r.metricValues[1].value),
-      };
-    });
-
-    return { summary, channels, topPages, daily, prevPeriod: `${prevDateRange.startDate} – ${prevDateRange.endDate}` };
+    return { summary, channels, topPages, prevPeriod: `${prevDateRange.startDate} – ${prevDateRange.endDate}` };
   } catch (e) {
     console.warn('[GA4]', e.message);
     return null;

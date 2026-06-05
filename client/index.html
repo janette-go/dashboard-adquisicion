@@ -645,54 +645,67 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
       </div>
 
       <!-- Métricas resumen -->
-      <div style="display:grid;grid-template-columns:repeat(5,1fr);border-bottom:1px solid var(--border)">
+      <div style="display:grid;grid-template-columns:repeat(6,1fr);border-bottom:1px solid var(--border)">
         <div style="padding:.6rem .85rem;border-right:1px solid var(--border)">
           <p style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">Sesiones</p>
-          <p class="ec-val" id="ga4-sessions" style="font-size:24px;margin-top:4px">–</p>
+          <p class="ec-val" id="ga4-sessions" style="font-size:22px;margin-top:4px">–</p>
           <p id="ga4-cmp-sessions" style="font-size:10px;margin-top:3px;color:var(--muted)"></p>
         </div>
         <div style="padding:.6rem .85rem;border-right:1px solid var(--border)">
           <p style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">Usuarios activos</p>
-          <p class="ec-val" id="ga4-users" style="font-size:24px;margin-top:4px">–</p>
+          <p class="ec-val" id="ga4-users" style="font-size:22px;margin-top:4px">–</p>
           <p id="ga4-cmp-users" style="font-size:10px;margin-top:3px;color:var(--muted)"></p>
         </div>
         <div style="padding:.6rem .85rem;border-right:1px solid var(--border)">
           <p style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">Nuevos usuarios</p>
-          <p class="ec-val" id="ga4-new-users" style="font-size:24px;margin-top:4px">–</p>
+          <p class="ec-val" id="ga4-new-users" style="font-size:22px;margin-top:4px">–</p>
           <p id="ga4-cmp-new-users" style="font-size:10px;margin-top:3px;color:var(--muted)"></p>
         </div>
         <div style="padding:.6rem .85rem;border-right:1px solid var(--border)">
           <p style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">Conversiones GA4</p>
-          <p class="ec-val" id="ga4-conv" style="font-size:24px;margin-top:4px">–</p>
+          <p class="ec-val" id="ga4-conv" style="font-size:22px;margin-top:4px">–</p>
           <p id="ga4-cmp-conv" style="font-size:10px;margin-top:3px;color:var(--muted)"></p>
         </div>
+        <div style="padding:.6rem .85rem;border-right:1px solid var(--border)">
+          <p style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">Engagement</p>
+          <p class="ec-val" id="ga4-eng" style="font-size:22px;margin-top:4px">–</p>
+        </div>
         <div style="padding:.6rem .85rem">
-          <p style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">Tasa de engagement</p>
-          <p class="ec-val" id="ga4-eng" style="font-size:24px;margin-top:4px">–</p>
+          <p style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">Rebote</p>
+          <p class="ec-val" id="ga4-bounce" style="font-size:22px;margin-top:4px">–</p>
         </div>
       </div>
 
-      <!-- Canales + Top páginas -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0">
-        <!-- Canales -->
-        <div style="padding:.75rem .85rem;border-right:1px solid var(--border)">
-          <p style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.5rem">Sesiones por canal</p>
-          <div id="ga4-channels" style="display:flex;flex-direction:column;gap:6px"></div>
+      <!-- Donut canales + Top páginas -->
+      <div style="display:grid;grid-template-columns:320px 1fr;gap:0">
+        <!-- Donut -->
+        <div style="padding:.75rem .85rem;border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center">
+          <p style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.6rem;align-self:flex-start">Sesiones por fuente</p>
+          <div style="position:relative;width:160px;height:160px;flex-shrink:0">
+            <canvas id="ga4Chart"></canvas>
+            <div id="ga4-donut-center" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none">
+              <span id="ga4-donut-val" style="font-size:22px;font-weight:700;color:#fff"></span>
+              <span style="font-size:8px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">sesiones</span>
+            </div>
+          </div>
+          <!-- Leyenda -->
+          <div id="ga4-legend" style="margin-top:.75rem;width:100%;display:flex;flex-direction:column;gap:5px"></div>
         </div>
 
-        <!-- Top páginas -->
-        <div style="overflow:auto;max-height:280px">
+        <!-- Top páginas con sort -->
+        <div style="overflow:auto;max-height:360px">
           <table style="width:100%;border-collapse:collapse;font-size:11px">
-            <thead style="position:sticky;top:0">
+            <thead style="position:sticky;top:0;z-index:1">
               <tr>
-                <th>Página</th>
-                <th style="text-align:right">Vistas</th>
-                <th style="text-align:right">Sesiones</th>
-                <th style="text-align:right">Conv.</th>
+                <th style="text-align:left">Página</th>
+                <th onclick="sortGA4Pages('views')"    style="text-align:right;cursor:pointer;white-space:nowrap">Vistas <span id="ga4-sort-views"></span></th>
+                <th onclick="sortGA4Pages('sessions')" style="text-align:right;cursor:pointer;white-space:nowrap">Sesiones <span id="ga4-sort-sessions"></span></th>
+                <th onclick="sortGA4Pages('users')"    style="text-align:right;cursor:pointer;white-space:nowrap">Usuarios <span id="ga4-sort-users"></span></th>
+                <th onclick="sortGA4Pages('conversions')" style="text-align:right;cursor:pointer;white-space:nowrap">Conv. <span id="ga4-sort-conversions"></span></th>
               </tr>
             </thead>
             <tbody id="ga4-pages-tbody">
-              <tr><td colspan="4" style="padding:1rem;text-align:center;color:var(--muted)">Cargando…</td></tr>
+              <tr><td colspan="5" style="padding:1rem;text-align:center;color:var(--muted)">Cargando…</td></tr>
             </tbody>
           </table>
         </div>
@@ -1287,84 +1300,146 @@ function renderGSC(d) {
 }
 
 // ── GOOGLE ANALYTICS 4 ────────────────────────────────────────────────────────
-const GA4_CH_COLORS = {
-  'Paid Search':   '#eb0000',
-  'Organic Search':'#4CAF50',
-  'Direct':        '#999999',
-  'Referral':      '#2196F3',
-  'Organic Social':'#9C27B0',
-  'Email':         '#FF9800',
-  'Unassigned':    '#555',
+const GA4_COLORS = {
+  'IA':                 '#7C3AED',
+  'Paid Search':        '#eb0000',
+  'LinkedIn · Paid':    '#0A66C2',
+  'LinkedIn · Orgánico':'#5BADE2',
+  'Orgánico':           '#22c55e',
+  'Mailing':            '#F97316',
+  'Directo':            '#999999',
+  'Display':            '#06B6D4',
+  'Referral / Social':  '#6B7280',
+  'Otro':               '#374151',
 };
+
+let _ga4Chart     = null;
+let _ga4Pages     = [];
+let _ga4SortCol   = 'views';
+let _ga4SortDir   = 'desc';
+
+function sortGA4Pages(col) {
+  if (_ga4SortCol === col) _ga4SortDir = _ga4SortDir === 'desc' ? 'asc' : 'desc';
+  else { _ga4SortCol = col; _ga4SortDir = 'desc'; }
+  renderGA4PagesBody();
+}
+
+function renderGA4PagesBody() {
+  const cols = ['views','sessions','users','conversions'];
+  cols.forEach(c => {
+    const el = document.getElementById(`ga4-sort-${c}`);
+    if (el) el.textContent = _ga4SortCol === c ? (_ga4SortDir === 'desc' ? ' ▼' : ' ▲') : '';
+    if (el) el.style.color = _ga4SortCol === c ? '#22c55e' : 'var(--muted)';
+  });
+
+  const sorted = [..._ga4Pages].sort((a, b) => {
+    const v = _ga4SortDir === 'desc' ? b[_ga4SortCol] - a[_ga4SortCol] : a[_ga4SortCol] - b[_ga4SortCol];
+    return v;
+  });
+
+  const tbody = document.getElementById('ga4-pages-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = sorted.map(p => {
+    const shortPath = p.path.length > 40 ? p.path.slice(0, 39) + '…' : p.path;
+    return `<tr style="border-bottom:1px solid var(--border)">
+      <td style="padding:.35rem .65rem;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${p.path}">${shortPath}</td>
+      <td style="padding:.35rem .65rem;text-align:right;color:#fff;font-weight:600">${fmt(p.views)}</td>
+      <td style="padding:.35rem .65rem;text-align:right;color:var(--muted)">${fmt(p.sessions)}</td>
+      <td style="padding:.35rem .65rem;text-align:right;color:var(--muted)">${fmt(p.users)}</td>
+      <td style="padding:.35rem .65rem;text-align:right;color:${p.conversions>0?'#22c55e':'var(--muted)'};font-weight:${p.conversions>0?'600':'400'}">${p.conversions || '–'}</td>
+    </tr>`;
+  }).join('');
+}
 
 function renderGA4(d) {
   const ga4 = d.ga4;
   const section = document.getElementById('analytics');
   if (!section) return;
-
-  if (!ga4) {
-    section.style.display = 'none';
-    return;
-  }
+  if (!ga4) { section.style.display = 'none'; return; }
   section.style.display = '';
 
   const s = ga4.summary || {};
   const p = s.prev || {};
 
-  const cmp = (cur, prev, higherIsBetter = true, suffix = '') => {
+  const cmp = (cur, prev, higherIsBetter = true) => {
     if (!prev) return '';
     const diff = cur - prev;
     const pct  = Math.round(diff / prev * 100);
     const better = higherIsBetter ? diff > 0 : diff < 0;
-    const sign = diff > 0 ? '+' : '';
-    const color = better ? '#4CAF50' : '#eb0000';
-    return `<span style="color:${color}">${sign}${pct}%</span> vs periodo anterior`;
+    const color  = better ? '#22c55e' : '#eb0000';
+    return `<span style="color:${color}">${diff>0?'+':''}${pct}%</span> vs ant.`;
   };
 
   setText('ga4-sessions',  fmt(s.sessions));
   setText('ga4-users',     fmt(s.users));
   setText('ga4-new-users', fmt(s.newUsers));
   setText('ga4-conv',      fmt(s.conversions));
-  setText('ga4-eng',       s.engagementRate != null ? s.engagementRate.toFixed(1) + '%' : '–');
+  setText('ga4-eng',       s.engagementRate != null ? s.engagementRate.toFixed(1)+'%' : '–');
+  setText('ga4-bounce',    s.bounceRate     != null ? s.bounceRate.toFixed(1)+'%'     : '–');
 
   const el = id => document.getElementById(id);
-  if (el('ga4-cmp-sessions'))  el('ga4-cmp-sessions').innerHTML  = cmp(s.sessions,  p.sessions);
-  if (el('ga4-cmp-users'))     el('ga4-cmp-users').innerHTML     = cmp(s.users,     p.users);
-  if (el('ga4-cmp-new-users')) el('ga4-cmp-new-users').innerHTML = cmp(s.newUsers,  p.newUsers);
+  if (el('ga4-cmp-sessions'))  el('ga4-cmp-sessions').innerHTML  = cmp(s.sessions,   p.sessions);
+  if (el('ga4-cmp-users'))     el('ga4-cmp-users').innerHTML     = cmp(s.users,      p.users);
+  if (el('ga4-cmp-new-users')) el('ga4-cmp-new-users').innerHTML = cmp(s.newUsers,   p.newUsers);
   if (el('ga4-cmp-conv'))      el('ga4-cmp-conv').innerHTML      = cmp(s.conversions, p.conversions);
 
-  // Canales
-  const chEl = document.getElementById('ga4-channels');
-  if (chEl && ga4.channels) {
-    const maxSessions = Math.max(...ga4.channels.map(c => c.sessions), 1);
-    chEl.innerHTML = ga4.channels.map(c => {
-      const pct = Math.round(c.sessions / maxSessions * 100);
-      const color = GA4_CH_COLORS[c.channel] || '#999';
-      return `<div>
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
-          <span style="font-size:10px;color:rgba(255,255,255,0.75)">${c.channel}</span>
-          <span style="font-size:10px;color:var(--muted)">${fmt(c.sessions)}</span>
-        </div>
-        <div style="height:4px;background:rgba(255,255,255,0.07);border-radius:2px">
-          <div style="width:${pct}%;height:100%;background:${color};border-radius:2px"></div>
-        </div>
-      </div>`;
-    }).join('');
+  // ── Donut
+  const channels = ga4.channels || [];
+  const totalSess = channels.reduce((a, c) => a + c.sessions, 0);
+  if (el('ga4-donut-val')) el('ga4-donut-val').textContent = fmt(totalSess);
+
+  const ctx = document.getElementById('ga4Chart');
+  if (ctx) {
+    if (_ga4Chart) _ga4Chart.destroy();
+    _ga4Chart = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels:   channels.map(c => c.channel),
+        datasets: [{ data: channels.map(c => c.sessions),
+          backgroundColor: channels.map(c => GA4_COLORS[c.channel] || '#555'),
+          borderColor:     '#141416',
+          borderWidth:     2,
+          hoverOffset:     6,
+        }],
+      },
+      options: {
+        cutout: '72%',
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: ctx => {
+                const c = channels[ctx.dataIndex];
+                return ` ${c.sessions.toLocaleString('es-MX')} sesiones (${c.pct}%)`;
+              },
+            },
+          },
+        },
+      },
+    });
   }
 
-  // Top páginas
-  const tbody = document.getElementById('ga4-pages-tbody');
-  if (tbody && ga4.topPages) {
-    tbody.innerHTML = ga4.topPages.map(p => {
-      const shortPath = p.path.length > 35 ? p.path.slice(0, 34) + '…' : p.path;
-      return `<tr style="border-bottom:1px solid var(--border)">
-        <td style="padding:.35rem .65rem;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${p.path}">${shortPath}</td>
-        <td style="padding:.35rem .65rem;text-align:right;color:rgba(255,255,255,0.8)">${fmt(p.views)}</td>
-        <td style="padding:.35rem .65rem;text-align:right;color:var(--muted)">${fmt(p.sessions)}</td>
-        <td style="padding:.35rem .65rem;text-align:right;color:${p.conversions>0?'#4CAF50':'var(--muted)'}">${p.conversions || '–'}</td>
-      </tr>`;
-    }).join('');
+  // ── Leyenda del donut
+  const leg = el('ga4-legend');
+  if (leg) {
+    leg.innerHTML = channels.map(c => `
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:6px">
+        <div style="display:flex;align-items:center;gap:5px;min-width:0">
+          <div style="width:8px;height:8px;border-radius:50%;background:${GA4_COLORS[c.channel]||'#555'};flex-shrink:0"></div>
+          <span style="font-size:10px;color:rgba(255,255,255,0.8);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.channel}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+          <span style="font-size:10px;color:#fff;font-weight:600">${fmt(c.sessions)}</span>
+          <span style="font-size:9px;color:var(--muted);width:32px;text-align:right">${c.pct}%</span>
+        </div>
+      </div>`).join('');
   }
+
+  // ── Tabla ordenable
+  _ga4Pages = ga4.topPages || [];
+  renderGA4PagesBody();
 }
 
 // ── MAPA DE CAMPAÑAS ──────────────────────────────────────────────────────────
