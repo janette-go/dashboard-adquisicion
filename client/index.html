@@ -843,15 +843,13 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
 <!-- ── CHAT WIDGET ────────────────────────────────────────────────────── -->
 <div id="chat-btn" onclick="toggleChat()"
      style="position:fixed;bottom:24px;right:24px;z-index:9500;
-            width:48px;height:48px;border-radius:50%;background:#eb0000;
+            width:56px;height:56px;border-radius:50%;background:#eb0000;
             display:flex;align-items:center;justify-content:center;
             cursor:pointer;box-shadow:0 4px 20px rgba(235,0,0,0.5);
-            transition:transform .15s,box-shadow .15s"
+            transition:transform .15s,box-shadow .15s;padding:3px"
      onmouseover="this.style.transform='scale(1.08)';this.style.boxShadow='0 6px 28px rgba(235,0,0,0.65)'"
      onmouseout="this.style.transform='scale(1)';this.style.boxShadow='0 4px 20px rgba(235,0,0,0.5)'">
-  <svg id="chat-btn-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-  </svg>
+  <img src="/detector-bot.png" style="width:100%;height:100%;border-radius:50%;object-fit:cover">
 </div>
 
 <div id="chat-panel"
