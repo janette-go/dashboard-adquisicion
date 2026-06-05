@@ -556,6 +556,80 @@ async function fetchGA4Data(period) {
   }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// TABLERO OPERATIVO — Atención a Clientes (Google Sheets)
+// ─────────────────────────────────────────────────────────────────────────────
+
+const UPSELL_SHEET_ID = '18khMdZ-ZFprS8n5Toc1MAHeTkP940u2GRSLk9imvE9E';
+
+async function fetchUpsellData() {
+  const { google } = require('googleapis');
+  const credJson = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
+  const keyFile  = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
+
+  const auth = new google.auth.GoogleAuth({
+    ...(credJson ? { credentials: JSON.parse(credJson) } : { keyFile }),
+    scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
+  });
+
+  const sheets = google.sheets({ version: 'v4', auth });
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId: UPSELL_SHEET_ID,
+    range: 'Tablero Q2!A1:BZ95',
+  });
+
+  const rows = res.data.values || [];
+  const dateRow    = rows[1]  || [];
+  const upSellRow  = rows[90] || [];  // Up Sell (Rutas nuevas)
+  const contactRow = rows[87] || [];  // Contacto de seguimiento
+  const npsRow     = rows[88] || [];  // NPS Servicio
+  const quejasRow  = rows[89] || [];  // Quejas y no conformidades
+
+  const parseNum = v => { const n = parseInt(String(v).replace('%','')); return isNaN(n) ? 0 : n; };
+
+  const weeks = [];
+  for (let start = 3; start < dateRow.length; start += 11) {
+    const dates = dateRow.slice(start, start + 7).filter(Boolean);
+    if (!dates.length) break;
+
+    const upSellVals  = upSellRow.slice(start, start+7).map(parseNum);
+    const contactVals = contactRow.slice(start, start+7).map(parseNum);
+    const quejaVals   = quejasRow.slice(start, start+7).map(parseNum);
+    const npsVals     = npsRow.slice(start, start+7).map(v => {
+      const s = String(v||'').replace('%','');
+      const n = parseFloat(s);
+      return isNaN(n) ? null : n;
+    }).filter(v => v !== null);
+
+    const totalUpsell  = upSellVals.reduce((a,b)=>a+b,0);
+    const totalContacto= contactVals.reduce((a,b)=>a+b,0);
+    const totalQuejas  = quejaVals.reduce((a,b)=>a+b,0);
+    const avgNps       = npsVals.length ? Math.round(npsVals.reduce((a,b)=>a+b,0)/npsVals.length) : null;
+
+    if (dates[0]) {
+      weeks.push({
+        startDate:  dates[0],
+        endDate:    dates[dates.length-1] || dates[0],
+        label:      `${dates[0]}`,
+        upSell:     totalUpsell,
+        contacto:   totalContacto,
+        quejas:     totalQuejas,
+        nps:        avgNps,
+      });
+    }
+  }
+
+  const total         = weeks.reduce((a,w)=>a+w.upSell, 0);
+  const totalContacto = weeks.reduce((a,w)=>a+w.contacto, 0);
+  const totalQuejas   = weeks.reduce((a,w)=>a+w.quejas, 0);
+  const allNps        = weeks.map(w=>w.nps).filter(v=>v!==null);
+  const avgNps        = allNps.length ? Math.round(allNps.reduce((a,b)=>a+b,0)/allNps.length) : null;
+  const lastWeek      = weeks[weeks.length-1] || null;
+  const prevWeek      = weeks[weeks.length-2] || null;
+
+  return { weeks, total, totalContacto, totalQuejas, avgNps, lastWeek, prevWeek };
+}
+
 // GOOGLE SHEETS — estadísticas de subasta (escritas por Google Ads Script)
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -1509,6 +1583,9 @@ async function fetchAllData(period) {
   // Google Analytics 4
   const ga4Data = await fetchGA4Data(period).catch(e => { console.warn('[GA4]', e.message); return null; });
 
+  // Tablero operativo — Atención a Clientes
+  const upsellData = await fetchUpsellData().catch(e => { console.warn('[Upsell]', e.message); return null; });
+
   let adsData   = null;
   let pipeData  = null;
   let adsError  = null;
@@ -1594,6 +1671,7 @@ async function fetchAllData(period) {
     auctionData:     _liveAuctionData || (adsData?.auctionData?.length ? adsData.auctionData : mk.auctionData),
     gsc:             gscData,
     ga4:             ga4Data,
+    upsell:          upsellData,
     dealLists:       pipeData?.dealLists    ?? { leads:[], sqls:[], ganados:[], sqlsPaid:[], sqlsOrg:[] },
     dealsByOrigin:   pipeData?.dealsByOrigin ?? {},
     periodLabel:     parsePeriod(period).periodLabel,
