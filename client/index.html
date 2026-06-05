@@ -703,7 +703,7 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
 <div id="kw-hist-modal" onclick="if(event.target===this)closeKwHistModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:9100;overflow:auto;padding:2rem 1rem;backdrop-filter:blur(4px)">
   <div style="background:#191919;border:1px solid rgba(255,255,255,0.12);border-top:2px solid var(--red);border-radius:10px;max-width:1100px;margin:0 auto;overflow:hidden;box-shadow:0 16px 48px rgba(0,0,0,.9)">
     <div style="display:flex;align-items:center;justify-content:space-between;padding:.65rem 1rem;border-bottom:1px solid var(--border);background:#000">
-      <span style="font-size:12px;font-weight:700;color:var(--text)" id="kw-hist-title">Histórico anual · Keywords</span>
+      <span style="font-size:12px;font-weight:700;color:#fff" id="kw-hist-title">Histórico anual · Keywords</span>
       <button onclick="closeKwHistModal()" style="background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;line-height:1;padding:0 4px">✕</button>
     </div>
     <div style="overflow-x:auto;max-height:70vh;overflow-y:auto">
@@ -1504,7 +1504,7 @@ function openKwHistModal() {
     return `${MONTHS_ES[idx]||m} de ${m.slice(0,4)}`;
   };
 
-  const thStyle = `padding:.35rem .55rem;text-align:right;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap;background:var(--gray-lt);position:sticky;top:0`;
+  const thStyle = `padding:.35rem .55rem;text-align:right;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#fff;border-bottom:2px solid var(--border);white-space:nowrap;background:#000;position:sticky;top:0`;
 
   const kwsWithData = _kwData.filter(k => k.monthly?.length);
   const tbody = document.getElementById('kw-hist-tbody');
