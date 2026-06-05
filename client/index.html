@@ -1430,7 +1430,7 @@ function renderKwBody() {
   };
 
   const sortArrow = col => _kwSortCol===col ? (_kwSortDir==='desc'?'▼':'▲') : '';
-  const thBase = `position:sticky;top:0;background:var(--gray-lt);padding:.3rem .5rem;text-align:right;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--border);white-space:nowrap;vertical-align:bottom`;
+  const thBase = `position:sticky;top:0;background:rgba(0,0,0,0.82);padding:.5rem .5rem;text-align:right;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--border);white-space:nowrap;vertical-align:middle`;
   const thS = col => `${thBase};color:${_kwSortCol===col?'#4285F4':'var(--muted)'};cursor:pointer`;
   const thN = `${thBase};color:var(--muted)`;
 
