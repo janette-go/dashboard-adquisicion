@@ -1131,13 +1131,20 @@ async function processPipedrive(deals, period, origenMap, stageMap = {}, activit
     else if (deal.status === 'lost') ownerStats[ownerId].perdidos++;
   }
 
-  const equipoNombres = ['raul', 'saul', 'erick', 'ana', 'laura', 'orlando', 'ulises', 'uriel'];
   const equipo = Object.entries(ownerStats)
-    .filter(([, stats]) => equipoNombres.some(n => stats.nombre.toLowerCase().includes(n)))
     .map(([ownerId, stats]) => {
       const acts = activityCountByOwner[ownerId] || { llamadas: 0, emails: 0, reuniones: 0 };
-      return { ...stats, ...acts };
-    });
+      return { ...stats, ...acts, ownerId };
+    })
+    .sort((a, b) => (b.llamadas + b.emails + b.reuniones) - (a.llamadas + a.emails + a.reuniones));
+
+  const equipoDealLists = {};
+  for (const p of equipo) {
+    const ownerDeals = deals.filter(d => String(d.user_id?.value ?? d.user_id) === String(p.ownerId));
+    equipoDealLists[`equipo_${p.ownerId}_activos`]  = buildDealSummaries(ownerDeals.filter(d => d.status === 'open'),  fieldOrigen, origenMap, stageMap);
+    equipoDealLists[`equipo_${p.ownerId}_ganados`]  = buildDealSummaries(ownerDeals.filter(d => d.status === 'won'),   fieldOrigen, origenMap, stageMap);
+    equipoDealLists[`equipo_${p.ownerId}_perdidos`] = buildDealSummaries(ownerDeals.filter(d => d.status === 'lost'),  fieldOrigen, origenMap, stageMap);
+  }
 
   return {
     pipeline:      { leads: leadDeals.length, sqls: sqlDeals.length, ganados: wonDeals.length },
@@ -1159,6 +1166,7 @@ async function processPipedrive(deals, period, origenMap, stageMap = {}, activit
       ganados:  buildDealSummaries(wonDeals,     fieldOrigen, origenMap, stageMap),
       sqlsPaid: buildDealSummaries(sqlsPaidDeals,fieldOrigen, origenMap, stageMap),
       sqlsOrg:  buildDealSummaries(sqlsOrgDeals, fieldOrigen, origenMap, stageMap),
+      ...equipoDealLists,
     },
     dealsByOrigin,
     ventas: { ticket, pipelineVal, ciclo, tasaPerdida, equipo },

@@ -1228,9 +1228,9 @@ function renderVentas(d){
   tbody.innerHTML=v.equipo.map(p=>`
     <tr>
       <td style="font-weight:600">${p.nombre}</td>
-      <td style="text-align:right">${p.activos}</td>
-      <td style="text-align:right;color:var(--green);font-weight:600">${p.ganados}</td>
-      <td style="text-align:right;color:var(--red)">${p.perdidos}</td>
+      <td style="text-align:right"><span class="deal-num" data-list="equipo_${p.ownerId}_activos" data-label="${p.nombre} — Deals activos" style="cursor:pointer">${p.activos}</span></td>
+      <td style="text-align:right;color:var(--green);font-weight:600"><span class="deal-num" data-list="equipo_${p.ownerId}_ganados" data-label="${p.nombre} — Deals ganados" style="cursor:pointer">${p.ganados}</span></td>
+      <td style="text-align:right;color:var(--red)"><span class="deal-num" data-list="equipo_${p.ownerId}_perdidos" data-label="${p.nombre} — Deals perdidos" style="cursor:pointer">${p.perdidos}</span></td>
       <td style="text-align:right">${p.llamadas}</td>
       <td style="text-align:right">${p.emails}</td>
       <td style="text-align:right">${p.reuniones}</td>
@@ -1238,6 +1238,7 @@ function renderVentas(d){
     </tr>`).join('');
 
   dc('actividades');
+  if (!v.equipo.length) return;
   charts['actividades'] = new Chart(document.getElementById('actividadesChart'), {
     type: 'bar',
     data: {
