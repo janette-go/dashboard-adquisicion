@@ -465,7 +465,8 @@ async function fetchGA4Data(period) {
     if (AI_KEYS.some(k => s.includes(k)))                                   return 'IA';
     if (s.includes('linkedin') && isPaid)                                    return 'LinkedIn · Paid';
     if (s.includes('linkedin'))                                              return 'LinkedIn · Orgánico';
-    if (isPaid && isSocialSite)                                              return 'Paid Social';
+    const isIG = ['ig','instagram','l.instagram.com','m.instagram.com'].includes(s);
+    if (isPaid && (isSocialSite || isIG))                                    return 'Paid Social';
     if (isPaid && isSearch)                                                  return 'Paid Search';
     if (isPaid)                                                              return 'Paid Search';
     if (['email','newsletter','mailing','correo'].some(e => m.includes(e))) return 'Mailing';
