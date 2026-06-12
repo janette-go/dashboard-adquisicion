@@ -1131,7 +1131,9 @@ async function processPipedrive(deals, period, origenMap, stageMap = {}, activit
     else if (deal.status === 'lost') ownerStats[ownerId].perdidos++;
   }
 
+  const equipoNombres = ['raul', 'saul', 'erick', 'ana', 'laura', 'orlando', 'ulises', 'uriel'];
   const equipo = Object.entries(ownerStats)
+    .filter(([, stats]) => equipoNombres.some(n => stats.nombre.toLowerCase().includes(n)))
     .map(([ownerId, stats]) => {
       const acts = activityCountByOwner[ownerId] || { llamadas: 0, emails: 0, reuniones: 0 };
       return { ...stats, ...acts, ownerId };
