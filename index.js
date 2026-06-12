@@ -912,7 +912,7 @@ async function fetchPipedriveActivities() {
   let all = [], start = 0;
 
   while (true) {
-    const url  = `${base}/activities?api_token=${token}&limit=500&start=${start}`;
+    const url  = `${base}/activities?api_token=${token}&limit=500&start=${start}&user_id=0`;
     const resp = await fetch(url);
     if (!resp.ok) throw new Error(`Pipedrive ${resp.status} ${resp.statusText}`);
     const json = await resp.json();
@@ -1174,6 +1174,8 @@ async function processPipedrive(deals, period, origenMap, stageMap = {}, activit
     ventas: { ticket, pipelineVal, ciclo, tasaPerdida, equipo },
     _debug: {
       allOwnerNames:   [...new Set(Object.values(ownerStats).map(s => s.nombre))],
+      activitiesFetched: activities.length,
+      activitiesSample: activities.slice(0, 3).map(a => ({ user_id: a.user_id, type: a.type })),
       totalFetched:    deals.length,
       updatedInPeriod_update: updatedInPeriod.length,  // filtrado por update_time
       conLeadField:    leadDeals.length,
@@ -1771,7 +1773,7 @@ async function fetchAllData(period) {
                 console.error('[Google Ads raw]', JSON.stringify(e, Object.getOwnPropertyNames(e), 2));
               }),
 
-    pipeOk && Promise.all([fetchPipedriveDeals(), getPipedriveOrigenMap(), fetchPipelineStages(), fetchPipedriveActivities().catch(() => [])])
+    pipeOk && Promise.all([fetchPipedriveDeals(), getPipedriveOrigenMap(), fetchPipelineStages(), fetchPipedriveActivities().catch(e => { console.error('[fetchPipedriveActivities]', e.message); return []; })])
                .then(async ([deals, origenMap, stageMap, activities]) => { pipeData = await processPipedrive(deals, period, origenMap, stageMap, activities); })
                .catch(e => { pipeError = e.message; console.error('[Pipedrive]', e.message); }),
   ].filter(Boolean));
