@@ -533,6 +533,7 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
           <span class="fr-val" id="f-rate">–</span>
           <span class="fr-lbl"> tasa de conversión global (1ª etapa → última etapa)</span>
         </div>
+        <div id="funnel-debug" style="font-size:9px;color:var(--muted);margin-top:.5rem;word-break:break-all"></div>
       </div>
     </div>
   </section>
@@ -1326,6 +1327,8 @@ function renderSummary(d) {
   const last  = etapas[etapas.length - 1]?.deals || 0;
   const globalRate = first > 0 ? ((last / first) * 100).toFixed(1) + '%' : '–';
   setText('f-rate', globalRate);
+  const fdbg = document.getElementById('funnel-debug');
+  if (fdbg) fdbg.textContent = 'debug → funnelEtapas: ' + JSON.stringify(etapas) + ' | stagesOrdered: ' + JSON.stringify(d._debug?.stagesOrdered || []);
 
   // Métricas de SQL en sección de gráfico
   setText('sql-totales',  fmt(d.sqlsTotales));
