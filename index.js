@@ -181,6 +181,7 @@ const MOCK = {
       { nombre: 'Laura',   activos: 10, ganados: 4, perdidos: 2, llamadas: 19, emails: 30, reuniones: 5 },
       { nombre: 'Orlando', activos: 7,  ganados: 1, perdidos: 1, llamadas: 12, emails: 18, reuniones: 2 },
       { nombre: 'Ulises',  activos: 6,  ganados: 2, perdidos: 1, llamadas: 14, emails: 20, reuniones: 3 },
+      { nombre: 'Uriel',   activos: 8,  ganados: 2, perdidos: 2, llamadas: 16, emails: 24, reuniones: 4 },
     ],
   },
 };
@@ -1128,7 +1129,7 @@ async function processPipedrive(deals, period, origenMap, stageMap = {}, activit
     else if (deal.status === 'lost') ownerStats[ownerId].perdidos++;
   }
 
-  const equipoNombres = ['raul', 'saul', 'erick', 'ana', 'laura', 'orlando', 'ulises'];
+  const equipoNombres = ['raul', 'saul', 'erick', 'ana', 'laura', 'orlando', 'ulises', 'uriel'];
   const equipo = Object.entries(ownerStats)
     .filter(([, stats]) => equipoNombres.some(n => stats.nombre.toLowerCase().includes(n)))
     .map(([ownerId, stats]) => {
