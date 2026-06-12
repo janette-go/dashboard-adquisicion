@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.100.1",
+    "compression": "^1.8.1",
     "dotenv": "^16.4.5",
     "express": "^4.18.2",
     "google-ads-api": "^23.0.0",
