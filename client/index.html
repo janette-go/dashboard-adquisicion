@@ -1312,7 +1312,7 @@ function renderSummary(d) {
   const etapas = d.funnelEtapas || [];
   if (funnelSvg) {
     funnelSvg.innerHTML = etapas.length
-      ? svgFunnelDark(etapas.map((e, i) => ({ l: e.etapa, v: e.deals, c: C.pal[i % C.pal.length] })), 900, 200)
+      ? svgFunnelDark(etapas.map((e, i) => ({ l: e.etapa, v: e.deals, c: C.pal[i % C.pal.length] })), 700, 260)
       : '<p style="color:var(--muted);font-size:11px;padding:1rem">Sin etapas del pipeline detectadas (revisa PIPEDRIVE_PIPELINE_ID)</p>';
   }
   const first = etapas[0]?.deals || 0;
@@ -2852,26 +2852,26 @@ function svgDonut(items, size) {
 }
 
 function svgFunnelDark(steps, w, h) {
-  w = w || 900; h = h || 200;
+  w = w || 700; h = h || 260;
   const valid = steps.filter(s => s.v >= 0);
   if (!valid.length) return '';
   const max = Math.max(...valid.map(s => s.v), 1);
   const n = valid.length;
-  const gap = 10;
-  const bw = (w - gap * (n - 1)) / n;
-  const maxH = h - 50;
-  const bars = valid.map((s, i) => {
-    const bh = Math.max(6, Math.round(s.v / max * maxH));
-    const x = i * (bw + gap);
-    const y = h - 40 - bh;
+  const rowH = h / n;
+  const bh = Math.max(20, rowH - 14);
+  const maxBW = w * 0.7;
+  const rows = valid.map((s, i) => {
+    const pct = s.v / max;
+    const bw = Math.max(maxBW * 0.12, pct * maxBW);
+    const x = (w - bw) / 2;
+    const y = i * rowH + (rowH - bh) / 2;
     const conv = i > 0 && valid[i-1].v > 0 ? Math.round(s.v / valid[i-1].v * 100) : null;
     return `
-      <rect x="${x}" y="${y}" width="${bw}" height="${bh}" rx="4" fill="${s.c}"/>
-      <text x="${x + bw/2}" y="${y - 8}" text-anchor="middle" font-size="16" font-weight="700" fill="#fff">${s.v.toLocaleString('es-MX')}</text>
-      ${conv != null ? `<text x="${x + bw/2}" y="${y - 26}" text-anchor="middle" font-size="11" font-weight="600" fill="${conv > 20 ? '#4ade80' : '#fbbf24'}">${conv}%</text>` : ''}
-      <text x="${x + bw/2}" y="${h - 18}" text-anchor="middle" font-size="10" fill="rgba(255,255,255,0.55)">${s.l}</text>`;
+      <rect x="${x}" y="${y}" width="${bw}" height="${bh}" rx="6" fill="${s.c}"/>
+      <text x="${w/2}" y="${y + bh/2 + 5}" text-anchor="middle" font-size="15" font-weight="700" fill="#0c0c0c">${s.v.toLocaleString('es-MX')} · ${s.l}</text>
+      ${conv != null ? `<text x="${w/2}" y="${y - 6}" text-anchor="middle" font-size="10" font-weight="600" fill="${conv > 20 ? '#4ade80' : '#fbbf24'}">↓ ${conv}%</text>` : ''}`;
   }).join('');
-  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" style="max-width:100%" xmlns="http://www.w3.org/2000/svg" font-family="'Google Sans','Segoe UI',sans-serif">${bars}</svg>`;
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" style="max-width:100%" xmlns="http://www.w3.org/2000/svg" font-family="'Google Sans','Segoe UI',sans-serif">${rows}</svg>`;
 }
 
 function svgFunnel(steps, w, h) {
