@@ -1875,6 +1875,7 @@ async function fetchAllData(period) {
     upsell:          upsellData,
     dealLists:       pipeData?.dealLists    ?? { leads:[], sqls:[], ganados:[], sqlsPaid:[], sqlsOrg:[] },
     dealsByOrigin:   pipeData?.dealsByOrigin ?? {},
+    funnelEtapas:    pipeData?.funnelEtapas  ?? [],
     ventas:          pipeData?.ventas        ?? mk.ventas,
     periodLabel:     parsePeriod(period).periodLabel,
     ...(adsError   ? { _adsError:   adsError          } : {}),
