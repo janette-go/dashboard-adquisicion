@@ -2140,4 +2140,15 @@ Cuando no tengas datos suficientes para responder algo, dilo claramente. Cuando 
 
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`);
+
+  // Pre-calienta y refresca en segundo plano el periodo más usado,
+  // para que los usuarios casi nunca esperen un fetch en frío.
+  const warmPeriod = 'this_month';
+  const refreshWarmCache = () => {
+    fetchAllData(warmPeriod)
+      .then(data => { _dataCache[warmPeriod] = { data, ts: Date.now() }; })
+      .catch(e => console.error('[warmCache]', e.message));
+  };
+  refreshWarmCache();
+  setInterval(refreshWarmCache, DATA_CACHE_TTL);
 });
