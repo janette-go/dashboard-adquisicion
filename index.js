@@ -706,6 +706,11 @@ async function fetchUpsellData(period) {
 let _auctionSheetCache = { data: null, ts: 0 };
 const AUCTION_CACHE_TTL = 60 * 60 * 1000; // 1 hora
 
+// Cache del dashboard completo por periodo, para evitar refetch a Pipedrive/Ads/GA4 en cada carga
+const _dataCache = {};
+const DATA_CACHE_TTL = 5 * 60 * 1000; // 5 minutos
+
+
 async function fetchAuctionFromSheets() {
   const sheetId = process.env.GOOGLE_SHEETS_AUCTION_ID;
   if (!sheetId) return null;
@@ -1892,8 +1897,14 @@ async function fetchAllData(period) {
 app.get('/api/campaigns', async (req, res) => {
   res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
   const period = req.query.period || 'this_month';
+  const cached = _dataCache[period];
+  if (cached && (Date.now() - cached.ts) < DATA_CACHE_TTL) {
+    return res.json(cached.data);
+  }
   try {
-    res.json(await fetchAllData(period));
+    const data = await fetchAllData(period);
+    _dataCache[period] = { data, ts: Date.now() };
+    res.json(data);
   } catch (err) {
     console.error('[fetchAllData]', err.message);
     res.status(500).json({ ...MOCK, error: err.message });
