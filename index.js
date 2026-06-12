@@ -1191,6 +1191,8 @@ async function processPipedrive(deals, period, origenMap, stageMap = {}, activit
     ventas: { ticket, pipelineVal, ciclo, tasaPerdida, equipo },
     _debug: {
       allOwnerNames:   [...new Set(Object.values(ownerStats).map(s => s.nombre))],
+      stagesOrdered,
+      funnelEtapas,
       activitiesFetched: activities.length,
       activitiesSample: activities.slice(0, 3).map(a => ({ user_id: a.user_id, type: a.type })),
       totalFetched:    deals.length,

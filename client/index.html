@@ -1319,7 +1319,7 @@ function renderSummary(d) {
         <div class="funnel-step"><p class="fs-val">${fmt(e.deals)}</p><p class="fs-lbl">${e.etapa}</p></div>
       `).join('');
     } else {
-      funnelSteps.innerHTML = '<div class="funnel-step"><p class="fs-val">–</p><p class="fs-lbl">Sin etapas configuradas</p></div>';
+      funnelSteps.innerHTML = '<div class="funnel-step"><p class="fs-val">–</p><p class="fs-lbl">Sin etapas del pipeline detectadas (revisa PIPEDRIVE_PIPELINE_ID)</p></div>';
     }
   }
   const first = etapas[0]?.deals || 0;
