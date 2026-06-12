@@ -1173,6 +1173,7 @@ async function processPipedrive(deals, period, origenMap, stageMap = {}, activit
     dealsByOrigin,
     ventas: { ticket, pipelineVal, ciclo, tasaPerdida, equipo },
     _debug: {
+      allOwnerNames:   [...new Set(Object.values(ownerStats).map(s => s.nombre))],
       totalFetched:    deals.length,
       updatedInPeriod_update: updatedInPeriod.length,  // filtrado por update_time
       conLeadField:    leadDeals.length,
