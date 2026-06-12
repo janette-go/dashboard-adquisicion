@@ -557,6 +557,7 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
           </table>
         </div>
         <div style="padding:.75rem .85rem;border-top:1px solid var(--border)">
+          <div id="actividades-empty" style="display:none;text-align:center;color:var(--muted);font-size:11px;padding:1rem"></div>
           <div class="chart-h-lg"><canvas id="actividadesChart"></canvas></div>
         </div>
       </div>
@@ -1238,8 +1239,20 @@ function renderVentas(d){
     </tr>`).join('');
 
   dc('actividades');
-  if (!v.equipo.length) return;
-  charts['actividades'] = new Chart(document.getElementById('actividadesChart'), {
+  const actEmpty = document.getElementById('actividades-empty');
+  const actCanvas = document.getElementById('actividadesChart');
+  if (!v.equipo.length) {
+    if (actEmpty) {
+      actEmpty.style.display = 'block';
+      actEmpty.textContent = 'Sin datos de equipo para mostrar en este periodo (nombres detectados: ' +
+        ((d._debug && d._debug.allOwnerNames) ? d._debug.allOwnerNames.join(', ') : 'ninguno') + ')';
+    }
+    if (actCanvas) actCanvas.style.display = 'none';
+    return;
+  }
+  if (actEmpty) actEmpty.style.display = 'none';
+  if (actCanvas) actCanvas.style.display = '';
+  charts['actividades'] = new Chart(actCanvas, {
     type: 'bar',
     data: {
       labels: v.equipo.map(p => p.nombre),
