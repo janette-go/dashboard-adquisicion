@@ -174,9 +174,13 @@ const MOCK = {
     ciclo: 24,
     tasaPerdida: 18.2,
     equipo: [
-      { nombre: 'Ana López',    activos: 14, ganados: 5, perdidos: 2, llamadas: 32, emails: 48, reuniones: 9 },
-      { nombre: 'Carlos Ruiz',  activos: 9,  ganados: 3, perdidos: 1, llamadas: 21, emails: 35, reuniones: 6 },
-      { nombre: 'Marina Sosa',  activos: 11, ganados: 1, perdidos: 3, llamadas: 18, emails: 27, reuniones: 4 },
+      { nombre: 'Raul',    activos: 14, ganados: 5, perdidos: 2, llamadas: 32, emails: 48, reuniones: 9 },
+      { nombre: 'Saul',    activos: 9,  ganados: 3, perdidos: 1, llamadas: 21, emails: 35, reuniones: 6 },
+      { nombre: 'Erick',   activos: 11, ganados: 1, perdidos: 3, llamadas: 18, emails: 27, reuniones: 4 },
+      { nombre: 'Ana',     activos: 8,  ganados: 2, perdidos: 1, llamadas: 15, emails: 22, reuniones: 3 },
+      { nombre: 'Laura',   activos: 10, ganados: 4, perdidos: 2, llamadas: 19, emails: 30, reuniones: 5 },
+      { nombre: 'Orlando', activos: 7,  ganados: 1, perdidos: 1, llamadas: 12, emails: 18, reuniones: 2 },
+      { nombre: 'Ulises',  activos: 6,  ganados: 2, perdidos: 1, llamadas: 14, emails: 20, reuniones: 3 },
     ],
   },
 };
@@ -1124,10 +1128,13 @@ async function processPipedrive(deals, period, origenMap, stageMap = {}, activit
     else if (deal.status === 'lost') ownerStats[ownerId].perdidos++;
   }
 
-  const equipo = Object.entries(ownerStats).map(([ownerId, stats]) => {
-    const acts = activityCountByOwner[ownerId] || { llamadas: 0, emails: 0, reuniones: 0 };
-    return { ...stats, ...acts };
-  });
+  const equipoNombres = ['raul', 'saul', 'erick', 'ana', 'laura', 'orlando', 'ulises'];
+  const equipo = Object.entries(ownerStats)
+    .filter(([, stats]) => equipoNombres.some(n => stats.nombre.toLowerCase().includes(n)))
+    .map(([ownerId, stats]) => {
+      const acts = activityCountByOwner[ownerId] || { llamadas: 0, emails: 0, reuniones: 0 };
+      return { ...stats, ...acts };
+    });
 
   return {
     pipeline:      { leads: leadDeals.length, sqls: sqlDeals.length, ganados: wonDeals.length },
