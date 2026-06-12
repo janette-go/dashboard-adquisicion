@@ -518,23 +518,6 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
     </div>
   </section>
 
-  <!-- FUNNEL DE CONVERSIÓN -->
-  <section id="funnel">
-    <div class="card">
-      <div class="card-hdr">
-        <span class="card-title">Funnel de conversión</span>
-        <span class="card-src"><span class="src-dot pipe live"></span>Pipedrive</span>
-      </div>
-      <div style="padding:.85rem">
-        <div id="funnel-svg" style="display:flex;justify-content:center"></div>
-        <div class="funnel-rate">
-          <span class="fr-val" id="f-rate">–</span>
-          <span class="fr-lbl"> tasa de conversión global (1ª etapa → última etapa)</span>
-        </div>
-      </div>
-    </div>
-  </section>
-
   <section id="ventas">
     <div class="card">
       <div class="card-hdr">
@@ -661,6 +644,23 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
       </div>
     </section>
   </div>
+
+  <!-- FUNNEL DE CONVERSIÓN -->
+  <section id="funnel">
+    <div class="card">
+      <div class="card-hdr">
+        <span class="card-title">Funnel de conversión</span>
+        <span class="card-src"><span class="src-dot pipe live"></span>Pipedrive</span>
+      </div>
+      <div style="padding:.85rem">
+        <div id="funnel-svg" style="display:flex;justify-content:center"></div>
+        <div class="funnel-rate">
+          <span class="fr-val" id="f-rate">–</span>
+          <span class="fr-lbl"> tasa de conversión global (1ª etapa → última etapa)</span>
+        </div>
+      </div>
+    </div>
+  </section>
 
   <!-- canvas oculto para compatibilidad de leads por mes (no se muestra) -->
   <canvas id="convChart" style="display:none"></canvas>
