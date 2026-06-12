@@ -518,6 +518,31 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
     </div>
   </section>
 
+  <!-- FUNNEL DE CONVERSIÓN -->
+  <section id="funnel">
+    <div class="card">
+      <div class="card-hdr">
+        <span class="card-title">Funnel de conversión</span>
+        <span class="card-src"><span class="src-dot pipe live"></span>Pipedrive</span>
+      </div>
+      <div style="padding:.85rem">
+        <div class="funnel-steps" id="funnel-steps">
+          <div class="funnel-step"><p class="fs-val" id="f-conv">–</p><p class="fs-lbl">Conversiones</p></div>
+          <span class="funnel-arr">→</span>
+          <div class="funnel-step"><p class="fs-val" id="f-leads">–</p><p class="fs-lbl">Leads calificados</p></div>
+          <span class="funnel-arr">→</span>
+          <div class="funnel-step"><p class="fs-val" id="f-sqls">–</p><p class="fs-lbl">SQLs</p></div>
+          <span class="funnel-arr">→</span>
+          <div class="funnel-step"><p class="fs-val" id="f-won">–</p><p class="fs-lbl">Clientes ganados</p></div>
+        </div>
+        <div class="funnel-rate">
+          <span class="fr-val" id="f-rate">–</span>
+          <span class="fr-lbl"> tasa de conversión global (Leads → Clientes)</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <section id="ventas">
     <div class="card">
       <div class="card-hdr">
@@ -1289,6 +1314,15 @@ function renderSummary(d) {
   setText('m-costo-sql', d.costoSQL != null ? fmtM(d.costoSQL) : '–');
   const s2w = pl.sqls > 0 ? ((pl.ganados / pl.sqls) * 100).toFixed(1) + '%' : '–';
   setText('m-s2w', s2w);
+
+  // Funnel de conversión
+  setText('f-conv',  fmt(s.conversiones));
+  setText('f-leads', fmt(s.leadsCalificados));
+  setText('f-sqls',  fmt(s.sqls));
+  setText('f-won',   fmt(s.clientesGanados));
+  const globalRate = s.leadsCalificados > 0 ? ((s.clientesGanados / s.leadsCalificados) * 100).toFixed(1) + '%' : '–';
+  setText('f-rate', globalRate);
+
   // Métricas de SQL en sección de gráfico
   setText('sql-totales',  fmt(d.sqlsTotales));
   setText('sql-paid',     fmt(d.sqlsPaidMedia));
