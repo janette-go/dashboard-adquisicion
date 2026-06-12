@@ -527,17 +527,11 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
       </div>
       <div style="padding:.85rem">
         <div class="funnel-steps" id="funnel-steps">
-          <div class="funnel-step"><p class="fs-val" id="f-conv">–</p><p class="fs-lbl">Conversiones</p></div>
-          <span class="funnel-arr">→</span>
-          <div class="funnel-step"><p class="fs-val" id="f-leads">–</p><p class="fs-lbl">Leads calificados</p></div>
-          <span class="funnel-arr">→</span>
-          <div class="funnel-step"><p class="fs-val" id="f-sqls">–</p><p class="fs-lbl">SQLs</p></div>
-          <span class="funnel-arr">→</span>
-          <div class="funnel-step"><p class="fs-val" id="f-won">–</p><p class="fs-lbl">Clientes ganados</p></div>
+          <div class="funnel-step"><p class="fs-val">–</p><p class="fs-lbl">Cargando...</p></div>
         </div>
         <div class="funnel-rate">
           <span class="fr-val" id="f-rate">–</span>
-          <span class="fr-lbl"> tasa de conversión global (Leads → Clientes)</span>
+          <span class="fr-lbl"> tasa de conversión global (1ª etapa → última etapa)</span>
         </div>
       </div>
     </div>
@@ -1315,12 +1309,22 @@ function renderSummary(d) {
   const s2w = pl.sqls > 0 ? ((pl.ganados / pl.sqls) * 100).toFixed(1) + '%' : '–';
   setText('m-s2w', s2w);
 
-  // Funnel de conversión
-  setText('f-conv',  fmt(s.conversiones));
-  setText('f-leads', fmt(s.leadsCalificados));
-  setText('f-sqls',  fmt(s.sqls));
-  setText('f-won',   fmt(s.clientesGanados));
-  const globalRate = s.leadsCalificados > 0 ? ((s.clientesGanados / s.leadsCalificados) * 100).toFixed(1) + '%' : '–';
+  // Funnel de conversión por etapas del pipeline de Custodia
+  const funnelSteps = document.getElementById('funnel-steps');
+  const etapas = d.funnelEtapas || [];
+  if (funnelSteps) {
+    if (etapas.length) {
+      funnelSteps.innerHTML = etapas.map((e, i) => `
+        ${i > 0 ? '<span class="funnel-arr">→</span>' : ''}
+        <div class="funnel-step"><p class="fs-val">${fmt(e.deals)}</p><p class="fs-lbl">${e.etapa}</p></div>
+      `).join('');
+    } else {
+      funnelSteps.innerHTML = '<div class="funnel-step"><p class="fs-val">–</p><p class="fs-lbl">Sin etapas configuradas</p></div>';
+    }
+  }
+  const first = etapas[0]?.deals || 0;
+  const last  = etapas[etapas.length - 1]?.deals || 0;
+  const globalRate = first > 0 ? ((last / first) * 100).toFixed(1) + '%' : '–';
   setText('f-rate', globalRate);
 
   // Métricas de SQL en sección de gráfico

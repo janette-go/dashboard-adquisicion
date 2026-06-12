@@ -767,7 +767,9 @@ async function fetchPipelineStages() {
   const resp  = await fetch(`https://api.pipedrive.com/v1/stages?pipeline_id=${pid}&api_token=${token}`);
   if (!resp.ok) return (_stageCache = {});
   const json  = await resp.json();
-  _stageCache = Object.fromEntries((json.data || []).map(s => [s.id, s.name]));
+  const stages = (json.data || []).sort((a, b) => a.order_nr - b.order_nr);
+  _stageCache = Object.fromEntries(stages.map(s => [s.id, s.name]));
+  _stageCache.__ordered = stages.map(s => ({ id: s.id, name: s.name }));
   return _stageCache;
 }
 
@@ -1140,6 +1142,20 @@ async function processPipedrive(deals, period, origenMap, stageMap = {}, activit
     })
     .sort((a, b) => (b.llamadas + b.emails + b.reuniones) - (a.llamadas + a.emails + a.reuniones));
 
+  // Funnel por etapas del pipeline de Custodia (deals abiertos actuales por etapa)
+  const stagesOrdered = stageMap.__ordered || [];
+  const openDealsAll  = deals.filter(d => d.status === 'open');
+  const stageCounts   = {};
+  for (const deal of openDealsAll) {
+    const sid = deal.stage_id;
+    if (sid == null) continue;
+    stageCounts[sid] = (stageCounts[sid] || 0) + 1;
+  }
+  const funnelEtapas = stagesOrdered.map(st => ({
+    etapa: st.name,
+    deals: stageCounts[st.id] || 0,
+  }));
+
   const equipoDealLists = {};
   for (const p of equipo) {
     const ownerDeals = deals.filter(d => String(d.user_id?.value ?? d.user_id) === String(p.ownerId));
@@ -1171,6 +1187,7 @@ async function processPipedrive(deals, period, origenMap, stageMap = {}, activit
       ...equipoDealLists,
     },
     dealsByOrigin,
+    funnelEtapas,
     ventas: { ticket, pipelineVal, ciclo, tasaPerdida, equipo },
     _debug: {
       allOwnerNames:   [...new Set(Object.values(ownerStats).map(s => s.nombre))],
