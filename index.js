@@ -1,11 +1,13 @@
 process.env.TZ = 'America/Mexico_City'; // fuerza timezone México en todo el proceso
 require('dotenv').config();
-const express = require('express');
-const path    = require('path');
-const fs      = require('fs');
+const express     = require('express');
+const compression = require('compression');
+const path        = require('path');
+const fs          = require('fs');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
+app.use(compression());
 app.use(express.static(path.join(__dirname, 'client')));
 app.use(express.json());
 
