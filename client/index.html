@@ -556,6 +556,9 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
             </tbody>
           </table>
         </div>
+        <div style="padding:.75rem .85rem;border-top:1px solid var(--border)">
+          <div class="chart-h-lg"><canvas id="actividadesChart"></canvas></div>
+        </div>
       </div>
     </div>
   </section>
@@ -1233,6 +1236,25 @@ function renderVentas(d){
       <td style="text-align:right">${p.reuniones}</td>
       <td style="text-align:right;font-weight:600">${p.llamadas+p.emails+p.reuniones}</td>
     </tr>`).join('');
+
+  dc('actividades');
+  charts['actividades'] = new Chart(document.getElementById('actividadesChart'), {
+    type: 'bar',
+    data: {
+      labels: v.equipo.map(p => p.nombre),
+      datasets: [
+        { label: 'Llamadas',  data: v.equipo.map(p => p.llamadas),  backgroundColor: C.blue },
+        { label: 'Emails',    data: v.equipo.map(p => p.emails),    backgroundColor: C.green },
+        { label: 'Reuniones', data: v.equipo.map(p => p.reuniones), backgroundColor: C.yellow },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } },
+      plugins: { legend: { position: 'bottom' }, title: { display: true, text: 'Actividades realizadas por ejecutivo' } },
+    },
+  });
 }
 
 // ── SUMMARY ───────────────────────────────────────────────────────────────────
