@@ -1328,7 +1328,7 @@ function renderSummary(d) {
   const globalRate = first > 0 ? ((last / first) * 100).toFixed(1) + '%' : '–';
   setText('f-rate', globalRate);
   const fdbg = document.getElementById('funnel-debug');
-  if (fdbg) fdbg.textContent = 'debug → funnelEtapas: ' + JSON.stringify(etapas) + ' | stagesOrdered: ' + JSON.stringify(d._debug?.stagesOrdered || []);
+  if (fdbg) fdbg.textContent = 'debug → funnelEtapas: ' + JSON.stringify(etapas) + ' | stagesOrdered: ' + JSON.stringify(d._debug?.stagesOrdered || []) + ' | stagesError: ' + JSON.stringify(d._debug?.stagesError || null) + ' | stagesPid: ' + JSON.stringify(d._debug?.stagesPid ?? null);
 
   // Métricas de SQL en sección de gráfico
   setText('sql-totales',  fmt(d.sqlsTotales));

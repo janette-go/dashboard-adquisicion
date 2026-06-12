@@ -764,11 +764,21 @@ async function fetchPipelineStages() {
   if (_stageCache) return _stageCache;
   const token = process.env.PIPEDRIVE_API_TOKEN;
   const pid   = process.env.PIPEDRIVE_PIPELINE_ID || '';
-  const resp  = await fetch(`https://api.pipedrive.com/v1/stages?pipeline_id=${pid}&api_token=${token}`);
-  if (!resp.ok) return {};
+  const url   = `https://api.pipedrive.com/v1/stages?pipeline_id=${pid}&api_token=${token}`;
+  let resp;
+  try {
+    resp = await fetch(url);
+  } catch (e) {
+    console.error('[fetchPipelineStages] fetch error', e.message);
+    return { __error: 'fetch_failed: ' + e.message, __pid: pid };
+  }
+  if (!resp.ok) {
+    console.error('[fetchPipelineStages] HTTP', resp.status);
+    return { __error: 'http_' + resp.status, __pid: pid };
+  }
   const json  = await resp.json();
   const stages = (json.data || []).sort((a, b) => a.order_nr - b.order_nr);
-  if (!stages.length) return {};
+  if (!stages.length) return { __error: 'no_stages', __pid: pid, __raw: json };
   const cache = Object.fromEntries(stages.map(s => [s.id, s.name]));
   cache.__ordered = stages.map(s => ({ id: s.id, name: s.name }));
   _stageCache = cache;
@@ -1194,6 +1204,8 @@ async function processPipedrive(deals, period, origenMap, stageMap = {}, activit
     _debug: {
       allOwnerNames:   [...new Set(Object.values(ownerStats).map(s => s.nombre))],
       stagesOrdered,
+      stagesError: stageMap.__error || null,
+      stagesPid:   stageMap.__pid ?? null,
       funnelEtapas,
       activitiesFetched: activities.length,
       activitiesSample: activities.slice(0, 3).map(a => ({ user_id: a.user_id, type: a.type })),
