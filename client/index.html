@@ -433,6 +433,7 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
       <span class="sb-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="12" width="4" height="9" rx="1"/><rect x="10" y="7" width="4" height="14" rx="1"/><rect x="17" y="3" width="4" height="18" rx="1"/></svg></span>
       Resumen ejecutivo
     </a>
+    <a class="sb-item" href="#ventas" onclick="sbClick(this)"><span class="sb-icon">💰</span>Ventas · Equipo</a>
     <a class="sb-item" href="#sqls-mes" onclick="sbClick(this)">
       <!-- 🎯 Diana / target -->
       <span class="sb-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/><path d="M22 12h-4M6 12H2M12 6V2M12 22v-4"/></svg></span>
@@ -505,6 +506,48 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
             <div class="exec-cell"><p class="ec-val" id="m-costo-sql">–</p><p class="ec-lbl"><span class="tip">Costo por SQL<span class="tip-icon">ⓘ</span><span class="tip-box"><b>Cálculo:</b> Gasto Ads ÷ (SQLs Paid Media + SQLs Orgánicos).<br>Solo considera canales pagados y orgánicos para atribuir el costo correctamente.</span></span></p></div>
             <div class="exec-cell"><p class="ec-val" id="m-s2w"      >–</p><p class="ec-lbl"><span class="tip">SQL → Cliente<span class="tip-icon">ⓘ</span><span class="tip-box"><b>Cálculo:</b> (Clientes ganados ÷ SQLs totales) × 100.<br>Tasa de cierre del pipeline de ventas.</span></span></p></div>
           </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="ventas">
+    <div class="card">
+      <div class="card-hdr">
+        <span class="card-title">Ventas · Equipo</span>
+        <span class="card-src"><span class="src-dot pipe live"></span>Pipedrive</span>
+      </div>
+      <div class="exec-rows">
+        <div class="exec-row">
+          <div class="exec-row-label">Negocio</div>
+          <div class="exec-cells">
+            <div class="exec-cell"><p class="ec-val" id="v-ticket" style="color:var(--green)">—</p><p class="ec-lbl">Ticket promedio</p></div>
+            <div class="exec-cell"><p class="ec-val" id="v-pipeline-val" style="color:var(--blue)">—</p><p class="ec-lbl">Valor pipeline activo</p></div>
+            <div class="exec-cell"><p class="ec-val" id="v-ciclo" style="color:var(--text)">—</p><p class="ec-lbl">Ciclo de venta (días)</p></div>
+            <div class="exec-cell"><p class="ec-val" id="v-perdida" style="color:var(--red)">—</p><p class="ec-lbl">Tasa de pérdida</p></div>
+          </div>
+        </div>
+      </div>
+      <div style="border-top:1px solid var(--border)">
+        <div style="padding:.5rem .85rem;font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);background:var(--gray-lt);border-bottom:1px solid var(--border)">Productividad del equipo</div>
+        <div style="overflow-x:auto">
+          <table id="team-table" style="min-width:600px">
+            <thead>
+              <tr>
+                <th>Vendedor</th>
+                <th style="text-align:right">Deals activos</th>
+                <th style="text-align:right">Deals ganados</th>
+                <th style="text-align:right">Deals perdidos</th>
+                <th style="text-align:right">Llamadas</th>
+                <th style="text-align:right">Emails</th>
+                <th style="text-align:right">Reuniones</th>
+                <th style="text-align:right">Total actividades</th>
+              </tr>
+            </thead>
+            <tbody id="team-body">
+              <tr><td colspan="8" style="text-align:center;color:var(--muted);padding:1rem">Cargando...</td></tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
@@ -1079,7 +1122,7 @@ function sbClick(el) {
   el.classList.add('active');
 }
 window.addEventListener('scroll', () => {
-  const ids = ['resumen','sqls-mes','gasto-sqls','origen','gsc','campanas','atencion'];
+  const ids = ['resumen','ventas','sqls-mes','gasto-sqls','origen','gsc','campanas','atencion'];
   let current = 'resumen';
   ids.forEach(id => {
     const el = document.getElementById(id);
@@ -1137,6 +1180,7 @@ async function loadData() {
   _dealLists    = data.dealLists    || {};
   _dealsByOrigin = data.dealsByOrigin || {};
   renderSummary(data);
+  renderVentas(data);
   if (typeof renderInsights === 'function') renderInsights(data);
   renderCharts(data);
   renderGSC(data);
@@ -1151,6 +1195,32 @@ function setText(id, v) { const e = document.getElementById(id); if (e) e.textCo
 const fmt  = n  => n != null ? n.toLocaleString('es-MX') : '–';
 const fmtP = n  => n != null ? n.toFixed(1) + '%' : '–';
 const fmtM = n  => n != null ? '$' + n.toLocaleString('es-MX') : '–';
+
+// ── VENTAS ────────────────────────────────────────────────────────────────────
+function renderVentas(d){
+  const v=d.ventas||{};
+  if(!v) return;
+  const fmtM=n=>n!=null?'$'+n.toLocaleString('es-MX'):'—';
+  const fmtP=n=>n!=null?n.toFixed(1)+'%':'—';
+  const setText=(id,val)=>{const e=document.getElementById(id);if(e)e.textContent=val;};
+  setText('v-ticket', v.ticket!=null ? fmtM(v.ticket) : '—');
+  setText('v-pipeline-val', v.pipelineVal!=null ? fmtM(v.pipelineVal) : '—');
+  setText('v-ciclo', v.ciclo!=null ? v.ciclo+' días' : '—');
+  setText('v-perdida', v.tasaPerdida!=null ? fmtP(v.tasaPerdida) : '—');
+  const tbody=document.getElementById('team-body');
+  if(!tbody||!v.equipo) return;
+  tbody.innerHTML=v.equipo.map(p=>`
+    <tr>
+      <td style="font-weight:600">${p.nombre}</td>
+      <td style="text-align:right">${p.activos}</td>
+      <td style="text-align:right;color:var(--green);font-weight:600">${p.ganados}</td>
+      <td style="text-align:right;color:var(--red)">${p.perdidos}</td>
+      <td style="text-align:right">${p.llamadas}</td>
+      <td style="text-align:right">${p.emails}</td>
+      <td style="text-align:right">${p.reuniones}</td>
+      <td style="text-align:right;font-weight:600">${p.llamadas+p.emails+p.reuniones}</td>
+    </tr>`).join('');
+}
 
 // ── SUMMARY ───────────────────────────────────────────────────────────────────
 function renderSummary(d) {

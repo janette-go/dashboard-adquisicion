@@ -168,6 +168,17 @@ const MOCK = {
     { date: '15 mayo 2026', type: 'Anuncio',     campaign: 'Brand',   desc: 'Adición de extensión de sitelinks con 4 LPs adicionales' },
   ],
   campaigns: mockCampaigns,
+  ventas: {
+    ticket: 18500,
+    pipelineVal: 412000,
+    ciclo: 24,
+    tasaPerdida: 18.2,
+    equipo: [
+      { nombre: 'Ana López',    activos: 14, ganados: 5, perdidos: 2, llamadas: 32, emails: 48, reuniones: 9 },
+      { nombre: 'Carlos Ruiz',  activos: 9,  ganados: 3, perdidos: 1, llamadas: 21, emails: 35, reuniones: 6 },
+      { nombre: 'Marina Sosa',  activos: 11, ganados: 1, perdidos: 3, llamadas: 18, emails: 27, reuniones: 4 },
+    ],
+  },
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -888,6 +899,24 @@ async function fetchPipedriveDeals() {
   return all;
 }
 
+async function fetchPipedriveActivities() {
+  const token = process.env.PIPEDRIVE_API_TOKEN;
+  const base  = 'https://api.pipedrive.com/v1';
+  let all = [], start = 0;
+
+  while (true) {
+    const url  = `${base}/activities?api_token=${token}&limit=500&start=${start}`;
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error(`Pipedrive ${resp.status} ${resp.statusText}`);
+    const json = await resp.json();
+    if (!json.success || !Array.isArray(json.data) || !json.data.length) break;
+    all   = all.concat(json.data);
+    start += 500;
+    if (!json.additional_data?.pagination?.more_items_in_collection) break;
+  }
+  return all;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // STATE TRACKING: registra cuándo se detectó por primera vez cada calificación
 // ─────────────────────────────────────────────────────────────────────────────
@@ -956,7 +985,7 @@ function updateQualState(deals, fieldCalLead, fieldCalSQL) {
   return state;
 }
 
-async function processPipedrive(deals, period, origenMap, stageMap = {}) {
+async function processPipedrive(deals, period, origenMap, stageMap = {}, activities = []) {
   const { start, end, year } = parsePeriod(period);
   const fieldCalLead = process.env.PIPEDRIVE_FIELD_CALIFICACION_LEAD || '';
   const fieldCalSQL  = process.env.PIPEDRIVE_FIELD_CALIFICACION_SQL  || '';
@@ -1040,6 +1069,66 @@ async function processPipedrive(deals, period, origenMap, stageMap = {}) {
     }
   }
 
+  // ── VENTAS · EQUIPO ──────────────────────────────────────────────────────
+  const allWonDeals  = deals.filter(d => d.status === 'won');
+  const allLostDeals = deals.filter(d => d.status === 'lost');
+  const allOpenDeals = deals.filter(d => d.status === 'open');
+
+  const wonValueTotal = allWonDeals.reduce((sum, d) => sum + (Number(d.value) || 0), 0);
+  const ticket = allWonDeals.length > 0
+    ? Math.round(wonValueTotal / allWonDeals.length)
+    : null;
+
+  const pipelineVal = allOpenDeals.reduce((sum, d) => sum + (Number(d.value) || 0), 0);
+
+  const cicloDias = allWonDeals
+    .map(d => {
+      if (!d.add_time || !d.close_time) return null;
+      const ms = new Date(d.close_time) - new Date(d.add_time);
+      return ms > 0 ? ms / (1000 * 60 * 60 * 24) : null;
+    })
+    .filter(v => v != null);
+  const ciclo = cicloDias.length > 0
+    ? Math.round(cicloDias.reduce((a, b) => a + b, 0) / cicloDias.length)
+    : null;
+
+  const totalDealsForLoss = allWonDeals.length + allLostDeals.length + allOpenDeals.length;
+  const tasaPerdida = totalDealsForLoss > 0
+    ? parseFloat((allLostDeals.length / totalDealsForLoss * 100).toFixed(1))
+    : null;
+
+  // Actividades por owner y tipo
+  const activityCountByOwner = {};
+  for (const act of activities) {
+    const ownerId = act.user_id;
+    if (ownerId == null) continue;
+    if (!activityCountByOwner[ownerId]) activityCountByOwner[ownerId] = { llamadas: 0, emails: 0, reuniones: 0 };
+    const type = (act.type || '').toLowerCase();
+    if (/call|llamada/.test(type)) activityCountByOwner[ownerId].llamadas++;
+    else if (/email|mail/.test(type)) activityCountByOwner[ownerId].emails++;
+    else if (/meeting|reunion|reunión/.test(type)) activityCountByOwner[ownerId].reuniones++;
+  }
+
+  const ownerStats = {};
+  for (const deal of deals) {
+    const ownerId = deal.user_id?.value ?? deal.user_id;
+    if (ownerId == null) continue;
+    if (!ownerStats[ownerId]) {
+      ownerStats[ownerId] = {
+        nombre: deal.owner_name || deal.user_id?.name || '–',
+        activos: 0, ganados: 0, perdidos: 0,
+      };
+    }
+    if (deal.status === 'open') ownerStats[ownerId].activos++;
+    else if (deal.status === 'won') ownerStats[ownerId].ganados++;
+    else if (deal.status === 'lost') ownerStats[ownerId].perdidos++;
+  }
+
+  const equipo = Object.entries(ownerStats).map(([ownerId, stats]) => {
+    const acts = activityCountByOwner[ownerId] || { llamadas: 0, emails: 0, reuniones: 0 };
+    return { ...stats, ...acts };
+  });
+
   return {
     pipeline:      { leads: leadDeals.length, sqls: sqlDeals.length, ganados: wonDeals.length },
     origenSqls:    groupByOrigenSQL(sqlDeals, fieldOrigen, origenMap),
@@ -1062,6 +1151,7 @@ async function processPipedrive(deals, period, origenMap, stageMap = {}) {
       sqlsOrg:  buildDealSummaries(sqlsOrgDeals, fieldOrigen, origenMap, stageMap),
     },
     dealsByOrigin,
+    ventas: { ticket, pipelineVal, ciclo, tasaPerdida, equipo },
     _debug: {
       totalFetched:    deals.length,
       updatedInPeriod_update: updatedInPeriod.length,  // filtrado por update_time
@@ -1660,8 +1750,8 @@ async function fetchAllData(period) {
                 console.error('[Google Ads raw]', JSON.stringify(e, Object.getOwnPropertyNames(e), 2));
               }),
 
-    pipeOk && Promise.all([fetchPipedriveDeals(), getPipedriveOrigenMap(), fetchPipelineStages()])
-               .then(async ([deals, origenMap, stageMap]) => { pipeData = await processPipedrive(deals, period, origenMap, stageMap); })
+    pipeOk && Promise.all([fetchPipedriveDeals(), getPipedriveOrigenMap(), fetchPipelineStages(), fetchPipedriveActivities().catch(() => [])])
+               .then(async ([deals, origenMap, stageMap, activities]) => { pipeData = await processPipedrive(deals, period, origenMap, stageMap, activities); })
                .catch(e => { pipeError = e.message; console.error('[Pipedrive]', e.message); }),
   ].filter(Boolean));
 
@@ -1729,6 +1819,7 @@ async function fetchAllData(period) {
     upsell:          upsellData,
     dealLists:       pipeData?.dealLists    ?? { leads:[], sqls:[], ganados:[], sqlsPaid:[], sqlsOrg:[] },
     dealsByOrigin:   pipeData?.dealsByOrigin ?? {},
+    ventas:          pipeData?.ventas        ?? mk.ventas,
     periodLabel:     parsePeriod(period).periodLabel,
     ...(adsError   ? { _adsError:   adsError          } : {}),
     ...(pipeError  ? { _pipeError:  pipeError         } : {}),
