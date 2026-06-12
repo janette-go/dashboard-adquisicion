@@ -765,11 +765,13 @@ async function fetchPipelineStages() {
   const token = process.env.PIPEDRIVE_API_TOKEN;
   const pid   = process.env.PIPEDRIVE_PIPELINE_ID || '';
   const resp  = await fetch(`https://api.pipedrive.com/v1/stages?pipeline_id=${pid}&api_token=${token}`);
-  if (!resp.ok) return (_stageCache = {});
+  if (!resp.ok) return {};
   const json  = await resp.json();
   const stages = (json.data || []).sort((a, b) => a.order_nr - b.order_nr);
-  _stageCache = Object.fromEntries(stages.map(s => [s.id, s.name]));
-  _stageCache.__ordered = stages.map(s => ({ id: s.id, name: s.name }));
+  if (!stages.length) return {};
+  const cache = Object.fromEntries(stages.map(s => [s.id, s.name]));
+  cache.__ordered = stages.map(s => ({ id: s.id, name: s.name }));
+  _stageCache = cache;
   return _stageCache;
 }
 
