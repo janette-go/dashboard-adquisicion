@@ -1313,7 +1313,7 @@ function renderSummary(d) {
   const etapas = d.funnelEtapas || [];
   if (funnelSvg) {
     funnelSvg.innerHTML = etapas.length
-      ? svgFunnelDark(etapas.map((e, i) => ({ l: e.etapa, v: e.deals, c: C.pal[i % C.pal.length] })), 700, 310)
+      ? svgFunnelDark(etapas.map((e, i) => ({ l: e.etapa, v: e.deals, c: C.pal[i % C.pal.length] })), 640, 320)
       : '<p style="color:var(--muted);font-size:11px;padding:1rem">Sin etapas del pipeline detectadas (revisa PIPEDRIVE_PIPELINE_ID)</p>';
   }
   const first = etapas[0]?.deals || 0;
@@ -2853,27 +2853,32 @@ function svgDonut(items, size) {
 }
 
 function svgFunnelDark(steps, w, h) {
-  w = w || 700; h = h || 290;
+  w = w || 640; h = h || 320;
   const valid = steps.filter(s => s.v >= 0);
   if (!valid.length) return '';
   const max = Math.max(...valid.map(s => s.v), 1);
   const n = valid.length;
-  const rowH = h / n;
-  const maxBW = w * 0.86;
-  const minBW = maxBW * 0.18;
-  const widths = valid.map(s => Math.max(minBW, (s.v / max) * maxBW));
+  const gap = 6;
+  const top = 28;
+  const rowH = (h - top) / n;
+  const segH = rowH - gap;
+  const maxBW = w * 0.92;
+  const minBW = w * 0.22;
+  // Escala con raíz cuadrada para que el angostamiento sea visualmente proporcional
+  const widths = valid.map(s => minBW + (Math.sqrt(s.v / max)) * (maxBW - minBW));
   const rows = valid.map((s, i) => {
     const wTop = widths[i];
-    const wBot = i < n - 1 ? widths[i + 1] : widths[i] * 0.7;
-    const y0 = i * rowH + 16;
-    const y1 = (i + 1) * rowH + 12;
+    const wBot = i < n - 1 ? widths[i + 1] : widths[i] * 0.82;
+    const y0 = top + i * rowH;
+    const y1 = y0 + segH;
     const xTop0 = (w - wTop) / 2, xTop1 = (w + wTop) / 2;
     const xBot0 = (w - wBot) / 2, xBot1 = (w + wBot) / 2;
     const conv = i > 0 && valid[i-1].v > 0 ? Math.round(s.v / valid[i-1].v * 100) : null;
     return `
+      ${conv != null ? `<text x="${w/2}" y="${y0 - 8}" text-anchor="middle" font-size="11" font-weight="600" fill="${conv >= 30 ? '#4ade80' : '#fbbf24'}">${conv}% conversión</text>` : ''}
       <polygon points="${xTop0},${y0} ${xTop1},${y0} ${xBot1},${y1} ${xBot0},${y1}" fill="${s.c}"/>
-      <text x="${w/2}" y="${(y0+y1)/2 + 5}" text-anchor="middle" font-size="14" font-weight="700" fill="#0c0c0c">${s.v.toLocaleString('es-MX')} · ${s.l}</text>
-      ${conv != null ? `<text x="${w/2}" y="${y0 - 4}" text-anchor="middle" font-size="10" font-weight="600" fill="${conv > 20 ? '#4ade80' : '#fbbf24'}">↓ ${conv}%</text>` : ''}`;
+      <text x="${w/2}" y="${(y0+y1)/2 - 4}" text-anchor="middle" font-size="17" font-weight="800" fill="#0c0c0c">${s.v.toLocaleString('es-MX')}</text>
+      <text x="${w/2}" y="${(y0+y1)/2 + 14}" text-anchor="middle" font-size="11" font-weight="600" fill="rgba(12,12,12,0.65)">${s.l}</text>`;
   }).join('');
   return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" style="max-width:100%" xmlns="http://www.w3.org/2000/svg" font-family="'Google Sans','Segoe UI',sans-serif">${rows}</svg>`;
 }
