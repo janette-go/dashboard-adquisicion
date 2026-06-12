@@ -761,7 +761,7 @@ async function fetchAuctionFromSheets() {
 // Cache de etapas del pipeline de Pipedrive
 let _stageCache = null;
 async function fetchPipelineStages() {
-  if (_stageCache) return _stageCache;
+  if (_stageCache && _stageCache.__ordered && _stageCache.__ordered.length) return _stageCache;
   const token = process.env.PIPEDRIVE_API_TOKEN;
   const pid   = process.env.PIPEDRIVE_PIPELINE_ID || '';
   const url   = `https://api.pipedrive.com/v1/stages?pipeline_id=${pid}&api_token=${token}`;
