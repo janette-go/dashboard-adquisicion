@@ -453,22 +453,31 @@ async function fetchGA4Data(period) {
 
   // Categoriza fuente+medio en canales significativos para Detecta
   const AI_KEYS = ['perplexity','chatgpt','claude','gemini','copilot','phind','openai','anthropic','bard','you.com','bing chat'];
+  const SOCIAL_SITES = ['facebook','instagram','tiktok','twitter','x.com','youtube','pinterest','threads','reddit'];
+
   function categorize(src, med) {
     const s = (src || '').toLowerCase();
     const m = (med || '').toLowerCase();
+    const isPaid   = ['cpc','ppc','paid'].includes(m) || m === 'paid search' || m.startsWith('paid');
+    const isSearch = s.includes('google') || s.includes('bing') || s.includes('yahoo') || s.includes('duckduckgo');
+    const isSocialSite = SOCIAL_SITES.some(k => s.includes(k));
+
     if (AI_KEYS.some(k => s.includes(k)))                                   return 'IA';
-    if (s.includes('linkedin') && (m.includes('cpc') || m.includes('paid'))) return 'LinkedIn · Paid';
+    if (s.includes('linkedin') && isPaid)                                    return 'LinkedIn · Paid';
     if (s.includes('linkedin'))                                              return 'LinkedIn · Orgánico';
-    if (['cpc','ppc','paid'].includes(m) || m === 'paid search')             return 'Paid Search';
+    if (isPaid && isSocialSite)                                              return 'Paid Social';
+    if (isPaid && isSearch)                                                  return 'Paid Search';
+    if (isPaid)                                                              return 'Paid Search';
     if (['email','newsletter','mailing','correo'].some(e => m.includes(e))) return 'Mailing';
     if (m === 'organic' || m === 'organic search')                          return 'Orgánico';
     if (s === '(direct)' || (s === '' && (m === '(none)' || m === '')))     return 'Directo';
     if (m === 'display' || m === 'banner')                                  return 'Display';
-    if (m === 'referral' || m === 'social' || m === 'organic social')       return 'Referral / Social';
+    if (isSocialSite || m === 'social' || m === 'organic social')           return 'Organic Social';
+    if (m === 'referral')                                                    return 'Referral';
     return 'Otro';
   }
 
-  const CHANNEL_ORDER = ['IA','Paid Search','LinkedIn · Paid','LinkedIn · Orgánico','Orgánico','Mailing','Directo','Display','Referral / Social','Otro'];
+  const CHANNEL_ORDER = ['IA','Paid Search','Paid Social','LinkedIn · Paid','LinkedIn · Orgánico','Orgánico','Organic Social','Mailing','Directo','Display','Referral','Otro'];
 
   try {
     const [summaryRes, sourceRes, pagesRes] = await Promise.all([
