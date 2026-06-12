@@ -526,14 +526,11 @@ section{scroll-margin-top:calc(var(--header) + 8px)}
         <span class="card-src"><span class="src-dot pipe live"></span>Pipedrive</span>
       </div>
       <div style="padding:.85rem">
-        <div class="funnel-steps" id="funnel-steps">
-          <div class="funnel-step"><p class="fs-val">–</p><p class="fs-lbl">Cargando...</p></div>
-        </div>
+        <div id="funnel-svg" style="display:flex;justify-content:center"></div>
         <div class="funnel-rate">
           <span class="fr-val" id="f-rate">–</span>
           <span class="fr-lbl"> tasa de conversión global (1ª etapa → última etapa)</span>
         </div>
-        <div id="funnel-debug" style="font-size:9px;color:var(--muted);margin-top:.5rem;word-break:break-all"></div>
       </div>
     </div>
   </section>
@@ -1311,24 +1308,17 @@ function renderSummary(d) {
   setText('m-s2w', s2w);
 
   // Funnel de conversión por etapas del pipeline de Custodia
-  const funnelSteps = document.getElementById('funnel-steps');
+  const funnelSvg = document.getElementById('funnel-svg');
   const etapas = d.funnelEtapas || [];
-  if (funnelSteps) {
-    if (etapas.length) {
-      funnelSteps.innerHTML = etapas.map((e, i) => `
-        ${i > 0 ? '<span class="funnel-arr">→</span>' : ''}
-        <div class="funnel-step"><p class="fs-val">${fmt(e.deals)}</p><p class="fs-lbl">${e.etapa}</p></div>
-      `).join('');
-    } else {
-      funnelSteps.innerHTML = '<div class="funnel-step"><p class="fs-val">–</p><p class="fs-lbl">Sin etapas del pipeline detectadas (revisa PIPEDRIVE_PIPELINE_ID)</p></div>';
-    }
+  if (funnelSvg) {
+    funnelSvg.innerHTML = etapas.length
+      ? svgFunnelDark(etapas.map((e, i) => ({ l: e.etapa, v: e.deals, c: C.pal[i % C.pal.length] })), 900, 200)
+      : '<p style="color:var(--muted);font-size:11px;padding:1rem">Sin etapas del pipeline detectadas (revisa PIPEDRIVE_PIPELINE_ID)</p>';
   }
   const first = etapas[0]?.deals || 0;
   const last  = etapas[etapas.length - 1]?.deals || 0;
   const globalRate = first > 0 ? ((last / first) * 100).toFixed(1) + '%' : '–';
   setText('f-rate', globalRate);
-  const fdbg = document.getElementById('funnel-debug');
-  if (fdbg) fdbg.textContent = 'debug → funnelEtapas: ' + JSON.stringify(etapas) + ' | stagesOrdered: ' + JSON.stringify(d._pipeDebug?.stagesOrdered || []) + ' | stagesError: ' + JSON.stringify(d._pipeDebug?.stagesError || null) + ' | stagesPid: ' + JSON.stringify(d._pipeDebug?.stagesPid ?? null);
 
   // Métricas de SQL en sección de gráfico
   setText('sql-totales',  fmt(d.sqlsTotales));
@@ -2859,6 +2849,29 @@ function svgDonut(items, size) {
     ${paths}
     <circle cx="${cx}" cy="${cy}" r="${r}" fill="white"/>
   </svg>`;
+}
+
+function svgFunnelDark(steps, w, h) {
+  w = w || 900; h = h || 200;
+  const valid = steps.filter(s => s.v >= 0);
+  if (!valid.length) return '';
+  const max = Math.max(...valid.map(s => s.v), 1);
+  const n = valid.length;
+  const gap = 10;
+  const bw = (w - gap * (n - 1)) / n;
+  const maxH = h - 50;
+  const bars = valid.map((s, i) => {
+    const bh = Math.max(6, Math.round(s.v / max * maxH));
+    const x = i * (bw + gap);
+    const y = h - 40 - bh;
+    const conv = i > 0 && valid[i-1].v > 0 ? Math.round(s.v / valid[i-1].v * 100) : null;
+    return `
+      <rect x="${x}" y="${y}" width="${bw}" height="${bh}" rx="4" fill="${s.c}"/>
+      <text x="${x + bw/2}" y="${y - 8}" text-anchor="middle" font-size="16" font-weight="700" fill="#fff">${s.v.toLocaleString('es-MX')}</text>
+      ${conv != null ? `<text x="${x + bw/2}" y="${y - 26}" text-anchor="middle" font-size="11" font-weight="600" fill="${conv > 20 ? '#4ade80' : '#fbbf24'}">${conv}%</text>` : ''}
+      <text x="${x + bw/2}" y="${h - 18}" text-anchor="middle" font-size="10" fill="rgba(255,255,255,0.55)">${s.l}</text>`;
+  }).join('');
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" style="max-width:100%" xmlns="http://www.w3.org/2000/svg" font-family="'Google Sans','Segoe UI',sans-serif">${bars}</svg>`;
 }
 
 function svgFunnel(steps, w, h) {
