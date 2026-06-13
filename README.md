@@ -4,15 +4,17 @@ Dashboard interno para visualizar métricas de adquisición de Detecta Security:
 
 ## Por qué existe
 
-Antes de este dashboard, las métricas de adquisición vivían dispersas entre Google Ads, Pipedrive, GA4, Search Console y hojas de cálculo — revisarlas implicaba entrar a cada plataforma por separado y armar reportes a mano. Este dashboard centraliza esa información en una sola vista, conectando cada fuente vía API para tener datos actualizados sin trabajo manual, y sirve como base para la toma de decisiones de marketing (presupuesto, campañas, seguimiento de leads) y para las juntas diarias.
+Su propósito principal es **cruzar métricas de distintas fuentes** (Google Ads, Pipedrive, GA4, Search Console, Sheets) que antes vivían aisladas en cada plataforma, para responder preguntas que ninguna herramienta por sí sola contesta: qué campañas generan los SQLs que sí cierran, cómo se relaciona el tráfico orgánico con el pipeline, etc.
+
+Se construyó a la medida (en vez de usar Looker Studio u otra herramienta de BI genérica) **pensando en escalabilidad por diseño**: cada fuente se integra como un módulo independiente, lo que permite ir agregando nuevas métricas, cruces y vistas sin estar limitado por los conectores o el modelo de datos de una herramienta de terceros.
 
 ## Capturas
 
 ### Resumen ejecutivo
 ![Resumen ejecutivo](docs/screenshots/overview.png)
 
-### Origen de SQLs y embudo de conversión
-![Origen de SQLs](docs/screenshots/sqls-por-mes.png)
+### Embudo de conversión
+![Embudo de conversión](docs/screenshots/funnel.png)
 
 ## Stack
 
