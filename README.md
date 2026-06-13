@@ -2,6 +2,20 @@
 
 Dashboard interno para visualizar métricas de adquisición de Detecta Security: campañas de Google Ads, pipeline de ventas (Pipedrive), tráfico web (Google Analytics 4), posicionamiento orgánico (Search Console), tablero operativo desde Google Sheets e informes de marketing en PDF.
 
+## Capturas
+
+### Resumen ejecutivo
+![Resumen ejecutivo](docs/screenshots/overview.png)
+
+### Origen de SQLs y embudo de conversión
+![Origen de SQLs](docs/screenshots/sqls-por-mes.png)
+
+### Mapa de campañas
+![Mapa de campañas](docs/screenshots/mapa-campanas.png)
+
+### Rendimiento del sitio (GA4)
+![Rendimiento sitio web](docs/screenshots/ga4.png)
+
 ## Stack
 
 - Node.js + Express
