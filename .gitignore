@@ -3,3 +3,16 @@ node_modules/
 deals_state.json
 *.log
 .claude/
+
+# Scripts y outputs de revisiones ad-hoc
+query_budget.js
+query_history.js
+review_kw.js
+budget_review.json
+campaigns_review.json
+history_data.json
+review_kw_output.json
+
+# Assets sueltos
+Copia de Isotipo (1).png
+Gemini_Generated_Image_tbrnjztbrnjztbrn.png
