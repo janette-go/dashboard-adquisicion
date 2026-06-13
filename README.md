@@ -17,6 +17,8 @@ Anthropic API ──────┘              └──► Informe PDF
 
 Cada fuente se integra como un módulo independiente del backend, lo que permite agregar nuevas métricas y cruces sin depender del modelo de datos de una herramienta de terceros.
 
+Desde el dashboard se puede generar y descargar un **informe de marketing en PDF** con los datos del periodo seleccionado: portada, resumen ejecutivo, gráficas y conclusiones.
+
 ## Capturas
 
 ### Resumen ejecutivo
