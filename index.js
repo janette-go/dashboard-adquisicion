@@ -1959,14 +1959,46 @@ app.post('/api/keyword-planner', async (req, res) => {
 
     const COMP = { 0: '–', 1: 'Baja', 2: 'Media', 3: 'Alta' };
     const metrics = response?.metrics || response?.keyword_metrics || [];
-    const results = metrics.map((m, i) => ({
-      keyword:    keywords[i],
-      avgMonthly: m.avg_monthly_searches ?? null,
-      competition:COMP[m.competition] ?? '–',
-      compIndex:  m.competition_index ?? null,
-      bidLow:     m.low_top_of_page_bid_micros ? parseFloat((m.low_top_of_page_bid_micros / 1e6).toFixed(2)) : null,
-      bidHigh:    m.high_top_of_page_bid_micros ? parseFloat((m.high_top_of_page_bid_micros / 1e6).toFixed(2)) : null,
-    }));
+    const results = metrics.map((m, i) => {
+      const monthly = (m.monthly_search_volumes || [])
+        .map(v => ({ year: Number(v.year), month: Number(v.month), searches: Number(v.monthly_searches) || 0 }))
+        .sort((a, b) => a.year - b.year || a.month - b.month);
+
+      const last = monthly.slice(-12);
+      const n = last.length;
+
+      // Cambio últimos 3 meses: promedio de los últimos 3 vs los 3 anteriores
+      let threeMonthChange = null;
+      if (n >= 6) {
+        const recent = last.slice(n - 3);
+        const prev   = last.slice(n - 6, n - 3);
+        const avgRecent = recent.reduce((a, b) => a + b.searches, 0) / 3;
+        const avgPrev   = prev.reduce((a, b) => a + b.searches, 0) / 3;
+        threeMonthChange = avgPrev > 0 ? Math.round((avgRecent - avgPrev) / avgPrev * 100) : null;
+      }
+
+      // Cambio interanual: último mes vs mismo mes hace un año
+      let yoyChange = null;
+      if (n >= 1) {
+        const lastEntry = last[n - 1];
+        const yearAgo = monthly.find(v => v.year === lastEntry.year - 1 && v.month === lastEntry.month);
+        if (yearAgo && yearAgo.searches > 0) {
+          yoyChange = Math.round((lastEntry.searches - yearAgo.searches) / yearAgo.searches * 100);
+        }
+      }
+
+      return {
+        keyword:    keywords[i],
+        avgMonthly: m.avg_monthly_searches ?? null,
+        competition:COMP[m.competition] ?? '–',
+        compIndex:  m.competition_index ?? null,
+        bidLow:     m.low_top_of_page_bid_micros ? parseFloat((m.low_top_of_page_bid_micros / 1e6).toFixed(2)) : null,
+        bidHigh:    m.high_top_of_page_bid_micros ? parseFloat((m.high_top_of_page_bid_micros / 1e6).toFixed(2)) : null,
+        monthly:    last.map(v => v.searches),
+        threeMonthChange,
+        yoyChange,
+      };
+    });
 
     console.log('[kw-planner] results:', results.length);
     res.json({ results });
