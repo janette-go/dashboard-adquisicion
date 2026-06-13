@@ -1105,19 +1105,27 @@ async function processPipedrive(deals, period, origenMap, stageMap = {}, activit
     }
   }
 
-  // ── VENTAS · EQUIPO ──────────────────────────────────────────────────────
-  const allWonDeals  = deals.filter(d => d.status === 'won');
-  const allLostDeals = deals.filter(d => d.status === 'lost');
-  const allOpenDeals = deals.filter(d => d.status === 'open');
+  // ── VENTAS · EQUIPO (filtrado por periodo seleccionado) ─────────────────
+  // wonDeals ya está filtrado por won_time dentro del periodo
+  const lostDealsPeriod = deals.filter(d => {
+    if (d.status !== 'lost' || !d.close_time) return false;
+    const closeStr = d.close_time.slice(0, 10);
+    return closeStr >= startStr && closeStr <= endStr;
+  });
+  const openDealsPeriod = deals.filter(d => {
+    if (d.status !== 'open') return false;
+    const addStr = (d.add_time || '').slice(0, 10);
+    return addStr >= startStr && addStr <= endStr;
+  });
 
-  const wonValueTotal = allWonDeals.reduce((sum, d) => sum + (Number(d.value) || 0), 0);
-  const ticket = allWonDeals.length > 0
-    ? Math.round(wonValueTotal / allWonDeals.length)
+  const wonValueTotal = wonDeals.reduce((sum, d) => sum + (Number(d.value) || 0), 0);
+  const ticket = wonDeals.length > 0
+    ? Math.round(wonValueTotal / wonDeals.length)
     : null;
 
-  const pipelineVal = allOpenDeals.reduce((sum, d) => sum + (Number(d.value) || 0), 0);
+  const pipelineVal = openDealsPeriod.reduce((sum, d) => sum + (Number(d.value) || 0), 0);
 
-  const cicloDias = allWonDeals
+  const cicloDias = wonDeals
     .map(d => {
       if (!d.add_time || !d.close_time) return null;
       const ms = new Date(d.close_time) - new Date(d.add_time);
@@ -1128,14 +1136,18 @@ async function processPipedrive(deals, period, origenMap, stageMap = {}, activit
     ? Math.round(cicloDias.reduce((a, b) => a + b, 0) / cicloDias.length)
     : null;
 
-  const totalDealsForLoss = allWonDeals.length + allLostDeals.length + allOpenDeals.length;
+  const totalDealsForLoss = wonDeals.length + lostDealsPeriod.length + openDealsPeriod.length;
   const tasaPerdida = totalDealsForLoss > 0
-    ? parseFloat((allLostDeals.length / totalDealsForLoss * 100).toFixed(1))
+    ? parseFloat((lostDealsPeriod.length / totalDealsForLoss * 100).toFixed(1))
     : null;
 
-  // Actividades por owner y tipo
+  // Actividades por owner y tipo, dentro del periodo seleccionado
+  const activitiesPeriod = activities.filter(a => {
+    const addStr = (a.add_time || '').slice(0, 10);
+    return addStr >= startStr && addStr <= endStr;
+  });
   const activityCountByOwner = {};
-  for (const act of activities) {
+  for (const act of activitiesPeriod) {
     const ownerId = act.user_id;
     if (ownerId == null) continue;
     if (!activityCountByOwner[ownerId]) activityCountByOwner[ownerId] = { llamadas: 0, emails: 0, reuniones: 0 };
@@ -1145,8 +1157,9 @@ async function processPipedrive(deals, period, origenMap, stageMap = {}, activit
     else if (/meeting|reunion|reunión/.test(type)) activityCountByOwner[ownerId].reuniones++;
   }
 
+  const dealsInPeriod = [...wonDeals, ...lostDealsPeriod, ...openDealsPeriod];
   const ownerStats = {};
-  for (const deal of deals) {
+  for (const deal of dealsInPeriod) {
     const ownerId = deal.user_id?.value ?? deal.user_id;
     if (ownerId == null) continue;
     if (!ownerStats[ownerId]) {
@@ -1185,11 +1198,12 @@ async function processPipedrive(deals, period, origenMap, stageMap = {}, activit
 
   const equipoDealLists = {};
   for (const p of equipo) {
-    const ownerDeals = deals.filter(d => String(d.user_id?.value ?? d.user_id) === String(p.ownerId));
-    equipoDealLists[`equipo_${p.ownerId}_activos`]  = buildDealSummaries(ownerDeals.filter(d => d.status === 'open'),  fieldOrigen, origenMap, stageMap);
-    equipoDealLists[`equipo_${p.ownerId}_ganados`]  = buildDealSummaries(ownerDeals.filter(d => d.status === 'won'),   fieldOrigen, origenMap, stageMap);
-    equipoDealLists[`equipo_${p.ownerId}_perdidos`] = buildDealSummaries(ownerDeals.filter(d => d.status === 'lost'),  fieldOrigen, origenMap, stageMap);
+    const ownerDealsPeriod = dealsInPeriod.filter(d => String(d.user_id?.value ?? d.user_id) === String(p.ownerId));
+    equipoDealLists[`equipo_${p.ownerId}_activos`]  = buildDealSummaries(ownerDealsPeriod.filter(d => d.status === 'open'),  fieldOrigen, origenMap, stageMap);
+    equipoDealLists[`equipo_${p.ownerId}_ganados`]  = buildDealSummaries(ownerDealsPeriod.filter(d => d.status === 'won'),   fieldOrigen, origenMap, stageMap);
+    equipoDealLists[`equipo_${p.ownerId}_perdidos`] = buildDealSummaries(ownerDealsPeriod.filter(d => d.status === 'lost'),  fieldOrigen, origenMap, stageMap);
   }
+
 
   return {
     pipeline:      { leads: leadDeals.length, sqls: sqlDeals.length, ganados: wonDeals.length },
