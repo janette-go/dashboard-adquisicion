@@ -2,8 +2,6 @@
 
 Dashboard interno para visualizar métricas de adquisición de Detecta Security: campañas de Google Ads, pipeline de ventas (Pipedrive), tráfico web (Google Analytics 4), posicionamiento orgánico (Search Console), tablero operativo desde Google Sheets e informes de marketing en PDF.
 
-🔗 Disponible en: https://dashboard-adquisicion.up.railway.app/
-
 ## Stack
 
 - Node.js + Express
